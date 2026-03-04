@@ -1,0 +1,33 @@
+{
+    "mcpServers": {
+        "task-master-ai": {
+            "type": "stdio",
+            "command": "npx",
+            "args": [
+                "-y",
+                "task-master-ai@latest"
+            ],
+            "env": {
+                "TASK_MASTER_TOOLS": "core"
+            }
+        },
+        "stitch": {
+            "command": "npx",
+            "args": ["@_davideast/stitch-mcp", "proxy"]
+        },
+        "sequential-thinking": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-sequential-thinking"
+            ]
+        },
+        "context7": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@upstash/context7-mcp"
+            ]
+        }
+    }
+}

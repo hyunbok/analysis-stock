@@ -29,7 +29,7 @@ replay_pid*
 #.claude
 #!.claude/agents
 #!.claude/agent-memory
-.mcp.json
+#.mcp.json
 
 # Logs
 logs

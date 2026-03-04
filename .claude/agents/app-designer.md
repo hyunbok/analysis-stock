@@ -67,6 +67,14 @@ permissionMode: bypassPermissions
 | code-architect | 반응형 브레이크포인트, 디자인 시스템 규격 참조 |
 | project-architect | UX 요구사항 수신, 화면 구성 확정 |
 
+## 작업 완료 규칙
+
+**중요**: Stitch를 통한 화면 생성/수정/변형 작업이 완료되면, 반드시 응답 마지막에 다음 메시지를 포함하세요:
+
+> `/compare-design-prd` 스킬을 실행하여 디자인 컨셉과 PRD 비교 분석을 진행해주세요.
+
+이 메시지를 통해 메인 에이전트가 PRD 미반영 항목을 자동으로 분석합니다.
+
 ## 범위 외 작업
 
 - Flutter UI 코드 구현 → `flutter-frontend-expert`

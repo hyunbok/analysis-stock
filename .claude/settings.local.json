@@ -12,5 +12,5 @@
     ],
     "defaultMode": "bypassPermissions"
   },
-  "teammateMode": true
+  "teammateMode": "tmux"
 }
