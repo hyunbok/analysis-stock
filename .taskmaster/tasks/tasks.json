@@ -2,7 +2,7 @@
   "v1": {
     "tasks": [
       {
-        "id": 1,
+        "id": "1",
         "title": "프로젝트 인프라 및 개발 환경 설정 (M1-Phase1)",
         "description": "모노레포 구조 정립, Docker Compose 환경 구성(PostgreSQL, MongoDB, Redis), FastAPI/Flutter 기본 골격, GitHub Actions CI/CD 초기화",
         "details": "- 프로젝트 루트에 server/, client/ 디렉토리 분리\n- Docker Compose 파일: postgres 16, mongodb 7, redis 7 서비스 정의\n- FastAPI 기본 앱 구조: app/main.py, core/, api/, models/, schemas/\n- Flutter 프로젝트: pubspec.yaml 기본 의존성 (Riverpod, Dio, web_socket_channel)\n- GitHub Actions: lint(ruff), test(pytest), coverage(80%+) workflow\n- 개발/스테이징/프로덕션 환경별 수 분리 (.env.example 작성)\n- Sentry, Prometheus 기본 연동 설정\n- Docker 이미지 빌드 및 레지스트리 푸시 파이프라인",
@@ -18,7 +18,8 @@
             "dependencies": [],
             "details": "프로젝트 루트에 다음 디렉토리 구조 생성:\n- server/ (FastAPI 백엔드)\n- client/ (Flutter 프론트엔드)\n- shared/api-spec/ (OpenAPI 스펙)\n- shared/ws-spec/ (WebSocket 이벤트 스펙)\n- docs/ (기존 PRD 문서 유지)\n\n.gitignore 파일에 Python(__pycache__, .venv, .env), Flutter(.dart_tool, build), Docker(.env.local), IDE(.idea, .vscode) 패턴 추가. .editorconfig로 코드 스타일 통일 (indent_size=4 for Python, indent_size=2 for Dart/YAML).",
             "status": "done",
-            "testStrategy": "모든 디렉토리 경로 존재 확인, .gitignore 패턴 적용 검증 (git status에서 무시 파일 확인)"
+            "testStrategy": "모든 디렉토리 경로 존재 확인, .gitignore 패턴 적용 검증 (git status에서 무시 파일 확인)",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -29,7 +30,8 @@
             ],
             "details": "docker-compose.yml 파일 생성:\n- postgres: image: postgres:16-alpine, ports: 5432:5432, volumes: postgres_data, 환경변수(POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB), healthcheck\n- mongodb: image: mongo:7, ports: 27017:27017, volumes: mongodb_data, 환경변수(MONGO_INITDB_ROOT_USERNAME, MONGO_INITDB_ROOT_PASSWORD), healthcheck\n- redis: image: redis:7-alpine, ports: 6379:6379, volumes: redis_data, healthcheck\n\n각 서비스에 restart: unless-stopped 설정. 네트워크: cointrader-network (bridge). 볼륨: named volumes로 데이터 영속성 보장. 개발 환경용 .env.example 템플릿 작성.",
             "status": "done",
-            "testStrategy": "docker-compose up -d 실행 후 docker-compose ps로 모든 서비스 healthy 상태 확인, docker exec로 각 DB 연결 테스트"
+            "testStrategy": "docker-compose up -d 실행 후 docker-compose ps로 모든 서비스 healthy 상태 확인, docker exec로 각 DB 연결 테스트",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -40,7 +42,8 @@
             ],
             "details": "server/ 디렉토리 구조 생성:\n- app/main.py: FastAPI 인스턴스, 라우터 등록, lifespan 이벤트\n- app/core/config.py: Pydantic BaseSettings (환경변수 로딩)\n- app/core/database.py: SQLAlchemy async 세션 팩토리 (PostgreSQL)\n- app/core/mongodb.py: Beanie init_beanie(), Motor 클라이언트\n- app/core/deps.py: FastAPI Depends (세션, 현재 사용자)\n- app/api/v1/__init__.py: 라우터 집합\n- app/models/: SQLAlchemy 모델 디렉토리\n- app/documents/: Beanie 도큐먼트 디렉토리\n- app/schemas/: Pydantic v2 스키마 디렉토리\n- app/repositories/: 레포지토리 베이스 클래스\n- app/services/: 서비스 레이어 디렉토리\n- app/providers/: 거래소 프로바이더 디렉토리\n- app/trading/: AI 매매 엔진 패키지\n- app/ws/: WebSocket 허브\n- tasks/: Celery 태스크 디렉토리\n- alembic/: 마이그레이션\n- tests/: 테스트\n\n__init__.py 파일 생성하여 Python 패키지화.",
             "status": "done",
-            "testStrategy": "Python import 테스트 (python -c \"from app.main import app\"), 디렉토리 구조 tree 명령으로 검증"
+            "testStrategy": "Python import 테스트 (python -c \"from app.main import app\"), 디렉토리 구조 tree 명령으로 검증",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -51,7 +54,8 @@
             ],
             "details": "server/pyproject.toml 생성:\n- [project]: name, version, python_requires>=3.12\n- 핵심 의존성: fastapi>=0.109.0, uvicorn[standard], sqlalchemy[asyncio]>=2.0, asyncpg, beanie>=1.26, motor, redis>=5.0, pydantic>=2.6, pydantic-settings, python-jose[cryptography], bcrypt, httpx, structlog, sentry-sdk[fastapi]\n- 개발 의존성: pytest>=8.0, pytest-asyncio, pytest-cov, httpx, ruff>=0.2, mypy>=1.8, pre-commit\n- Celery: celery[redis]>=5.3\n\n[tool.ruff]: line-length=100, select=[\"E\", \"F\", \"I\", \"N\", \"W\", \"UP\"], target-version=\"py312\"\n[tool.mypy]: python_version=\"3.12\", strict=true, plugins=[\"pydantic.mypy\"]\n\nserver/requirements.txt도 함께 생성 (Docker 빌드용).",
             "status": "done",
-            "testStrategy": "pip install -e . 또는 pip install -r requirements.txt 실행 후 모든 패키지 import 확인, ruff check . 및 mypy app/ 실행"
+            "testStrategy": "pip install -e . 또는 pip install -r requirements.txt 실행 후 모든 패키지 import 확인, ruff check . 및 mypy app/ 실행",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -62,7 +66,8 @@
             ],
             "details": "app/api/v1/health.py 생성:\n- GET /health 엔드포인트\n- 응답 스키마: {status: 'healthy'|'unhealthy', components: {postgres: 'up'|'down', mongodb: 'up'|'down', redis: 'up'|'down'}, timestamp: ISO8601}\n- 각 컴포넌트 연결 테스트:\n  * PostgreSQL: SELECT 1 쿼리\n  * MongoDB: ping 명령\n  * Redis: PING 명령\n- 모든 컴포넌트 정상 시 status='healthy', HTTP 200\n- 하나라도 실패 시 status='unhealthy', HTTP 503\n\napp/main.py에 health 라우터 등록. CORS 미들웨어 설정 (localhost, 프로덕션 도메인 화이트리스트). 구조화 로깅(structlog) 설정.",
             "status": "done",
-            "testStrategy": "Docker Compose 서비스 실행 후 curl http://localhost:8000/health 호출, 모든 컴포넌트 'up' 확인. 개별 서비스 중지 후 'unhealthy' 상태 및 503 응답 확인"
+            "testStrategy": "Docker Compose 서비스 실행 후 curl http://localhost:8000/health 호출, 모든 컴포넌트 'up' 확인. 개별 서비스 중지 후 'unhealthy' 상태 및 503 응답 확인",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -73,7 +78,8 @@
             ],
             "details": "client/ 디렉토리에 Flutter 프로젝트 생성:\n- flutter create cointrader --org com.cointrader --platforms=ios,android,web,macos,windows\n\npubspec.yaml 핵심 의존성:\n- flutter_riverpod: ^2.5.0 (상태 관리)\n- riverpod_annotation: ^2.3.0\n- dio: ^5.4.0 (HTTP 클라이언트)\n- web_socket_channel: ^2.4.0 (WebSocket)\n- shared_preferences: ^2.2.0 (로컬 저장)\n- hive: ^2.2.0, hive_flutter: ^1.1.0\n- flutter_localizations: sdk: flutter (다국어)\n- intl: ^0.18.0\n- go_router: ^13.0.0 (라우팅)\n- fl_chart: ^0.66.0 (차트)\n\n개발 의존성:\n- riverpod_generator: ^2.4.0\n- build_runner: ^2.4.0\n- flutter_lints: ^3.0.0\n\nlib/ 디렉토리 구조:\n- main.dart (앱 진입점)\n- app/router.dart, app/theme.dart\n- features/ (auth, home, trading 등 빈 디렉토리)\n- core/api/, core/websocket/, core/utils/\n- l10n/ (다국어 ARB 파일)",
             "status": "done",
-            "testStrategy": "flutter pub get 실행 성공, flutter analyze로 린트 오류 없음 확인, flutter build apk --debug로 빌드 테스트"
+            "testStrategy": "flutter pub get 실행 성공, flutter analyze로 린트 오류 없음 확인, flutter build apk --debug로 빌드 테스트",
+            "parentId": "undefined"
           },
           {
             "id": 7,
@@ -85,7 +91,8 @@
             ],
             "details": "server/ 디렉토리에 환경 파일 생성:\n- .env.example: 모든 환경변수 템플릿 (주석 설명 포함)\n- .env.dev: 개발 환경 (localhost DB, DEBUG=true)\n- .env.staging: 스테이징 환경 예시\n- .env.prod: 프로덕션 환경 예시 (민감 정보 제외)\n\n환경변수 목록:\n- DATABASE_URL (PostgreSQL 연결 문자열)\n- MONGODB_URL (MongoDB 연결 문자열)\n- REDIS_URL (Redis 연결 문자열)\n- JWT_SECRET_KEY, JWT_ALGORITHM=HS256\n- JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30\n- JWT_REFRESH_TOKEN_EXPIRE_DAYS=14\n- EXCHANGE_API_KEY_SECRET (AES-256 암호화 키)\n- OPENAI_API_KEY, OPENAI_MODEL=gpt-4o-mini\n- SENTRY_DSN\n- DEBUG, LOG_LEVEL\n- CORS_ORIGINS (쉼표 구분 도메인)\n\napp/core/config.py에서 pydantic-settings로 환경변수 자동 로딩. 환경별 설정 클래스 상속 구조 (Settings, DevSettings, ProdSettings).",
             "status": "done",
-            "testStrategy": ".env.dev 파일로 서버 실행 후 config 값 로깅 확인, 필수 환경변수 누락 시 ValidationError 발생 검증"
+            "testStrategy": ".env.dev 파일로 서버 실행 후 config 값 로깅 확인, 필수 환경변수 누락 시 ValidationError 발생 검증",
+            "parentId": "undefined"
           },
           {
             "id": 8,
@@ -97,7 +104,8 @@
             ],
             "details": ".github/workflows/ 디렉토리 생성:\n\nci.yml (서버 CI):\n- trigger: push, pull_request (main, develop 브랜치)\n- jobs:\n  * lint: ruff check app/ tests/\n  * type-check: mypy app/\n  * test: pytest tests/ --cov=app --cov-report=xml --cov-fail-under=80\n- services: postgres:16, mongodb:7, redis:7 (GitHub Actions services)\n- cache: pip 캐시\n- artifacts: 커버리지 리포트 업로드\n\nci-flutter.yml (클라이언트 CI):\n- trigger: push, pull_request\n- jobs:\n  * analyze: flutter analyze\n  * test: flutter test --coverage\n- cache: pub 캐시\n\n공통 설정:\n- runs-on: ubuntu-latest\n- fail-fast: false\n- 브랜치 보호 규칙 권장 사항 문서화",
             "status": "done",
-            "testStrategy": "테스트 브랜치 푸시 후 GitHub Actions 실행 확인, 모든 job 성공 여부 검증, 커버리지 리포트 생성 확인"
+            "testStrategy": "테스트 브랜치 푸시 후 GitHub Actions 실행 확인, 모든 job 성공 여부 검증, 커버리지 리포트 생성 확인",
+            "parentId": "undefined"
           },
           {
             "id": 9,
@@ -108,7 +116,8 @@
             ],
             "details": "server/Dockerfile 생성:\n- Base: python:3.12-slim\n- 멀티스테이지 빌드 (builder → runtime)\n- 비루트 사용자 (appuser) 실행\n- COPY requirements.txt → pip install → COPY app/\n- EXPOSE 8000\n- CMD [\"uvicorn\", \"app.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]\n- 헬스체크: HEALTHCHECK CMD curl -f http://localhost:8000/health || exit 1\n\n.github/workflows/docker.yml:\n- trigger: push (main, develop), release\n- jobs:\n  * build-and-push:\n    - docker/setup-buildx-action\n    - docker/login-action (Docker Hub 또는 ECR)\n    - docker/build-push-action\n    - 태그: latest, commit SHA, 버전 태그\n- secrets: DOCKER_USERNAME, DOCKER_PASSWORD (또는 AWS credentials)\n\ndocker-compose.yml에 server 서비스 추가 (Dockerfile 빌드 또는 이미지 참조).",
             "status": "done",
-            "testStrategy": "docker build -t cointrader-server . 로컬 빌드 성공, docker run으로 헬스체크 통과, GitHub Actions에서 이미지 푸시 성공 확인"
+            "testStrategy": "docker build -t cointrader-server . 로컬 빌드 성공, docker run으로 헬스체크 통과, GitHub Actions에서 이미지 푸시 성공 확인",
+            "parentId": "undefined"
           },
           {
             "id": 10,
@@ -119,21 +128,22 @@
             ],
             "details": "Sentry 통합 (app/main.py):\n- sentry_sdk.init(dsn=settings.SENTRY_DSN, traces_sample_rate=0.1, profiles_sample_rate=0.1)\n- FastAPI 통합: sentry_sdk.integrations.fastapi.FastApiIntegration\n- 환경변수: SENTRY_DSN (비어있으면 비활성화)\n- 에러 자동 캡처, 성능 트레이싱\n\nPrometheus 메트릭 (app/core/metrics.py):\n- prometheus_fastapi_instrumentator 라이브러리 사용\n- 기본 메트릭: http_requests_total, http_request_duration_seconds\n- 커스텀 메트릭: db_connections_active, websocket_connections\n- /metrics 엔드포인트 노출\n\ndocker-compose.yml에 Prometheus 서비스 추가 (선택적):\n- prometheus: image: prom/prometheus, volumes: prometheus.yml, ports: 9090\n- prometheus.yml: FastAPI /metrics 스크래핑 설정\n\nGrafana 대시보드 템플릿 (선택적):\n- docs/monitoring/grafana-dashboard.json",
             "status": "done",
-            "testStrategy": "SENTRY_DSN 설정 후 의도적 에러 발생 → Sentry 대시보드 이벤트 확인, /metrics 엔드포인트 호출 → Prometheus 포맷 메트릭 반환 확인"
+            "testStrategy": "SENTRY_DSN 설정 후 의도적 에러 발생 → Sentry 대시보드 이벤트 확인, /metrics 엔드포인트 호출 → Prometheus 포맷 메트릭 반환 확인",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 2,
+        "id": "2",
         "title": "데이터베이스 스키마 설계 및 마이그레이션 구성 (DB Setup)",
         "description": "PostgreSQL 테이블 정의(users, user_social_accounts, clients, user_exchange_accounts, coins, watchlist_coins, ai_trading_configs, trade_orders 등), MongoDB 컬렉션 설계, Alembic/Beanie 마이그레이션 틀",
         "details": "PostgreSQL:\n- users: email, password_hash(nullable), nickname, avatar_url, language, theme, price_color_style, ai_trading_enabled, totp_secret, is_2fa_enabled, email_verified_at\n- user_social_accounts: provider(google/apple), provider_id, provider_email\n- clients: device_type, fcm_token\n- user_exchange_accounts: exchange_type, api_key_encrypted(AES-256-GCM), api_secret_encrypted\n- coins: symbol, name_ko, name_en, exchange_type, market_code\n- watchlist_coins: sort_order\n- ai_trading_configs: is_enabled, max_investment_ratio(0.10), stop_loss_ratio(0.02), take_profit_ratio(0.03), daily_max_loss_ratio(0.05), primary_timeframe('5m'), confirmation_timeframes(ARRAY), strategy_params(JSONB)\n- trade_orders: order_type, order_method, price, quantity, fee, status, is_ai_order\n- price_alerts: condition(above/below), target_price, is_triggered\n- user_consents: consent_type, agreed_at, version\n\nMongoDB:\n- trade_logs: user_id, trade_order_id, coin_symbol, market_regime, strategy_name, entry_price, pnl_amount, pnl_ratio, status\n- ai_decisions: user_id, coin_symbol, market_regime, selected_strategy, action(buy/sell/hold), indicators_snapshot(JSON), gpt_model, gpt_raw_response, celery_task_id, TTL: 180일\n- daily_pnl_reports: upsert key (user_id, report_date), total_pnl, trade_count, ai_pnl, manual_pnl, strategy_stats\n- candle_data_* (타임프레임별): Time Series 컬렉션, TTL 차등 (1m=7일, 5m=90일, 15m=180일, 1h=1년, 4h=2년, 1d=5년)\n- notifications: user_id, type, title, body, is_read, TTL: 90일\n- audit_logs: user_id, action, ip_address, user_agent, created_at, TTL: 1년\n\nAlembic 초기화, Beanie 마이그레이션 스크립트 틀 구성",
         "testStrategy": "Docker Compose 환경에서 Alembic 마이그레이션 실행 및 테이블 생성 확인, 인덱스 생성 검증(고유 제약조건, 외래키), MongoDB 컬렉션 및 TTL 인덱스 생성 확인, 초기 데이터(coins 마스터) 로드 테스트",
         "priority": "high",
         "dependencies": [
-          1
+          "1"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -141,8 +151,10 @@
             "description": "users, user_social_accounts, clients, user_consents 테이블의 SQLAlchemy async 모델을 정의합니다. 각 테이블의 컬럼, 타입, 제약조건, 관계를 PRD 명세에 맞게 구현합니다.",
             "dependencies": [],
             "details": "server/app/models/ 디렉토리에 user.py 파일을 생성하여 다음 테이블 모델 정의:\n\n1. users 테이블:\n   - id (UUID, PK), email (VARCHAR 255, UNIQUE, NOT NULL)\n   - password_hash (VARCHAR 255, NULLABLE - 소셜 전용 계정)\n   - nickname (VARCHAR 50), avatar_url (VARCHAR 500, NULLABLE)\n   - language (VARCHAR 5, DEFAULT 'ko'), theme (VARCHAR 10, DEFAULT 'system')\n   - price_color_style (VARCHAR 10, DEFAULT 'korean')\n   - ai_trading_enabled (BOOLEAN, DEFAULT false)\n   - totp_secret (VARCHAR 32, NULLABLE), is_2fa_enabled (BOOLEAN, DEFAULT false)\n   - email_verified_at (TIMESTAMP, NULLABLE)\n   - created_at, updated_at (TIMESTAMP with timezone)\n   - 인덱스: email (UNIQUE), created_at\n\n2. user_social_accounts 테이블:\n   - id (UUID, PK), user_id (FK users.id, ON DELETE CASCADE)\n   - provider (VARCHAR 20, google/apple), provider_id (VARCHAR 255)\n   - provider_email (VARCHAR 255, NULLABLE)\n   - created_at (TIMESTAMP)\n   - 복합 UNIQUE: (provider, provider_id)\n   - 인덱스: user_id\n\n3. clients 테이블:\n   - id (UUID, PK), user_id (FK users.id, ON DELETE CASCADE)\n   - device_type (VARCHAR 20), fcm_token (VARCHAR 500, NULLABLE)\n   - last_active_at, created_at (TIMESTAMP)\n   - 인덱스: user_id, fcm_token\n\n4. user_consents 테이블:\n   - id (UUID, PK), user_id (FK users.id, ON DELETE CASCADE)\n   - consent_type (VARCHAR 20, terms/privacy/marketing)\n   - agreed_at (TIMESTAMP NOT NULL), version (VARCHAR 10)\n   - 복합 UNIQUE: (user_id, consent_type, version)\n\nSQLAlchemy 2.0 async 패턴, DeclarativeBase, Mapped 타입 사용",
-            "status": "pending",
-            "testStrategy": "pytest로 모델 정의 검증: 테이블 생성, 컬럼 타입/제약조건 확인, 관계 설정 검증, UNIQUE 제약조건 위반 시 IntegrityError 발생 확인"
+            "status": "done",
+            "testStrategy": "pytest로 모델 정의 검증: 테이블 생성, 컬럼 타입/제약조건 확인, 관계 설정 검증, UNIQUE 제약조건 위반 시 IntegrityError 발생 확인",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-05T12:44:20.535Z"
           },
           {
             "id": 2,
@@ -152,8 +164,10 @@
               1
             ],
             "details": "server/app/models/ 디렉토리에 exchange.py, coin.py 파일 생성:\n\n1. user_exchange_accounts 테이블 (exchange.py):\n   - id (UUID, PK), user_id (FK users.id, ON DELETE CASCADE)\n   - exchange_type (VARCHAR 20, upbit/coinone/coinbase/binance)\n   - api_key_encrypted (BYTEA NOT NULL) - AES-256-GCM 암호화\n   - api_secret_encrypted (BYTEA NOT NULL)\n   - permissions (VARCHAR[], NULLABLE) - ['trade', 'withdraw'] 등\n   - is_active (BOOLEAN, DEFAULT true)\n   - created_at, updated_at (TIMESTAMP)\n   - 복합 UNIQUE: (user_id, exchange_type)\n   - 인덱스: user_id\n\n2. coins 테이블 (coin.py):\n   - id (UUID, PK)\n   - symbol (VARCHAR 20, NOT NULL) - BTC, ETH 등\n   - name_ko (VARCHAR 100, NULLABLE)\n   - name_en (VARCHAR 100, NULLABLE)\n   - exchange_type (VARCHAR 20, NOT NULL)\n   - market_code (VARCHAR 30, NOT NULL) - KRW-BTC, USDT-BTC 등\n   - is_active (BOOLEAN, DEFAULT true)\n   - created_at, updated_at (TIMESTAMP)\n   - 복합 UNIQUE: (exchange_type, market_code)\n   - 인덱스: symbol, exchange_type\n\n3. watchlist_coins 테이블 (coin.py):\n   - id (UUID, PK)\n   - user_id (FK users.id, ON DELETE CASCADE)\n   - coin_id (FK coins.id, ON DELETE CASCADE)\n   - exchange_account_id (FK user_exchange_accounts.id, NULLABLE)\n   - sort_order (INTEGER, DEFAULT 0)\n   - created_at (TIMESTAMP)\n   - 복합 UNIQUE: (user_id, coin_id, exchange_account_id)\n   - 인덱스: user_id, sort_order\n\nrelationship() 설정으로 User ↔ ExchangeAccount ↔ WatchlistCoin 연결",
-            "status": "pending",
-            "testStrategy": "모델 관계 검증: user.exchange_accounts, user.watchlist_coins lazy loading 확인, CASCADE 삭제 테스트, 암호화 필드 BYTEA 타입 확인"
+            "status": "done",
+            "testStrategy": "모델 관계 검증: user.exchange_accounts, user.watchlist_coins lazy loading 확인, CASCADE 삭제 테스트, 암호화 필드 BYTEA 타입 확인",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-05T12:44:20.542Z"
           },
           {
             "id": 3,
@@ -164,8 +178,10 @@
               2
             ],
             "details": "server/app/models/ 디렉토리에 trading.py 파일 생성:\n\n1. ai_trading_configs 테이블:\n   - id (UUID, PK)\n   - watchlist_coin_id (FK watchlist_coins.id, ON DELETE CASCADE, UNIQUE)\n   - is_enabled (BOOLEAN, DEFAULT false)\n   - max_investment_ratio (NUMERIC(5,4), DEFAULT 0.10)\n   - stop_loss_ratio (NUMERIC(5,4), DEFAULT 0.02)\n   - take_profit_ratio (NUMERIC(5,4), DEFAULT 0.03)\n   - daily_max_loss_ratio (NUMERIC(5,4), DEFAULT 0.05)\n   - primary_timeframe (VARCHAR 10, DEFAULT '5m')\n   - confirmation_timeframes (VARCHAR[], DEFAULT '{\"15m\",\"1h\"}')\n   - strategy_params (JSONB, NULLABLE) - 장세별 전략 파라미터\n   - enabled_at, disabled_at (TIMESTAMP, NULLABLE)\n   - disable_reason (VARCHAR 200, NULLABLE)\n   - created_at, updated_at (TIMESTAMP)\n   - 인덱스: watchlist_coin_id (UNIQUE), is_enabled\n\n2. ai_trading_config_history 테이블:\n   - id (UUID, PK)\n   - config_id (FK ai_trading_configs.id, ON DELETE CASCADE)\n   - action (VARCHAR 30, enabled/disabled/params_updated)\n   - changed_by (VARCHAR 10, user/system)\n   - change_detail (JSONB) - 변경 전 파라미터 스냅샷\n   - created_at (TIMESTAMP)\n   - 인덱스: config_id, created_at\n\n3. trade_orders 테이블:\n   - id (UUID, PK)\n   - user_id (FK users.id, ON DELETE CASCADE)\n   - exchange_account_id (FK user_exchange_accounts.id)\n   - coin_id (FK coins.id)\n   - order_type (VARCHAR 10, buy/sell)\n   - order_method (VARCHAR 10, market/limit)\n   - price (NUMERIC(20,8), NULLABLE - 지정가만)\n   - quantity (NUMERIC(20,8), NOT NULL)\n   - executed_quantity (NUMERIC(20,8), DEFAULT 0)\n   - fee (NUMERIC(20,8), DEFAULT 0)\n   - status (VARCHAR 20, pending/filled/cancelled/partial)\n   - is_ai_order (BOOLEAN, DEFAULT false)\n   - exchange_order_id (VARCHAR 100, NULLABLE)\n   - created_at, updated_at, executed_at (TIMESTAMP)\n   - 인덱스: user_id, status, created_at, is_ai_order\n\n4. price_alerts 테이블:\n   - id (UUID, PK)\n   - user_id (FK users.id, ON DELETE CASCADE)\n   - coin_id (FK coins.id, ON DELETE CASCADE)\n   - exchange_account_id (FK user_exchange_accounts.id, NULLABLE)\n   - condition (VARCHAR 10, above/below)\n   - target_price (NUMERIC(20,8), NOT NULL)\n   - is_triggered (BOOLEAN, DEFAULT false)\n   - is_active (BOOLEAN, DEFAULT true)\n   - triggered_at (TIMESTAMP, NULLABLE)\n   - created_at (TIMESTAMP)\n   - 인덱스: user_id, is_active, coin_id",
-            "status": "pending",
-            "testStrategy": "JSONB/ARRAY 필드 CRUD 테스트, NUMERIC 정밀도 검증, 주문 상태 전이 검증 (pending→filled→cancelled), 외래키 CASCADE 동작 확인"
+            "status": "done",
+            "testStrategy": "JSONB/ARRAY 필드 CRUD 테스트, NUMERIC 정밀도 검증, 주문 상태 전이 검증 (pending→filled→cancelled), 외래키 CASCADE 동작 확인",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-05T12:44:20.549Z"
           },
           {
             "id": 4,
@@ -173,8 +189,10 @@
             "description": "AI 매매 로그, AI 판단 이력, 일별 손익 리포트 컬렉션의 Beanie Document 모델을 정의합니다. 내장 문서와 TTL 인덱스를 포함합니다.",
             "dependencies": [],
             "details": "server/app/documents/ 디렉토리에 trading_logs.py 파일 생성:\n\n1. TradeLogs Document:\n   - id (PydanticObjectId, _id)\n   - user_id (UUID, indexed)\n   - trade_order_id (UUID, PG 참조 - 조인 불가 비정규화)\n   - 비정규화 스냅샷: coin_symbol, market_code, exchange_type, order_type, order_method, price, quantity, fee, is_ai_order\n   - market_regime (str, trend/range/transition)\n   - strategy_name (str, NULLABLE)\n   - ai_decision_id (PydanticObjectId, NULLABLE)\n   - reasoning_summary (str, 200자)\n   - strategy_params_snapshot (dict)\n   - entry_price (Decimal)\n   - pnl_amount, pnl_ratio, holding_minutes (청산 시 업데이트)\n   - status (str, open/closed)\n   - created_at, updated_at (datetime)\n   - 인덱스: user_id, trade_order_id, status, created_at\n\n2. IndicatorsSnapshot (내장 문서):\n   - ema_20, ema_50, ema_200 (Decimal)\n   - vwap, vwap_upper, vwap_lower (Decimal)\n   - rsi (Decimal)\n   - macd, macd_signal, macd_histogram (Decimal)\n   - bb_upper, bb_middle, bb_lower, bb_percent_b (Decimal)\n   - adx, plus_di, minus_di (Decimal)\n   - atr, stochastic_k, stochastic_d (Decimal)\n   - obv, williams_r, cci (Decimal)\n\n3. AiDecisions Document:\n   - user_id (UUID, indexed)\n   - coin_symbol, market_regime (str)\n   - regime_confidence (dict, {trend: 0.7, range: 0.2, transition: 0.1})\n   - selected_strategy (str)\n   - action (str, buy/sell/hold), action_confidence (Decimal)\n   - indicators_snapshot (IndicatorsSnapshot 내장)\n   - gpt_model, gpt_prompt_tokens, gpt_completion_tokens (int)\n   - gpt_raw_response, gpt_parsed_result (str, dict)\n   - news_context_summary (str)\n   - trade_log_id (PydanticObjectId, NULLABLE)\n   - execution_skipped_reason (str, NULLABLE)\n   - analysis_duration_ms (int)\n   - celery_task_id (str)\n   - created_at (datetime with TTL 180일 인덱스)\n\n4. DailyPnlReports Document:\n   - user_id (UUID), report_date (date) - 복합 unique\n   - total_pnl, trade_count, win_rate (Decimal, int, Decimal)\n   - ai_pnl, ai_trade_count, ai_win_count (AI 분리)\n   - manual_pnl, manual_trade_count (수동 분리)\n   - regime_stats (dict), strategy_stats (dict)\n   - cumulative_pnl (Decimal)\n   - created_at, updated_at (datetime)\n   - upsert on (user_id, report_date) 멱등성 보장\n\nBeanie Settings class로 collection 이름, 인덱스 정의",
-            "status": "pending",
-            "testStrategy": "Beanie Document CRUD 테스트, 내장 문서 직렬화/역직렬화 검증, TTL 인덱스 생성 확인 (db.collection.getIndexes()), upsert 멱등성 테스트"
+            "status": "done",
+            "testStrategy": "Beanie Document CRUD 테스트, 내장 문서 직렬화/역직렬화 검증, TTL 인덱스 생성 확인 (db.collection.getIndexes()), upsert 멱등성 테스트",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-05T12:44:20.580Z"
           },
           {
             "id": 5,
@@ -182,8 +200,10 @@
             "description": "타임프레임별 캔들 데이터 Time Series 컬렉션 모델을 정의합니다. MongoDB 5.0+ Time Series 기능과 차등 TTL을 구현합니다.",
             "dependencies": [],
             "details": "server/app/documents/ 디렉토리에 candle_data.py 파일 생성:\n\n1. CandleData Document (각 타임프레임별 별도 컬렉션):\n   - 컬렉션명: candle_data_1m, candle_data_5m, candle_data_15m, candle_data_1h, candle_data_4h, candle_data_1d\n   - timestamp (datetime, timeField)\n   - exchange_type (str, metaField 일부)\n   - market_code (str, metaField 일부)\n   - open, high, low, close (Decimal)\n   - volume (Decimal)\n   - trade_count (int, NULLABLE)\n\n2. Time Series Collection 설정 (MongoDB Native):\n   - timeField: 'timestamp'\n   - metaField: 'meta' (exchange_type + market_code 복합)\n   - granularity: 타임프레임별 차등 (seconds/minutes/hours)\n     - 1m: 'seconds'\n     - 5m, 15m: 'minutes'\n     - 1h, 4h, 1d: 'hours'\n\n3. TTL 인덱스 설정 (타임프레임별 차등):\n   - candle_data_1m: 7일 (604800초)\n   - candle_data_5m: 90일 (7776000초)\n   - candle_data_15m: 180일 (15552000초)\n   - candle_data_1h: 1년 (31536000초)\n   - candle_data_4h: 2년 (63072000초)\n   - candle_data_1d: 5년 (157680000초)\n\n4. 인덱스 설계:\n   - 복합 인덱스: (exchange_type, market_code, timestamp DESC)\n   - Time Series 특화 압축 활용\n\n5. Beanie 초기화 시 Time Series 컬렉션 자동 생성 스크립트:\n   - create_collection() with timeseries 옵션\n   - 기존 컬렉션 존재 시 skip\n\nserver/app/core/mongodb.py에 초기화 함수 추가:\n- init_timeseries_collections() 함수 구현\n- app startup 이벤트에서 호출",
-            "status": "pending",
-            "testStrategy": "Time Series 컬렉션 생성 확인 (db.listCollections()), TTL 인덱스 expireAfterSeconds 검증, 캔들 데이터 삽입 후 시간 경과 TTL 삭제 확인 (테스트 환경 TTL 단축)"
+            "status": "done",
+            "testStrategy": "Time Series 컬렉션 생성 확인 (db.listCollections()), TTL 인덱스 expireAfterSeconds 검증, 캔들 데이터 삽입 후 시간 경과 TTL 삭제 확인 (테스트 환경 TTL 단축)",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-05T12:44:20.589Z"
           },
           {
             "id": 6,
@@ -191,8 +211,10 @@
             "description": "알림, 감사 로그, 뉴스 데이터 컬렉션의 Beanie Document 모델을 정의합니다. TTL 인덱스와 가변 스키마 필드를 포함합니다.",
             "dependencies": [],
             "details": "server/app/documents/ 디렉토리에 notifications.py, audit_logs.py 파일 생성:\n\n1. Notifications Document (notifications.py):\n   - id (PydanticObjectId)\n   - user_id (UUID, indexed)\n   - type (str, price_alert/ai_trading/order_execution)\n   - title (str, 100자)\n   - body (str, 500자)\n   - data (dict, 가변 메타데이터)\n     - price_alert: {coin_symbol, target_price, current_price}\n     - ai_trading: {action, coin_symbol, strategy}\n     - order_execution: {order_id, status, price, quantity}\n   - is_read (bool, DEFAULT false)\n   - created_at (datetime, TTL 90일 인덱스)\n   - 인덱스: (user_id, is_read), (user_id, created_at DESC)\n\n2. AuditLogs Document (audit_logs.py):\n   - id (PydanticObjectId)\n   - user_id (UUID, indexed, NULLABLE - 로그인 실패 등)\n   - action (str, login/logout/password_change/api_key_change/2fa_toggle)\n   - ip_address (str, IPv4/IPv6)\n   - user_agent (str, 500자)\n   - details (dict, 가변)\n     - login: {success: bool, failure_reason: str}\n     - api_key_change: {exchange_type, action: 'add'/'remove'}\n   - created_at (datetime, TTL 1년 인덱스)\n   - 인덱스: user_id, action, created_at\n\n3. NewsData Document (news_data.py):\n   - id (PydanticObjectId)\n   - coin_symbol (str, indexed)\n   - source (str, 뉴스 출처)\n   - title, content (str)\n   - url (str)\n   - published_at (datetime)\n   - sentiment_score (Decimal, -1.0 ~ 1.0, NULLABLE)\n   - embedding_vector (list[float], 384/768차원, NULLABLE)\n   - created_at (datetime)\n   - 인덱스: coin_symbol, published_at DESC\n\n4. TTL 인덱스 설정:\n   - notifications: expireAfterSeconds = 7776000 (90일)\n   - audit_logs: expireAfterSeconds = 31536000 (1년)\n\n5. Beanie Settings:\n   - collection 이름 명시\n   - indexes 리스트로 복합 인덱스 정의",
-            "status": "pending",
-            "testStrategy": "Document 생성/조회 테스트, TTL 인덱스 생성 확인, 가변 data 필드 다양한 타입 저장 검증, user_id 기준 필터링 쿼리 성능 확인"
+            "status": "done",
+            "testStrategy": "Document 생성/조회 테스트, TTL 인덱스 생성 확인, 가변 data 필드 다양한 타입 저장 검증, user_id 기준 필터링 쿼리 성능 확인",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-05T12:44:20.592Z"
           },
           {
             "id": 7,
@@ -204,8 +226,10 @@
               3
             ],
             "details": "server/ 디렉토리에서 Alembic 환경 구성:\n\n1. Alembic 초기화:\n   - alembic init alembic\n   - async 드라이버 지원 설정 (asyncpg)\n\n2. alembic.ini 수정:\n   - sqlalchemy.url 제거 (env.py에서 동적 설정)\n   - script_location = alembic\n\n3. alembic/env.py 수정:\n   - from app.core.config import settings\n   - from app.core.database import Base\n   - from app.models import * (모든 모델 import)\n   - target_metadata = Base.metadata\n   - async def run_migrations_online() 구현\n   - connectable = create_async_engine(settings.DATABASE_URL)\n\n4. 초기 마이그레이션 생성:\n   - alembic revision --autogenerate -m \"initial_schema\"\n   - 생성된 마이그레이션 파일 검토 및 수정:\n     - UUID 타입 명시 (PostgreSQL UUID native)\n     - 인덱스 이름 명시적 지정\n     - 외래키 제약조건 이름 지정\n     - CHECK 제약조건 추가 (status enum 등)\n\n5. 마이그레이션 스크립트 구조:\n   ```python\n   def upgrade() -> None:\n       # users 테이블 생성\n       op.create_table('users', ...)\n       # user_social_accounts 테이블 생성\n       # clients 테이블 생성\n       # ... 의존성 순서대로\n   \n   def downgrade() -> None:\n       # 역순으로 DROP TABLE\n   ```\n\n6. 환경 변수 설정:\n   - DATABASE_URL=postgresql+asyncpg://...\n   - 환경별 분리 (dev/prod/test)\n\n7. seed 데이터 마이그레이션:\n   - coins 마스터 초기 데이터 (Upbit, CoinOne KRW 마켓)",
-            "status": "pending",
-            "testStrategy": "alembic upgrade head 실행 후 psql로 테이블 생성 확인, \\d+ 명령으로 컬럼 타입/제약조건 검증, alembic downgrade -1 후 upgrade 재실행 롤백 테스트"
+            "status": "done",
+            "testStrategy": "alembic upgrade head 실행 후 psql로 테이블 생성 확인, \\d+ 명령으로 컬럼 타입/제약조건 검증, alembic downgrade -1 후 upgrade 재실행 롤백 테스트",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-05T12:44:20.594Z"
           },
           {
             "id": 8,
@@ -217,8 +241,10 @@
               6
             ],
             "details": "server/app/core/ 및 server/migrations/mongo/ 디렉토리 구성:\n\n1. Beanie 초기화 (app/core/mongodb.py):\n   ```python\n   from beanie import init_beanie\n   from motor.motor_asyncio import AsyncIOMotorClient\n   from app.documents import (\n       TradeLogs, AiDecisions, DailyPnlReports,\n       Notifications, AuditLogs, NewsData\n   )\n   \n   async def init_mongodb(db_url: str, db_name: str):\n       client = AsyncIOMotorClient(db_url)\n       await init_beanie(\n           database=client[db_name],\n           document_models=[\n               TradeLogs, AiDecisions, DailyPnlReports,\n               Notifications, AuditLogs, NewsData\n           ]\n       )\n       await init_timeseries_collections(client[db_name])\n   ```\n\n2. Time Series 컬렉션 초기화 함수:\n   ```python\n   async def init_timeseries_collections(db):\n       timeframes = ['1m', '5m', '15m', '1h', '4h', '1d']\n       ttl_days = [7, 90, 180, 365, 730, 1825]\n       granularities = ['seconds', 'minutes', 'minutes', 'hours', 'hours', 'hours']\n       \n       for tf, ttl, gran in zip(timeframes, ttl_days, granularities):\n           coll_name = f'candle_data_{tf}'\n           existing = await db.list_collection_names()\n           if coll_name not in existing:\n               await db.create_collection(\n                   coll_name,\n                   timeseries={\n                       'timeField': 'timestamp',\n                       'metaField': 'meta',\n                       'granularity': gran\n                   },\n                   expireAfterSeconds=ttl * 86400\n               )\n   ```\n\n3. 마이그레이션 스크립트 틀 (migrations/mongo/):\n   - 버전 관리: migrations/mongo/versions/001_initial.py\n   - 마이그레이션 runner 스크립트\n   - 각 버전 파일 구조:\n     ```python\n     VERSION = '001'\n     DESCRIPTION = 'Initial collections and indexes'\n     \n     async def upgrade(db):\n         # 인덱스 생성\n         await db.trade_logs.create_index([('user_id', 1), ('created_at', -1)])\n         # TTL 인덱스\n         await db.notifications.create_index(\n             'created_at', expireAfterSeconds=7776000\n         )\n     \n     async def downgrade(db):\n         # 인덱스 삭제\n         await db.trade_logs.drop_index('user_id_1_created_at_-1')\n     ```\n\n4. 마이그레이션 버전 추적:\n   - migration_versions 컬렉션에 적용된 버전 기록\n   - 멱등성 보장 (이미 적용된 버전 스킵)\n\n5. FastAPI startup 이벤트에 초기화 연결:\n   ```python\n   @app.on_event(\"startup\")\n   async def startup():\n       await init_mongodb(settings.MONGO_URL, settings.MONGO_DB_NAME)\n   ```",
-            "status": "pending",
-            "testStrategy": "Beanie 초기화 후 Document.find() 쿼리 테스트, db.getCollectionInfos()로 Time Series 컬렉션 확인, 인덱스 생성 검증 (db.collection.getIndexes()), 마이그레이션 버전 기록 확인"
+            "status": "done",
+            "testStrategy": "Beanie 초기화 후 Document.find() 쿼리 테스트, db.getCollectionInfos()로 Time Series 컬렉션 확인, 인덱스 생성 검증 (db.collection.getIndexes()), 마이그레이션 버전 기록 확인",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-05T12:44:20.597Z"
           },
           {
             "id": 9,
@@ -229,8 +255,10 @@
               8
             ],
             "details": "인덱스 및 제약조건 최적화:\n\n1. PostgreSQL 인덱스 최적화:\n   - 복합 인덱스 순서 최적화 (선택성 높은 컬럼 우선)\n   - 부분 인덱스 활용:\n     - trade_orders: WHERE status = 'pending' (미체결 주문 조회 최적화)\n     - price_alerts: WHERE is_active = true AND is_triggered = false\n   - INCLUDE 인덱스 (Covering Index):\n     - watchlist_coins: (user_id) INCLUDE (coin_id, sort_order)\n   - GIN 인덱스:\n     - ai_trading_configs.strategy_params (JSONB)\n\n2. PostgreSQL CHECK 제약조건:\n   - trade_orders.status IN ('pending', 'filled', 'cancelled', 'partial')\n   - trade_orders.order_type IN ('buy', 'sell')\n   - trade_orders.order_method IN ('market', 'limit')\n   - ai_trading_configs 비율 필드 범위: 0.0 ~ 1.0\n   - price_alerts.condition IN ('above', 'below')\n\n3. MongoDB 복합 인덱스:\n   - trade_logs: {user_id: 1, status: 1, created_at: -1}\n   - ai_decisions: {user_id: 1, coin_symbol: 1, created_at: -1}\n   - daily_pnl_reports: {user_id: 1, report_date: -1} (unique)\n   - notifications: {user_id: 1, is_read: 1, created_at: -1}\n\n4. MongoDB 쿼리 최적화:\n   - hint() 사용 가이드 문서화\n   - explain() 분석 예시\n\n5. 크로스DB 참조 검증 로직:\n   - trade_logs.trade_order_id 유효성 검증 (애플리케이션 레벨)\n   - 고아 참조 탐지 스크립트 (정기 실행용)\n\n6. 성능 테스트 쿼리 세트:\n   - 사용자별 최근 주문 100건 조회\n   - 활성 AI 설정 목록 조회\n   - 일별 손익 리포트 범위 조회\n   - 캔들 데이터 범위 조회 (최근 N개)\n\n7. 인덱스 문서화:\n   - docs/db-indexes.md 생성\n   - 각 인덱스 목적, 예상 쿼리, 선택성 설명",
-            "status": "pending",
-            "testStrategy": "EXPLAIN ANALYZE로 쿼리 계획 확인 (Index Scan 사용 검증), 대량 테스트 데이터 삽입 후 쿼리 성능 측정 (< 100ms), 제약조건 위반 INSERT/UPDATE 시 에러 발생 확인"
+            "status": "done",
+            "testStrategy": "EXPLAIN ANALYZE로 쿼리 계획 확인 (Index Scan 사용 검증), 대량 테스트 데이터 삽입 후 쿼리 성능 측정 (< 100ms), 제약조건 위반 INSERT/UPDATE 시 에러 발생 확인",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-05T12:44:20.599Z"
           },
           {
             "id": 10,
@@ -242,48 +270,51 @@
               9
             ],
             "details": "시드 데이터 및 통합 테스트 구성:\n\n1. 코인 마스터 시드 데이터 (server/app/seeds/coins.py):\n   ```python\n   INITIAL_COINS = [\n       # Upbit KRW 마켓 (주요 30개)\n       {'symbol': 'BTC', 'name_ko': '비트코인', 'name_en': 'Bitcoin', 'exchange_type': 'upbit', 'market_code': 'KRW-BTC'},\n       {'symbol': 'ETH', 'name_ko': '이더리움', 'name_en': 'Ethereum', 'exchange_type': 'upbit', 'market_code': 'KRW-ETH'},\n       {'symbol': 'XRP', 'name_ko': '리플', 'name_en': 'Ripple', 'exchange_type': 'upbit', 'market_code': 'KRW-XRP'},\n       # ... 추가 코인\n       \n       # CoinOne KRW 마켓 (주요 20개)\n       {'symbol': 'BTC', 'name_ko': '비트코인', 'name_en': 'Bitcoin', 'exchange_type': 'coinone', 'market_code': 'KRW-BTC'},\n       # ...\n   ]\n   ```\n\n2. 시드 실행 스크립트 (server/scripts/seed_coins.py):\n   - 멱등성 보장 (ON CONFLICT DO NOTHING)\n   - 환경별 분리 (dev/test/prod)\n   - CLI 인터페이스: python -m scripts.seed_coins\n\n3. Alembic 데이터 마이그레이션 연동 (선택적):\n   - alembic/versions/002_seed_coins.py\n   - op.bulk_insert() 활용\n\n4. 통합 테스트 (tests/integration/test_database.py):\n   - Docker Compose 환경 설정 (testcontainers-python 또는 docker-compose.test.yml)\n   - pytest fixtures:\n     - db_session: PostgreSQL async session\n     - mongo_db: MongoDB database\n   - 테스트 케이스:\n     - 모든 PostgreSQL 테이블 생성 확인\n     - 모든 MongoDB 컬렉션/인덱스 생성 확인\n     - CRUD 흐름 테스트 (User → ExchangeAccount → WatchlistCoin → AIConfig)\n     - 크로스DB 참조 일관성 테스트\n     - CASCADE 삭제 테스트\n     - TTL 인덱스 동작 테스트 (짧은 TTL로 검증)\n\n5. 테스트 데이터 팩토리 (tests/factories/):\n   - factory_boy 또는 자체 팩토리 패턴\n   - UserFactory, CoinFactory, OrderFactory 등\n\n6. 테스트 정리:\n   - pytest-asyncio 설정\n   - conftest.py: DB 연결 fixture, 트랜잭션 롤백\n\n7. CI 파이프라인 연동:\n   - GitHub Actions workflow에 DB 테스트 단계 추가\n   - services: postgres, mongodb",
-            "status": "pending",
-            "testStrategy": "시드 스크립트 실행 후 SELECT COUNT(*) FROM coins 검증, pytest -v tests/integration/ 전체 통과, Docker Compose 환경에서 Alembic migrate + seed + 테스트 자동화 확인"
+            "status": "done",
+            "testStrategy": "시드 스크립트 실행 후 SELECT COUNT(*) FROM coins 검증, pytest -v tests/integration/ 전체 통과, Docker Compose 환경에서 Alembic migrate + seed + 테스트 자동화 확인",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-05T12:44:20.602Z"
           }
-        ]
+        ],
+        "updatedAt": "2026-03-05T12:44:20.602Z"
       },
       {
-        "id": 3,
+        "id": "3",
         "title": "Redis 캐시 및 Pub/Sub 구성",
         "description": "Redis 키 패턴 정의, TTL 설정, Pub/Sub 채널 구성, Rate Limiting 토큰 버킷 알고리즘의 구현",
         "details": "Redis 키 패턴:\n- auth:refresh:{user_id}:{client_id} — JWT refresh token 저장\n- rate:{ip} / rate:{user_id} — Rate limiting 토큰 버킷\n- ticker:{exchange}:{market} — 실시간 시세 Pub/Sub\n- notifications:unread_count:{user_id} — 미읽 알림 수 캐시\n- indicators:{exchange}:{market}:{timeframe} — 기술적 지표 스냅샷 (TTL 60~600s)\n- regime:{exchange}:{market} — 장세 분석 결과 (TTL 300s)\n- ai_decision:{user_id}:{market}:latest — AI 최신 결정 (TTL 300s)\n- candles:{exchange}:{market}:{timeframe}:{count} — 캔들 캐시 (TTL 30s)\n- ai:news_sentiment:{coin} — 뉴스 감성 캐시 (TTL 30분)\n- ai:last_run:{user_id}:{coin} — 마지막 분석 시간 (TTL 10분)\n- ai:signal:{user_id} — AI 실시간 신호 Pub/Sub\n\nRate Limiting: Token Bucket 알고리즘, 거래소별 차등 한도 (Upbit: 초당 10회, 분당 600회)\nPub/Sub: Redis 채널 구독 관리, 메시지 포맷 정의 (JSON)",
         "testStrategy": "Redis CLI로 키 저장/조회 검증, TTL 만료 테스트, Pub/Sub 메시지 발행/구독 테스트, Rate Limiter 토큰 소비 검증 (초과 요청 거부 확인)",
         "priority": "high",
         "dependencies": [
-          1
+          "1"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 4,
+        "id": "4",
         "title": "FastAPI 기본 프로젝트 구조 및 미들웨어 구성",
         "description": "FastAPI 앱 초기화, 의존성 주입 설정, 미들웨어(CORS, 요청 로깅, 에러 처리), 헬스체크 엔드포인트",
         "details": "app/main.py:\n- FastAPI 앱 인스턴스 생성\n- CORS 화이트리스트 설정 (localhost, 프로덕션 도메인)\n- 구조화된 로깅 (structlog JSON)\n- Correlation ID 미들웨어 (요청 추적)\n- 글로벌 에러 핸들러 (ValidationError, HTTPException)\n- 헬스체크 GET /health (PostgreSQL, MongoDB, Redis 연결 상태 포함)\n\ncore/deps.py:\n- Database 세션 의존성 (AsyncSession)\n- MongoDB 세션 의존성 (Beanie)\n- 현재 사용자 의존성 (JWT 검증)\n- Rate Limit 의존성\n\napp/core/config.py:\n- 환경별 수 로딩 (pydantic-settings)\n- 데이터베이스 연결 문자열\n- JWT 시크릿, 토큰 만료 설정\n- OpenAI 모델 설정 (환경별 수 OPENAI_MODEL)\n- Redis 연결 설정",
         "testStrategy": "FastAPI 테스트 클라이언트로 GET /health 호출 검증, 잘못된 요청(ValidationError) 에러 응답 확인, 헬스체크에서 모든 의존성 상태 정상 확인, 구조화 로그 출력 검증",
         "priority": "high",
         "dependencies": [
-          1,
-          2,
-          3
+          "1",
+          "2",
+          "3"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 5,
+        "id": "5",
         "title": "JWT 인증 시스템 구현 (회원가입, 로그인, 토큰 갱신)",
         "description": "이메일 기반 회원가입(인증 코드 메일 발송), 로그인, JWT access/refresh 토큰 발급 및 갱신, 인증 미들웨어",
         "details": "엔드포인트:\n- POST /api/v1/auth/register — 회원가입 (email, password, nickname)\n  → 비밀번호 bcrypt(12) 해싱\n  → 인증 코드(6자리) 이메일 발송 (Redis TTL 10분)\n  → user 생성 (email_verified_at: null)\n- POST /api/v1/auth/verify-email — 이메일 인증 (email, code)\n  → 코드 검증 후 email_verified_at 업데이트\n- POST /api/v1/auth/login — 로그인 (email, password)\n  → 비밀번호 검증\n  → JWT access token (30분) + refresh token (14일) 발급\n  → refresh token Redis 저장: auth:refresh:{user_id}:{client_id}\n  → client_id 자동 생성 또는 요청값 사용\n- POST /api/v1/auth/refresh — 토큰 갱신 (refresh_token)\n  → Redis에서 refresh token 검증\n  → 새 access token 발급\n- POST /api/v1/auth/logout — 로그아웃\n  → refresh token Redis에서 삭제\n- GET /api/v1/auth/me — 현재 사용자 정보\n  → JWT 검증 필수\n- PUT /api/v1/auth/me — 프로필 수정 (nickname, language, theme, price_color_style)\n  → JWT 검증 필수\n- DELETE /api/v1/auth/me — 계정 삭제\n  → 30일 유예 기간 후 영구 삭제 예약\n  → user 상태 soft_deleted = True\n\nJWT 미들웨어:\n- Authorization 헤더에서 token 추출\n- Token 서명 검증 (HS256)\n- 만료 시간 확인\n- User 조회 및 `request.user` 주입\n\nEmail 서비스:\n- SMTP 연결 설정\n- 이메일 템플릿 (인증 코드, 비밀번호 재설정)\n- 비동기 이메일 발송 (Celery 또는 백그라운드 태스크)",
         "testStrategy": "pytest로 회원가입 → 이메일 인증 → 로그인 흐름 통합 테스트, JWT 토큰 검증 및 갱신 테스트, 잘못된 비밀번호/코드 에러 처리 확인, 만료된 토큰 거부 검증, 계정 삭제 유예 기간 검증",
         "priority": "high",
         "dependencies": [
-          4
+          "4"
         ],
         "status": "pending",
         "subtasks": [
@@ -294,7 +325,8 @@
             "dependencies": [],
             "details": "SQLAlchemy 2.0 async 모델 정의: app/models/user.py에 User 클래스 생성. 컬럼: id(UUID), email(unique), password_hash(nullable), nickname, avatar_url, language(default='ko'), theme(default='light'), price_color_style(default='korean'), ai_trading_enabled(default=False), totp_secret(nullable), is_2fa_enabled(default=False), email_verified_at(nullable), soft_deleted(default=False), created_at, updated_at. bcrypt(12) 해싱을 위한 password 프로퍼티 추가. Pydantic v2 스키마: app/schemas/auth.py에 RegisterRequest(email, password, nickname), LoginRequest(email, password), TokenResponse(access_token, refresh_token, token_type), RefreshRequest(refresh_token), VerifyEmailRequest(email, code), UserResponse(id, email, nickname, email_verified_at, created_at), ProfileUpdateRequest(nickname?, language?, theme?, price_color_style?) 정의.",
             "status": "pending",
-            "testStrategy": "User 모델 인스턴스 생성 및 password setter/getter 검증, bcrypt 해시 비교 테스트, Pydantic 스키마 유효성 검증(이메일 형식, 비밀번호 최소 길이 8자, 특수문자 포함 등)"
+            "testStrategy": "User 모델 인스턴스 생성 및 password setter/getter 검증, bcrypt 해시 비교 테스트, Pydantic 스키마 유효성 검증(이메일 형식, 비밀번호 최소 길이 8자, 특수문자 포함 등)",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -305,7 +337,8 @@
             ],
             "details": "app/core/security.py 확장: create_access_token(user_id, expires_delta=30분) → HS256 서명 JWT, create_refresh_token(user_id, client_id, expires_delta=14일) → JWT, verify_token(token) → payload dict 또는 예외 발생. PyJWT 라이브러리 사용. 환경변수: JWT_SECRET_KEY, JWT_ALGORITHM='HS256'. Redis 키 패턴: auth:refresh:{user_id}:{client_id}, TTL 14일. store_refresh_token(user_id, client_id, token), get_refresh_token(user_id, client_id), delete_refresh_token(user_id, client_id), delete_all_refresh_tokens(user_id) 함수 구현. client_id는 UUID 자동 생성 또는 요청에서 수신.",
             "status": "pending",
-            "testStrategy": "JWT 토큰 생성 후 디코딩하여 payload 검증, 만료 토큰 거부 테스트, Redis refresh 토큰 CRUD 동작 확인 (저장/조회/삭제/TTL 만료), 잘못된 서명 토큰 거부 검증"
+            "testStrategy": "JWT 토큰 생성 후 디코딩하여 payload 검증, 만료 토큰 거부 테스트, Redis refresh 토큰 CRUD 동작 확인 (저장/조회/삭제/TTL 만료), 잘못된 서명 토큰 거부 검증",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -316,7 +349,8 @@
             ],
             "details": "app/services/email_service.py 생성: generate_verification_code() → 6자리 숫자 문자열, send_verification_email(to_email, code) → SMTP 비동기 발송. aiosmtplib 라이브러리 사용. 환경변수: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM_EMAIL. 이메일 템플릿: HTML 형식, 인증 코드 표시, 10분 유효 안내. Redis 키 패턴: email:verify:{email}, TTL 10분 (600초). store_verification_code(email, code), verify_code(email, code) → bool, delete_verification_code(email) 함수. Celery BackgroundTasks 또는 FastAPI background_tasks로 비동기 발송.",
             "status": "pending",
-            "testStrategy": "인증 코드 6자리 숫자 형식 검증, Redis 저장 및 TTL 설정 확인, SMTP 연결 테스트 (개발환경: MailHog 또는 Mock), 올바른/잘못된 코드 검증 테스트, 만료된 코드 거부 확인"
+            "testStrategy": "인증 코드 6자리 숫자 형식 검증, Redis 저장 및 TTL 설정 확인, SMTP 연결 테스트 (개발환경: MailHog 또는 Mock), 올바른/잘못된 코드 검증 테스트, 만료된 코드 거부 확인",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -329,7 +363,8 @@
             ],
             "details": "app/repositories/user_repository.py (base_pg.py 상속): create_user(email, password_hash, nickname) → User, get_by_email(email) → User|None, get_by_id(user_id) → User|None, update_email_verified(user_id, verified_at), update_profile(user_id, **fields), soft_delete_user(user_id). app/services/auth_service.py: register(email, password, nickname) → 비밀번호 해싱, User 생성, 인증코드 발송, verify_email(email, code) → email_verified_at 업데이트, login(email, password) → 비밀번호 검증, access/refresh 토큰 발급, Redis 저장, refresh_token(refresh_token) → 검증 후 새 access 토큰 발급, logout(user_id, client_id) → Redis refresh 토큰 삭제, get_current_user(user_id) → UserResponse, update_profile(user_id, **fields), delete_account(user_id) → soft_deleted=True, 30일 후 영구 삭제 예약.",
             "status": "pending",
-            "testStrategy": "회원가입 플로우: 이메일 중복 체크, bcrypt 해싱 적용 확인. 로그인: 올바른/잘못된 비밀번호 분기, 미인증 계정 접근 제한. 토큰 갱신: 유효/만료/삭제된 refresh 토큰 처리. 프로필 업데이트: 부분 수정 지원. 계정 삭제: soft_deleted 플래그 설정 확인"
+            "testStrategy": "회원가입 플로우: 이메일 중복 체크, bcrypt 해싱 적용 확인. 로그인: 올바른/잘못된 비밀번호 분기, 미인증 계정 접근 제한. 토큰 갱신: 유효/만료/삭제된 refresh 토큰 처리. 프로필 업데이트: 부분 수정 지원. 계정 삭제: soft_deleted 플래그 설정 확인",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -341,7 +376,8 @@
             ],
             "details": "app/core/deps.py 확장: get_current_user(token: str = Depends(oauth2_scheme)) → User. Authorization 헤더에서 Bearer 토큰 추출, verify_token()으로 검증, user_id 추출, UserRepository.get_by_id()로 사용자 조회, soft_deleted=True면 401 반환, request.state.user에 주입. oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/api/v1/auth/login'). 선택적 인증: get_current_user_optional() → User|None. 인증 필수 라우터용 Depends(get_current_user) 데코레이터. HTTPException(401, 'Invalid or expired token'), HTTPException(401, 'User not found or deactivated') 에러 처리.",
             "status": "pending",
-            "testStrategy": "유효한 토큰으로 사용자 주입 확인, 만료 토큰 401 응답, 잘못된 서명 401 응답, Authorization 헤더 누락 시 401, 삭제된 사용자 토큰 거부, 선택적 인증 None 반환 테스트"
+            "testStrategy": "유효한 토큰으로 사용자 주입 확인, 만료 토큰 401 응답, 잘못된 서명 401 응답, Authorization 헤더 누락 시 401, 삭제된 사용자 토큰 거부, 선택적 인증 None 반환 테스트",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -353,7 +389,8 @@
             ],
             "details": "app/api/v1/auth.py 라우터 생성: POST /api/v1/auth/register → RegisterRequest → UserResponse + 인증코드 이메일 발송 (201). POST /api/v1/auth/verify-email → VerifyEmailRequest → 성공 메시지 (200). POST /api/v1/auth/login → LoginRequest → TokenResponse (200), 미인증 계정 403, 잘못된 자격증명 401. POST /api/v1/auth/refresh → RefreshRequest → TokenResponse (새 access만, 200). POST /api/v1/auth/logout → 인증필수, refresh 토큰 삭제 (204). 공통 에러 응답: ApiError 스키마 사용, HTTP 상태 코드 준수. app/main.py에 라우터 등록.",
             "status": "pending",
-            "testStrategy": "httpx AsyncClient로 각 엔드포인트 호출 테스트. 회원가입 성공/중복 이메일 409. 이메일 인증 성공/잘못된 코드 400/만료 코드 400. 로그인 성공/실패 401/미인증 403. 토큰 갱신 성공/만료 401. 로그아웃 성공/미인증 401"
+            "testStrategy": "httpx AsyncClient로 각 엔드포인트 호출 테스트. 회원가입 성공/중복 이메일 409. 이메일 인증 성공/잘못된 코드 400/만료 코드 400. 로그인 성공/실패 401/미인증 403. 토큰 갱신 성공/만료 401. 로그아웃 성공/미인증 401",
+            "parentId": "undefined"
           },
           {
             "id": 7,
@@ -365,7 +402,8 @@
             ],
             "details": "app/api/v1/auth.py 확장: GET /api/v1/auth/me → 인증필수, UserResponse 반환 (200). PUT /api/v1/auth/me → 인증필수, ProfileUpdateRequest → UserResponse (200). 수정 가능 필드: nickname, language, theme, price_color_style. DELETE /api/v1/auth/me → 인증필수, 30일 유예 기간 후 영구 삭제 예약, soft_deleted=True 설정 (200, 삭제 예정 날짜 응답). 유예 기간 내 재로그인 시 soft_deleted=False로 복구 가능 (복구 로직은 login에서 처리). 영구 삭제는 Celery scheduled task로 30일 후 실행.",
             "status": "pending",
-            "testStrategy": "현재 사용자 조회 성공/미인증 401. 프로필 수정 부분 필드만 업데이트 확인, 유효하지 않은 값 400. 계정 삭제 후 soft_deleted 플래그 확인, 삭제 유예 기간 중 재로그인 복구 테스트, 미인증 401"
+            "testStrategy": "현재 사용자 조회 성공/미인증 401. 프로필 수정 부분 필드만 업데이트 확인, 유효하지 않은 값 400. 계정 삭제 후 soft_deleted 플래그 확인, 삭제 유예 기간 중 재로그인 복구 테스트, 미인증 401",
+            "parentId": "undefined"
           },
           {
             "id": 8,
@@ -377,45 +415,46 @@
             ],
             "details": "tests/integration/test_auth.py 생성: 전체 플로우 테스트 (회원가입 → 이메일 인증 → 로그인 → 토큰 갱신 → 프로필 조회/수정 → 로그아웃 → 계정 삭제). Testcontainers로 PostgreSQL/Redis 컨테이너 실행. conftest.py에 async test client, test database fixtures. pytest-asyncio 설정. 에러 시나리오: 중복 이메일 409, 잘못된 비밀번호 401, 만료된 인증코드 400, 만료된 토큰 401, 삭제된 계정 접근 401. 로깅: structlog로 인증 이벤트(회원가입, 로그인, 로그아웃, 실패 시도) 로깅. audit_logs MongoDB 컬렉션에 로그인/로그아웃 감사 로그 기록.",
             "status": "pending",
-            "testStrategy": "pytest --cov로 80%+ 커버리지 달성. 전체 인증 플로우 성공 시나리오 통과. 각 에러 케이스별 올바른 HTTP 상태 코드 및 에러 메시지 확인. Testcontainers 환경에서 DB 격리 테스트. 감사 로그 MongoDB 저장 확인"
+            "testStrategy": "pytest --cov로 80%+ 커버리지 달성. 전체 인증 플로우 성공 시나리오 통과. 각 에러 케이스별 올바른 HTTP 상태 코드 및 에러 메시지 확인. Testcontainers 환경에서 DB 격리 테스트. 감사 로그 MongoDB 저장 확인",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 6,
+        "id": "6",
         "title": "소셜 로그인 구현 (Google/Apple OAuth2)",
         "description": "Google 및 Apple OAuth2 통합, 소셜 계정 연동, 기존 계정과의 병합",
         "details": "엔드포인트:\n- POST /api/v1/auth/social/google (id_token)\n  → Google JWT 검증\n  → provider_id 추출\n  → 기존 social account 확인\n    - 있으면: 로그인 (access/refresh token 발급)\n    - 없으면: 신규 사용자 등록 → social account 생성\n  → email_verified_at 자동 설정 (소셜 로그인은 이미 검증됨)\n- POST /api/v1/auth/social/apple (id_token, user)\n  → Apple JWT 검증\n  → 동일 로직\n\nuser_social_accounts 테이블:\n- user_id (FK)\n- provider (google / apple)\n- provider_id (고유 ID)\n- provider_email\n\nFlow:\n1. 클라이언트가 Google/Apple SDK로 OAuth 인증\n2. id_token 서버로 전송\n3. 서버가 토큰 서명 검증 (Google/Apple 공개키)\n4. 신규/기존 사용자 처리\n5. JWT token 반환\n\nSocial Account 병합:\n- 기존 이메일 사용자 + 소셜 로그인 시도 → 두 계정 병합 (사용자 확인 후)\n- 또는 자동 병합 (provider_email 일치 시)",
         "testStrategy": "Google/Apple OAuth Playground로 테스트 id_token 생성 후 엔드포인트 호출, 신규/기존 사용자 로그인 분기 검증, 잘못된 토큰 거부 확인, 동일 소셜 계정 중복 로그인 방지",
         "priority": "high",
         "dependencies": [
-          5
+          "5"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 7,
+        "id": "7",
         "title": "2FA (TOTP) 및 세션 관리 시스템 구현 (M9)",
         "description": "Time-based One-Time Password (TOTP) 설정, 로그인/주문/API키 변경 시 2차 인증, 활성 세션(디바이스) 관리, 새 디바이스 로그인 알림",
         "details": "2FA 엔드포인트:\n- POST /api/v1/auth/2fa/setup\n  → TOTP 비밀키 생성 (pyotp.random_base32())\n  → QR 코드 생성 (qrcode 라이브러리)\n  → QR 이미지 + 백업 코드(8개) 반환\n  → user.totp_secret 미리 저장 (is_2fa_enabled: False)\n- POST /api/v1/auth/2fa/verify\n  → 사용자가 Google Authenticator에서 생성한 6자리 코드 제출\n  → pyotp.TOTP(user.totp_secret).verify(code) 검증\n  → user.is_2fa_enabled = True\n- POST /api/v1/auth/2fa/disable\n  → 현재 2FA 코드 재검증\n  → user.is_2fa_enabled = False, totp_secret NULL\n\n세션 관리:\n- clients 테이블: user_id, device_type(ios/android/web/windows/macos), device_name, fcm_token, last_login, user_agent, ip_address\n- POST /api/v1/auth/login 시 client 자동 생성/갱신\n- GET /api/v1/auth/sessions — 활성 세션 목록 (디바이스명, 마지막 로그인)\n- DELETE /api/v1/auth/sessions/{client_id} — 개별 세션 강제 종료 (해당 client의 refresh token Redis 삭제)\n- POST /api/v1/auth/logout-all — 모든 세션 종료\n\n새 디바이스 알림:\n- 로그인 시 device_fingerprint(user_agent + ip) 확인\n- 신규 디바이스면 audit_logs 기록 + FCM 푸시 알림 \"새 기기에서 로그인했습니다\"\n\nAudit Logging:\n- MongoDB audit_logs 컬렉션: action(login/logout/api_key_change/password_change/2fa_toggle), user_id, ip_address, user_agent, timestamp",
         "testStrategy": "TOTP 설정 및 검증 테스트 (pyotp로 생성한 코드 검증), QR 코드 생성 확인, 2FA 활성화 후 로그인 시 코드 요구 검증, 세션 목록 조회 및 강제 종료 테스트, 새 디바이스 로그인 시 알림 발송 검증, audit_logs 기록 확인",
         "priority": "medium",
         "dependencies": [
-          5
+          "5"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 8,
+        "id": "8",
         "title": "거래소 추상화 계층 (Exchange Abstraction Layer) 설계 및 구현",
         "description": "모든 거래소를 공통 인터페이스(ABC)로 추상화, Provider Factory로 런타임 선택, Circuit Breaker 패턴 적용, 거래소별 Rate Limiting",
         "details": "Base Classes (providers/base.py):\n- ExchangeRestProvider (ABC):\n  * get_ticker(market) → Ticker\n  * get_orderbook(market) → OrderBook\n  * get_candles(market, interval, count) → list[Candle]\n  * place_order(order: Order) → OrderResult\n  * cancel_order(order_id) → bool\n  * get_balance() → list[Balance]\n  * get_trading_fee(market) → TradingFee (maker/taker 수수료율)\n  * verify_api_key() → ApiKeyInfo (권한 범위 확인: trade/withdraw/all)\n  \n- ExchangeStreamProvider (ABC):\n  * subscribe_ticker(markets, callback) → None\n  * subscribe_orderbook(markets, callback) → None\n  * unsubscribe() → None\n\n- ExchangeProvider(ExchangeRestProvider, ExchangeStreamProvider) — 통합\n\nFactory (providers/factory.py):\n- ExchangeProviderFactory.create(exchange_type: str, api_key: str, api_secret: str) → ExchangeProvider\n- 런타임에 적절한 Provider 클래스 인스턴스 반환\n\nCircuit Breaker Pattern:\n- 상태: Closed (정상) → Open (차단) → Half-Open (복구 시도)\n- 트리거: 연속 5회 실패 OR 30초 내 실패율 50% 초과\n- Open 상태: 즉시 실패 반환 + 사용자 알림 \"거래소 연결 불안정\"\n- Half-Open: 30초 후 1건 테스트 요청\n- 거래소별 독립 Circuit Breaker\n\nRate Limiting (Token Bucket):\n- Upbit: 초당 10회(주문), 분당 600회(조회)\n- CoinOne: 초당 10회\n- Coinbase: 분당 10,000회\n- Binance: 분당 1,200회 (Weight 기반)\n\nAPI 키 권한 검증:\n- verify_api_key() 호출 시 권한 범위 확인\n- 출금 권한 감지 → 경고 표시\n- 조회 전용 키 → 주문 비활성화 안내\n- 사용자 확인 후 등록 허용",
         "testStrategy": "Mock Exchange 객체로 각 메서드 호출 검증, Circuit Breaker 상태 전이 테스트 (정상→장애→복구), 거래소별 Rate Limit 토큰 소비 검증, API 키 권한 검증 (출금 권한 감지/경고), Factory로 올바른 Provider 반환 확인",
         "priority": "high",
         "dependencies": [
-          4
+          "4"
         ],
         "status": "pending",
         "subtasks": [
@@ -426,7 +465,8 @@
             "dependencies": [],
             "details": "1. app/providers/types.py 파일 생성\n2. 거래소 타입 Enum 정의: ExchangeType(UPBIT, COINONE, COINBASE, BINANCE)\n3. 주문 타입 Enum: OrderSide(BUY, SELL), OrderMethod(MARKET, LIMIT), OrderStatus(PENDING, OPEN, FILLED, PARTIAL, CANCELLED, FAILED)\n4. API 키 권한 Enum: ApiKeyPermission(READ_ONLY, TRADE, WITHDRAW, ALL)\n5. Ticker 모델: market, trade_price, change_rate, volume_24h, high_price, low_price, timestamp\n6. OrderBook 모델: market, bids(list[OrderBookEntry]), asks(list[OrderBookEntry]), timestamp\n7. Candle 모델: market, timestamp, open, high, low, close, volume (모든 금액 필드는 Decimal)\n8. Order 모델: order_id, market, side, method, price, quantity, fee, status, created_at\n9. OrderResult 모델: order_id, status, filled_quantity, avg_price, fee, executed_at\n10. Balance 모델: currency, available, locked, total\n11. TradingFee 모델: market, maker_rate, taker_rate (Decimal, 소수점 4자리까지)\n12. ApiKeyInfo 모델: permissions(set[ApiKeyPermission]), has_withdraw_permission(bool), valid_until(optional datetime)\n13. 심볼 정규화 SymbolMapper 클래스: to_internal(exchange, symbol), to_exchange(exchange, internal_symbol) 메서드",
             "status": "pending",
-            "testStrategy": "각 모델의 직렬화/역직렬화 테스트, Decimal 정밀도 검증, Enum 변환 테스트, SymbolMapper 거래소별 변환 테스트 (Upbit: KRW-BTC ↔ BTC/KRW, Binance: BTCUSDT ↔ BTC/USDT)"
+            "testStrategy": "각 모델의 직렬화/역직렬화 테스트, Decimal 정밀도 검증, Enum 변환 테스트, SymbolMapper 거래소별 변환 테스트 (Upbit: KRW-BTC ↔ BTC/KRW, Binance: BTCUSDT ↔ BTC/USDT)",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -437,7 +477,8 @@
             ],
             "details": "1. app/providers/base.py 파일 생성\n2. ExchangeRestProvider(ABC) 클래스 정의:\n   - __init__(api_key: str, api_secret: str, exchange_type: ExchangeType)\n   - @abstractmethod async def get_ticker(market: str) -> Ticker\n   - @abstractmethod async def get_orderbook(market: str, depth: int = 15) -> OrderBook\n   - @abstractmethod async def get_candles(market: str, interval: str, count: int = 200) -> list[Candle]\n   - @abstractmethod async def place_order(order: Order) -> OrderResult\n   - @abstractmethod async def cancel_order(order_id: str) -> bool\n   - @abstractmethod async def get_balance() -> list[Balance]\n   - @abstractmethod async def get_trading_fee(market: str) -> TradingFee\n   - @abstractmethod async def verify_api_key() -> ApiKeyInfo\n   - @abstractmethod async def close() -> None (리소스 정리)\n3. 공통 헬퍼 메서드:\n   - _normalize_symbol(symbol: str) -> str (내부 포맷 변환)\n   - _denormalize_symbol(internal: str) -> str (거래소 포맷 변환)\n4. 컨텍스트 매니저 지원 (__aenter__, __aexit__)\n5. exchange_type 속성으로 거래소 타입 반환\n6. httpx.AsyncClient 공유 인스턴스 관리 (하위 클래스에서 사용)",
             "status": "pending",
-            "testStrategy": "ABC 추상 메서드 누락 시 TypeError 발생 확인, Mock 구현체로 인터페이스 계약 검증, 컨텍스트 매니저 진입/종료 동작 확인"
+            "testStrategy": "ABC 추상 메서드 누락 시 TypeError 발생 확인, Mock 구현체로 인터페이스 계약 검증, 컨텍스트 매니저 진입/종료 동작 확인",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -448,7 +489,8 @@
             ],
             "details": "1. providers/base.py에 추가\n2. 콜백 타입 정의:\n   - TickerCallback = Callable[[Ticker], Awaitable[None]]\n   - OrderBookCallback = Callable[[OrderBook], Awaitable[None]]\n3. ExchangeStreamProvider(ABC) 클래스 정의:\n   - __init__(exchange_type: ExchangeType)\n   - @abstractmethod async def subscribe_ticker(markets: list[str], callback: TickerCallback) -> None\n   - @abstractmethod async def subscribe_orderbook(markets: list[str], callback: OrderBookCallback) -> None\n   - @abstractmethod async def unsubscribe(channel: str, markets: list[str] | None = None) -> None\n   - @abstractmethod async def unsubscribe_all() -> None\n   - @abstractmethod async def close() -> None\n   - @property @abstractmethod def is_connected(self) -> bool\n4. 재연결 정책 상수:\n   - RECONNECT_DELAY_BASE = 1.0\n   - RECONNECT_DELAY_MAX = 60.0\n   - RECONNECT_MAX_ATTEMPTS = 10\n5. 연결 상태 추적 속성\n6. 구독 목록 관리 (reconnect 시 복원용)",
             "status": "pending",
-            "testStrategy": "ABC 인터페이스 계약 검증, Mock 콜백 함수로 호출 확인, 연결 상태 속성 테스트"
+            "testStrategy": "ABC 인터페이스 계약 검증, Mock 콜백 함수로 호출 확인, 연결 상태 속성 테스트",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -460,7 +502,8 @@
             ],
             "details": "1. providers/base.py에 추가\n2. ExchangeProvider(ExchangeRestProvider, ExchangeStreamProvider) 클래스:\n   - 다중 상속으로 REST + Stream 기능 통합\n   - __init__(api_key, api_secret, exchange_type) 호출 체인 관리\n   - async def close() 오버라이드: 양쪽 리소스 정리\n3. providers/exceptions.py 생성:\n   - ExchangeError(Exception): base 클래스, exchange, error_type, code, message, retryable 속성\n   - ExchangeErrorType(Enum): AUTH_FAILED, RATE_LIMITED, INSUFFICIENT_FUNDS, ORDER_NOT_FOUND, INVALID_PARAMETER, SERVER_ERROR, NETWORK_ERROR, MAINTENANCE\n   - AuthenticationError(ExchangeError): API 키 인증 실패\n   - RateLimitError(ExchangeError): 요청 한도 초과, retry_after 속성 포함\n   - InsufficientFundsError(ExchangeError): 잔고 부족\n   - OrderNotFoundError(ExchangeError): 주문 미존재\n   - InvalidParameterError(ExchangeError): 잘못된 파라미터\n   - ServerError(ExchangeError): 거래소 서버 오류 (5xx)\n   - NetworkError(ExchangeError): 네트워크 연결 오류\n   - MaintenanceError(ExchangeError): 거래소 점검 중\n4. 각 예외 클래스에 retryable 기본값 설정",
             "status": "pending",
-            "testStrategy": "예외 계층 구조 isinstance 검증, retryable 속성 기본값 테스트, 예외 메시지 포맷팅 확인"
+            "testStrategy": "예외 계층 구조 isinstance 검증, retryable 속성 기본값 테스트, 예외 메시지 포맷팅 확인",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -471,7 +514,8 @@
             ],
             "details": "1. app/providers/rate_limiter.py 파일 생성\n2. TokenBucket 클래스:\n   - __init__(rate: float, capacity: int, window: float = 1.0) # rate: 초당 토큰 생성 수, capacity: 버킷 용량\n   - tokens: float = capacity (현재 토큰 수)\n   - last_refill: float = time.monotonic()\n   - _refill(): 경과 시간에 따라 토큰 보충\n   - async def acquire(tokens: int = 1) -> float: 토큰 소비, 대기 시간 반환\n   - async def wait_for_token(tokens: int = 1): 토큰 확보까지 비동기 대기\n   - try_acquire(tokens: int = 1) -> bool: 논블로킹 시도\n3. RateLimiter 클래스 (거래소별 복합 리밋 관리):\n   - __init__(exchange_type: ExchangeType)\n   - _buckets: dict[str, TokenBucket] (용도별 버킷: 'order', 'query', 'default')\n   - 거래소별 기본 설정 적용:\n     * Upbit: order=10/sec, query=600/min\n     * CoinOne: default=10/sec\n     * Coinbase: default=10000/min\n     * Binance: default=1200/min (Weight 기반 확장 가능)\n   - async def acquire(category: str = 'default', tokens: int = 1): 카테고리별 토큰 획득\n   - reset(): 모든 버킷 초기화\n4. asyncio.Lock으로 동시성 보호\n5. 로깅: 토큰 대기 발생 시 warning 로그",
             "status": "pending",
-            "testStrategy": "토큰 소비/보충 시간 검증 (asyncio 시뮬레이션), 동시 요청 시 rate limit 준수 확인, 거래소별 기본 설정 적용 테스트, 버킷 용량 초과 시 대기 동작 검증"
+            "testStrategy": "토큰 소비/보충 시간 검증 (asyncio 시뮬레이션), 동시 요청 시 rate limit 준수 확인, 거래소별 기본 설정 적용 테스트, 버킷 용량 초과 시 대기 동작 검증",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -482,7 +526,8 @@
             ],
             "details": "1. app/providers/circuit_breaker.py 파일 생성\n2. CircuitState(Enum): CLOSED, OPEN, HALF_OPEN\n3. CircuitBreakerConfig dataclass:\n   - failure_threshold: int = 5 (연속 실패 횟수)\n   - failure_rate_threshold: float = 0.5 (30초 내 실패율)\n   - failure_rate_window: float = 30.0 (실패율 측정 윈도우)\n   - recovery_timeout: float = 30.0 (Half-Open 전환 대기)\n   - half_open_max_calls: int = 1 (Half-Open에서 허용할 테스트 요청 수)\n4. CircuitBreaker 클래스:\n   - __init__(config: CircuitBreakerConfig, exchange_type: ExchangeType)\n   - state: CircuitState = CLOSED\n   - failure_count: int = 0\n   - _failure_timestamps: list[float] (실패율 계산용)\n   - last_failure_time: float | None\n   - last_state_change: float\n   - async def call(func: Callable[..., Awaitable[T]], *args, **kwargs) -> T: 래핑된 함수 호출\n   - _should_allow_request() -> bool: 현재 상태에서 요청 허용 여부\n   - _on_success(): 성공 시 상태 전이 (HALF_OPEN → CLOSED)\n   - _on_failure(error: Exception): 실패 시 상태 전이\n   - _calculate_failure_rate() -> float: 윈도우 내 실패율 계산\n   - _transition_to(state: CircuitState): 상태 전이 및 로깅\n   - reset(): 수동 초기화\n5. CircuitOpenError(ExchangeError) 예외: Open 상태에서 요청 시 발생\n6. 데코레이터 @circuit_breaker(breaker) 제공\n7. 로깅: 상태 전이 시 INFO, 요청 차단 시 WARNING",
             "status": "pending",
-            "testStrategy": "상태 전이 시나리오 테스트 (CLOSED→OPEN: 5회 연속 실패 / 실패율 50% 초과, OPEN→HALF_OPEN: 30초 경과, HALF_OPEN→CLOSED: 성공, HALF_OPEN→OPEN: 실패), 실패율 윈도우 계산 정확성 검증, 동시 요청 시 상태 일관성 확인"
+            "testStrategy": "상태 전이 시나리오 테스트 (CLOSED→OPEN: 5회 연속 실패 / 실패율 50% 초과, OPEN→HALF_OPEN: 30초 경과, HALF_OPEN→CLOSED: 성공, HALF_OPEN→OPEN: 실패), 실패율 윈도우 계산 정확성 검증, 동시 요청 시 상태 일관성 확인",
+            "parentId": "undefined"
           },
           {
             "id": 7,
@@ -495,7 +540,8 @@
             ],
             "details": "1. app/providers/factory.py 파일 생성\n2. ProviderRegistry 클래스 (싱글톤):\n   - _providers: dict[ExchangeType, type[ExchangeProvider]]\n   - register(exchange_type: ExchangeType, provider_class: type[ExchangeProvider]): 등록\n   - get(exchange_type: ExchangeType) -> type[ExchangeProvider] | None: 조회\n   - list_available() -> list[ExchangeType]: 등록된 거래소 목록\n   - is_registered(exchange_type: ExchangeType) -> bool\n3. @register_provider(exchange_type) 데코레이터: 클래스 자동 등록\n4. ExchangeProviderFactory 클래스:\n   - __init__(registry: ProviderRegistry = default_registry)\n   - create(exchange_type: str | ExchangeType, api_key: str, api_secret: str, **kwargs) -> ExchangeProvider\n   - 문자열 exchange_type은 ExchangeType으로 변환\n   - 미등록 거래소 타입 시 UnsupportedExchangeError 발생\n   - 생성된 Provider에 Rate Limiter, Circuit Breaker 자동 주입\n   - kwargs로 추가 설정 전달 (timeout, proxy 등)\n5. ExchangeProviderManager 클래스 (Provider 풀 관리):\n   - _providers: dict[str, ExchangeProvider] (user_id:exchange_type 키)\n   - async def get_or_create(user_id: str, exchange_type: ExchangeType, api_key: str, api_secret: str) -> ExchangeProvider\n   - async def close_all(): 모든 Provider 정리\n   - async def close_user_providers(user_id: str): 특정 사용자 Provider 정리",
             "status": "pending",
-            "testStrategy": "Factory로 올바른 Provider 타입 반환 확인, 미등록 거래소 예외 발생 검증, Registry 등록/조회 동작 테스트, Manager 풀링 및 정리 동작 검증"
+            "testStrategy": "Factory로 올바른 Provider 타입 반환 확인, 미등록 거래소 예외 발생 검증, Registry 등록/조회 동작 테스트, Manager 풀링 및 정리 동작 검증",
+            "parentId": "undefined"
           },
           {
             "id": 8,
@@ -506,7 +552,8 @@
             ],
             "details": "1. app/providers/permissions.py 파일 생성\n2. ApiKeyValidationResult dataclass:\n   - info: ApiKeyInfo\n   - warnings: list[str] (경고 메시지 목록)\n   - allowed_operations: set[str] ('read', 'trade', 'withdraw')\n   - requires_user_confirmation: bool (출금 권한 포함 시 True)\n3. ApiKeyValidator 클래스:\n   - validate(info: ApiKeyInfo) -> ApiKeyValidationResult\n   - _check_withdraw_permission(info) -> str | None: 출금 권한 경고 메시지\n   - _determine_allowed_operations(info) -> set[str]\n   - _generate_warnings(info) -> list[str]\n4. 권한별 안내 메시지 상수:\n   - WITHDRAW_WARNING = \"출금 권한이 포함된 API 키입니다. 보안을 위해 출금 권한 없는 키 사용을 권장합니다.\"\n   - READ_ONLY_INFO = \"조회 전용 API 키입니다. 주문 기능이 비활성화됩니다.\"\n   - TRADE_RECOMMENDED = \"거래 권한이 있는 API 키입니다. (권장)\"\n5. PermissionChecker 데코레이터:\n   - @requires_permission('trade'): 거래 권한 필요 메서드에 적용\n   - 권한 부족 시 InsufficientPermissionError 발생\n6. InsufficientPermissionError(ExchangeError) 예외 정의",
             "status": "pending",
-            "testStrategy": "각 권한 조합(read_only, trade, withdraw, all)에 대한 검증 결과 확인, 경고 메시지 생성 테스트, PermissionChecker 데코레이터 동작 검증, 권한 부족 시 예외 발생 확인"
+            "testStrategy": "각 권한 조합(read_only, trade, withdraw, all)에 대한 검증 결과 확인, 경고 메시지 생성 테스트, PermissionChecker 데코레이터 동작 검증, 권한 부족 시 예외 발생 확인",
+            "parentId": "undefined"
           },
           {
             "id": 9,
@@ -519,7 +566,8 @@
             ],
             "details": "1. app/providers/base_impl.py 파일 생성\n2. BaseRestProvider(ExchangeRestProvider) 클래스:\n   - __init__ 확장: rate_limiter, circuit_breaker 인스턴스 초기화\n   - _client: httpx.AsyncClient (커넥션 풀링, timeout 설정)\n   - _rate_limiter: RateLimiter\n   - _circuit_breaker: CircuitBreaker\n   - _api_key_info: ApiKeyInfo | None (verify_api_key 결과 캐시)\n   - async def _request(method: str, path: str, **kwargs) -> dict: 공통 요청 메서드\n     * Rate Limiter 토큰 획득\n     * Circuit Breaker 래핑\n     * 거래소별 인증 헤더 추가 (하위 클래스에서 구현)\n     * 에러 응답 → ExchangeError 변환\n     * 재시도 로직 (retryable 에러만, 지수 백오프)\n   - @abstractmethod def _build_auth_headers(method, path, body) -> dict: 인증 헤더 생성\n   - @abstractmethod def _parse_error(response) -> ExchangeError: 에러 파싱\n   - async def close(): httpx 클라이언트 정리\n3. BaseStreamProvider(ExchangeStreamProvider) 클래스:\n   - _ws: websockets.WebSocketClientProtocol | None\n   - _subscriptions: dict[str, set[str]] (채널 → 마켓 목록)\n   - _callbacks: dict[str, Callable]\n   - _reconnect_task: asyncio.Task | None\n   - async def _connect(url: str): WebSocket 연결\n   - async def _reconnect(): 지수 백오프 재연결\n   - async def _message_loop(): 메시지 수신 루프\n   - async def _restore_subscriptions(): 재연결 시 구독 복원\n   - @abstractmethod async def _send_subscribe(channel, markets): 구독 메시지 전송\n   - @abstractmethod def _parse_message(data) -> Ticker | OrderBook | None\n4. BaseExchangeProvider(BaseRestProvider, BaseStreamProvider) 통합",
             "status": "pending",
-            "testStrategy": "HTTP 요청 시 Rate Limiter/Circuit Breaker 적용 확인, 재시도 로직 동작 검증 (지수 백오프 간격), WebSocket 재연결 시 구독 복원 테스트, 에러 응답 파싱 및 변환 테스트"
+            "testStrategy": "HTTP 요청 시 Rate Limiter/Circuit Breaker 적용 확인, 재시도 로직 동작 검증 (지수 백오프 간격), WebSocket 재연결 시 구독 복원 테스트, 에러 응답 파싱 및 변환 테스트",
+            "parentId": "undefined"
           },
           {
             "id": 10,
@@ -530,95 +578,96 @@
             ],
             "details": "1. tests/providers/conftest.py 픽스처 구성\n2. app/providers/mock.py 파일 생성:\n   - MockExchangeProvider(BaseExchangeProvider) 클래스\n   - _ticker_data, _orderbook_data, _balance_data: 사전 정의된 테스트 데이터\n   - _delay: float (응답 지연 시뮬레이션)\n   - _fail_next_n: int (다음 N개 요청 실패 시뮬레이션)\n   - _error_type: ExchangeErrorType | None (발생시킬 에러 타입)\n   - set_delay(seconds): 지연 설정\n   - set_failure(count, error_type): 실패 시뮬레이션 설정\n   - set_ticker_response(market, data): 응답 데이터 설정\n   - 각 추상 메서드 구현 (테스트 데이터 반환)\n3. tests/providers/test_types.py: 데이터 모델 테스트\n4. tests/providers/test_rate_limiter.py: Rate Limiter 테스트\n5. tests/providers/test_circuit_breaker.py: Circuit Breaker 테스트\n6. tests/providers/test_factory.py: Factory/Registry 테스트\n7. tests/providers/test_permissions.py: 권한 검증 테스트\n8. tests/providers/test_base_impl.py: 베이스 구현 테스트\n9. 테스트 헬퍼:\n   - create_mock_ticker(market, price, volume)\n   - create_mock_orderbook(market, bid_count, ask_count)\n   - create_mock_balance(currency, available, locked)\n10. pytest-asyncio 설정, @pytest.mark.anyio 데코레이터 사용",
             "status": "pending",
-            "testStrategy": "MockProvider로 모든 추상 메서드 동작 확인, 지연/에러 시뮬레이션 테스트, 전체 테스트 스위트 실행 및 커버리지 80% 이상 달성, Circuit Breaker 상태 전이 시나리오 테스트, Rate Limiter 동시성 테스트"
+            "testStrategy": "MockProvider로 모든 추상 메서드 동작 확인, 지연/에러 시뮬레이션 테스트, 전체 테스트 스위트 실행 및 커버리지 80% 이상 달성, Circuit Breaker 상태 전이 시나리오 테스트, Rate Limiter 동시성 테스트",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9,
+        "id": "9",
         "title": "Upbit 거래소 프로바이더 구현",
         "description": "Upbit REST API 및 WebSocket 스트리밍 구현, JWT 인증, 실시간 시세/호가 수신",
         "details": "Upbit API 참고: https://docs.upbit.com/kr/reference/api-overview\n\nREST 메서드 구현 (providers/upbit.py):\n- get_ticker(market='KRW-BTC') → {symbol, price, bid, ask, volume, ...}\n- get_orderbook(market) → {bids: [], asks: []}\n- get_candles(market, interval='5m', count=200) → [{open, high, low, close, volume, timestamp}]\n- place_order(symbol, side, quantity, price=None) → 주문 생성\n  * order_method: market/limit 지원\n  * 거래소 응답: order_id, status(wait/done/cancel), ...)\n- cancel_order(order_id) → bool\n- get_balance() → [{coin, balance, locked}]\n- get_trading_fee(market) → {maker, taker}\n- verify_api_key() → {권한 범위 확인, 출금_권한_여부}\n\nWebSocket 스트리밍:\n- subscribe_ticker(markets=['KRW-BTC'], callback) → 실시간 체결가\n- subscribe_orderbook(markets, callback) → 호가 변화\n- 연결 상태 관리 (자동 재연결)\n\nJWT 인증:\n- api_key + api_secret으로 JWT 생성 (HS256)\n- 요청 헤더: Authorization: Bearer {jwt}\n- 서명에 요청 쿼리/바디 포함\n\n에러 처리:\n- Upbit 에러 코드 해석\n- Circuit Breaker 통합\n- 재시도 로직 (Exponential Backoff)",
         "testStrategy": "Upbit API 테스트넷(또는 모의 거래)으로 각 메서드 호출 및 응답 검증, WebSocket 연결 및 메시지 수신 확인, JWT 서명 검증, 거래소 에러 코드 처리 확인, Rate Limit 준수 검증",
         "priority": "high",
         "dependencies": [
-          8
+          "8"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 10,
+        "id": "10",
         "title": "CoinOne 거래소 프로바이더 구현",
         "description": "CoinOne REST API 및 WebSocket 구현, HMAC-SHA512 인증, 실시간 시세 지원",
         "details": "CoinOne API 참고: https://docs.coinone.co.kr/reference/range-unit\n\nREST 메서드 구현 (providers/coinone.py):\n- ExchangeRestProvider 인터페이스 구현\n- get_ticker(market) → CoinOne 시세 포맷 변환\n- get_orderbook(market) → 호가창 데이터\n- get_candles(market, interval, count) → 캔들 데이터\n- place_order(...) → 주문 생성\n- cancel_order(order_id) → 취소\n- get_balance() → 잔고 조회\n- get_trading_fee(market) → 수수료율\n- verify_api_key() → API 권한 검증\n\nHMAC-SHA512 인증:\n- 요청 시 api_key + api_secret으로 서명\n- 요청 헤더: X-COINONE-PAYLOAD, X-COINONE-SIGNATURE\n\nWebSocket (선택적):\n- subscribe_ticker(markets, callback) → 실시간 시세\n- CoinOne WebSocket 연결 유지\n\nRate Limiting:\n- 초당 10회 한도 준수\n- Token Bucket 적용\n\nError Handling:\n- CoinOne 에러 코드 해석\n- Circuit Breaker 통합",
         "testStrategy": "CoinOne Sandbox 또는 테스트 API로 각 메서드 호출 검증, HMAC-SHA512 서명 검증, WebSocket 연결 및 메시지 수신 확인, Rate Limit 준수 검증",
         "priority": "high",
         "dependencies": [
-          8
+          "8"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 11,
+        "id": "11",
         "title": "거래소 계정 관리 API 구현",
         "description": "사용자의 거래소 API 키 등록/수정/삭제, 암호화 저장, 권한 검증, API 키 테스트",
         "details": "엔드포인트:\n- POST /api/v1/exchanges (API 키 등록)\n  * 요청: exchange_type, api_key, api_secret, nickname\n  * AES-256-GCM으로 api_key/api_secret 암호화 후 저장\n  * verify_api_key() 호출 → 권한 범위 확인\n  * 출금 권한 감지 → 경고 반환\n  * user_exchange_accounts 테이블에 저장\n  * 응답: exchange_account_id, nickname, exchange_type, is_verified, warning_message\n\n- GET /api/v1/exchanges (등록된 거래소 계정 목록)\n  * API 키/시크릿 마스킹 표시 (예: ****abc123)\n  * 잔고 정보 조회 옵션\n\n- PUT /api/v1/exchanges/{id} (API 키 수정)\n  * 새로운 api_key/api_secret로 갱신\n  * 권한 재검증\n\n- DELETE /api/v1/exchanges/{id} (API 키 삭제)\n  * 해당 거래소 계정 삭제\n  * 관련 watchlist_coins, ai_trading_configs 삭제 또는 비활성화\n\n- POST /api/v1/exchanges/{id}/verify (API 키 테스트)\n  * 해당 거래소 balance 조회 시도\n  * 성공 여부 반환\n\n데이터 모델:\n- user_exchange_accounts: user_id(FK), exchange_type, api_key_encrypted, api_secret_encrypted, nickname, is_verified, warning_level(none/warning/critical)\n\n암호화:\n- AES-256-GCM (cryptography 라이브러리)\n- 암호화 키: 환경별 수 EXCHANGE_API_KEY_SECRET\n- 각 키마다 고유 nonce 생성 (AEAD 보안)",
         "testStrategy": "API 키 등록 → verify → 마스킹 확인 → 수정 → 삭제 전체 흐름 테스트, 출금 권한 감지 및 경고 표시 검증, 암호화/복호화 검증 (저장된 키 암호화 상태 확인), 잘못된 API 키 거부 테스트",
         "priority": "high",
         "dependencies": [
-          8,
-          9,
-          10
+          "8",
+          "9",
+          "10"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 12,
+        "id": "12",
         "title": "WebSocket 실시간 시세 허브 구현",
         "description": "단일 WebSocket 연결 + 구독 메시지 방식, 거래소별 시세 스트리밍, Pub/Sub 통합",
         "details": "WebSocket 설계:\n- 엔드포인트: ws://server/ws/v1?token={access_token}\n- 단일 연결 유지, 여러 채널 구독\n- 메시지 형식: JSON {action, channel, exchange, market}\n\n구독 요청:\n{ \"action\": \"subscribe\", \"channel\": \"ticker\", \"exchange\": \"upbit\", \"market\": \"KRW-BTC\" }\n{ \"action\": \"subscribe\", \"channel\": \"orderbook\", \"exchange\": \"upbit\", \"market\": \"KRW-BTC\" }\n{ \"action\": \"subscribe\", \"channel\": \"trades\", \"exchange\": \"upbit\", \"market\": \"KRW-BTC\" }\n{ \"action\": \"subscribe\", \"channel\": \"my-orders\", ... } (인증된 사용자만)\n\n구독 해제:\n{ \"action\": \"unsubscribe\", \"channel\": \"ticker\", ... }\n\nWS Hub (ws/hub.py):\n- ConnectionManager: 활성 연결 관리 (user_id → ws)\n- 채널별 구독 관리 (ticker:upbit:KRW-BTC → {user_ids})\n- Redis Pub/Sub 연동\n  * Exchange Provider WS → Redis pub:ticker:upbit:KRW-BTC\n  * WS Hub 구독 → 연결된 클라이언트에 브로드캐스트\n\n연결 상태 UI:\n- 클라이언트에 연결 상태 메시지 발송\n  * \"connected\" (녹색)\n  * \"connecting\" (황색 + 스피너)\n  * \"disconnected\" (적색 + \"재연결 중\")\n\n에러 처리:\n- 토큰 만료 시 연결 종료\n- 구독 한계 초과 → 에러 메시지\n- 거래소 연결 끊김 → 클라이언트에 알림\n\nPerformance:\n- 거래소 API → Redis Pub/Sub (100ms)\n- Redis → WS Hub → Client (최소 지연)\n- 동시 연결 1,000개 지원",
         "testStrategy": "WebSocket 테스트 클라이언트로 연결 및 구독 테스트, 다중 채널 구독 검증, 메시지 수신 및 형식 확인, 인증되지 않은 연결 거부 확인, 구독 한계 초과 시 에러 처리, Redis Pub/Sub 통합 검증 (Exchange WS → Redis → WS Hub → Client)",
         "priority": "high",
         "dependencies": [
-          3,
-          9,
-          10
+          "3",
+          "9",
+          "10"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 13,
+        "id": "13",
         "title": "코인 마스터 및 관심 코인 관리 API 구현",
         "description": "거래소별 코인 목록 조회, 검색, 관심 코인 CRUD, 정렬, 실시간 시세 통합",
         "details": "엔드포인트:\n- GET /api/v1/coins?q={keyword}&exchange={exchange}\n  * 코인 마스터에서 검색 (symbol, name_ko, name_en)\n  * 페이지네이션\n  * 응답: coins 리스트 + 실시간 시세 (ticker 데이터)\n\n- GET /api/v1/coins/{id}\n  * 코인 상세 정보 + 현재 가격/변동률\n\n- GET /api/v1/watchlist\n  * 사용자의 관심 코인 목록\n  * exchange_account_id별 필터링 가능\n  * 정렬 순서 반영\n\n- POST /api/v1/watchlist\n  * 관심 코인 추가 (coin_id, exchange_account_id)\n  * 중복 방지\n  * 응답: watchlist_coin_id\n\n- DELETE /api/v1/watchlist/{id}\n  * 관심 코인 제거\n\n- PUT /api/v1/watchlist/reorder\n  * 정렬 순서 변경 (드래그 앤 드롭)\n  * 요청: [{id, sort_order}]\n  * 트랜잭션 내 일괄 업데이트\n\n데이터 모델:\n- coins: id, symbol, name_ko, name_en, exchange_type, market_code\n- watchlist_coins: user_id(FK), coin_id(FK), exchange_account_id(FK), sort_order\n\n초기 데이터 로드:\n- Upbit, CoinOne의 모든 거래 가능 코인을 coins 테이블에 초기 로드\n- seed 스크립트 작성\n\nWS 통합:\n- 관심 코인 목록 조회 시 현재 시세 포함\n- 클라이언트가 WS로 구독하여 실시간 업데이트",
         "testStrategy": "코인 검색 (정확/부분 매칭) 테스트, 관심 코인 추가/제거/정렬 전체 흐름 테스트, 중복 추가 방지 검증, 정렬 순서 변경 후 확인, 거래소별 필터링 검증, 실시간 시세 포함 여부 확인",
         "priority": "high",
         "dependencies": [
-          11,
-          12
+          "11",
+          "12"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 14,
+        "id": "14",
         "title": "주문 실행 및 거래 API 구현",
         "description": "시장가/지정가 주문, 주문 취소, 미체결 일괄 취소, 거래소별 실시간 동기화",
         "details": "엔드포인트:\n- POST /api/v1/orders (주문 생성)\n  * 요청: exchange_account_id, symbol, side(buy/sell), order_method(market/limit), quantity, price(limit만)\n  * 입력 검증: 잔고 확인, 최소 주문량, 가격 범위\n  * ExchangeProvider.place_order() 호출\n  * 응답: order_id, status, filled_quantity, fee\n  * trade_orders 테이블에 저장 (status: pending)\n  * 거래소 응답 필링 또는 WS로 상태 감지\n\n- GET /api/v1/orders?status={status}&exchange_account_id={id}\n  * 사용자의 주문 내역 (filled/cancelled/partial/pending)\n  * 기간 필터\n  * 정렬 (최신순)\n\n- GET /api/v1/orders/{id}\n  * 단일 주문 상세\n\n- DELETE /api/v1/orders/{id} (주문 취소)\n  * 거래소에서 주문 취소\n  * trade_orders.status = cancelled\n\n- POST /api/v1/orders/batch-cancel\n  * 미체결 주문 일괄 취소\n  * 요청: exchange_account_id, [order_ids] (또는 상태 필터)\n\n주문 상태 머신:\n```\nPENDING → FILLED (전량 체결)\n       → PARTIAL → 60초 대기 → FILLED or PARTIAL_CANCELLED\n       → OPEN → 120초 대기 → FILLED or CANCELLED\n       → FAILED (API 실패)\n```\n\n예외 처리:\n- 전량 체결: 정상 완료\n- 부분 체결: 60초 대기 → 잔량 시장가 전환 또는 취소\n- 잔고 부족: 1회 스킵, 다음 주기 재시도 (AI만)\n- 네트워크 오류: 30초 간격 최대 2회 재시도\n- Circuit Breaker Open: 해당 거래소 일시 중지\n\nFee 계산:\n- trading_fee(market)에서 maker/taker 수수료율 조회\n- 수수료 = quantity × price × rate\n- 응답에 포함\n\nUI 표시:\n- 수수료 명시 (원화 단위)\n- 실제 수령 수량 계산",
         "testStrategy": "Mock Exchange로 주문 생성 → 상태 추적 → 취소 전체 흐름 테스트, 부분 체결 후 잔량 처리 검증, 잔고 부족 에러 처리, 일괄 취소 검증, 수수료 계산 정확성 확인, 거래소별 에러 코드 처리 (실제 거래 불가 - Mock 사용)",
         "priority": "high",
         "dependencies": [
-          11
+          "11"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 15,
+        "id": "15",
         "title": "기술적 지표 계산 엔진 구현",
         "description": "11가지 기술적 지표 구현: EMA, VWAP, RSI, MACD, Bollinger Bands, ADX, ATR, Stochastic, OBV, Williams %R, CCI",
         "details": "trading/indicators/ 패키지 (FastAPI/DB import 금지 — 순수 함수):\n\n지표 목록 및 파라미터:\n1. **EMA** (Exponential Moving Average): periods=[20, 50, 200]\n   * 공식: EMA(t) = P(t) × k + EMA(t-1) × (1 - k), k = 2/(n+1)\n2. **VWAP** (Volume Weighted Average Price): period=14\n   * 당일 KST 00:00 기준 리셋, 밴드 k=1.5\n3. **RSI** (Relative Strength Index): period=14, overbought=70, oversold=30\n   * RS = Avg Gain / Avg Loss\n4. **MACD**: fast=12, slow=26, signal=9\n   * MACD = EMA12 - EMA26, Signal = EMA9(MACD)\n5. **Bollinger Bands**: period=20, std_dev=2.0\n   * Upper = SMA + 2σ, Lower = SMA - 2σ\n6. **ADX** (Average Directional Index): period=14\n   * +DI, -DI, DX, ADX\n7. **ATR** (Average True Range): period=14\n   * True Range = max(High-Low, |High-Close|, |Low-Close|)\n8. **Stochastic**: period=14, signal=3\n   * %K = (Close - LowestLow) / (HighestHigh - LowestLow) × 100\n9. **OBV** (On Balance Volume): ema_period=20\n   * 양봉 +Volume, 음봉 -Volume 누적\n10. **Williams %R**: period=14, overbought=-20, oversold=-80\n    * -100 × (HighestHigh - Close) / (HighestHigh - LowestLow)\n11. **CCI** (Commodity Channel Index): period=20\n    * (TP - SMA(TP)) / (0.015 × Mean Deviation)\n\nAPI:\n- indicators/__init__.py: calculate_all_indicators(candles: list[Candle]) → dict[str, any]\n  * 입력: [{open, high, low, close, volume, timestamp}]\n  * 출력: {ema_20, ema_50, ema_200, vwap, rsi, macd, signal, histogram, bb_upper, bb_lower, adx, di_plus, di_minus, atr, stochastic_k, stochastic_d, obv, williams_r, cci, ...}\n  * 캔들 수 충분히 필요 (최소 200개 권장)\n\n구현 전략:\n- 각 지표 계산 함수 분리 (trend.py, oscillator.py, volatility.py)\n- Pandas 활용 (성능)\n- 결측값 처리 (NaN → 0 또는 전일값)\n- 이상치 필터링 (극단값 무시)\n\nCaching:\n- Redis에 지표 스냅샷 저장 (TTL 60~600초, 타임프레임별 차등)\n- 같은 candle set 재계산 방지",
@@ -634,7 +683,8 @@
             "dependencies": [],
             "details": "server/trading/indicators/__init__.py, base.py 생성. Candle(TypedDict 또는 Pydantic BaseModel - open, high, low, close, volume, timestamp 필드), IndicatorResult(TypedDict - 지표 계산 결과), IndicatorBase(ABC - calculate 메서드 추상화) 정의. pandas DataFrame 변환 유틸리티 함수(candles_to_dataframe) 포함. 모든 지표는 list[Candle] → dict[str, float | None] 시그니처 준수.",
             "status": "pending",
-            "testStrategy": "타입 힌트 검증 (mypy), Candle 데이터 변환 유틸리티 유닛 테스트, 빈 캔들 리스트 입력 시 예외 처리 검증"
+            "testStrategy": "타입 힌트 검증 (mypy), Candle 데이터 변환 유틸리티 유닛 테스트, 빈 캔들 리스트 입력 시 예외 처리 검증",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -645,7 +695,8 @@
             ],
             "details": "calculate_ema(candles, period) → float | None 함수 구현. EMA 공식: EMA(t) = P(t) × k + EMA(t-1) × (1 - k), k = 2/(n+1). pandas ewm 메서드 활용. calculate_ema_set(candles, periods=[20, 50, 200]) → dict 추가 구현. EMA 정배열/역배열 판별 헬퍼 함수(check_ema_alignment) 포함. 캔들 수 부족 시 None 반환.",
             "status": "pending",
-            "testStrategy": "수작업 계산 vs 구현 결과 비교 (10개 캔들 샘플), pandas ewm 결과와 일치 검증, 경계 조건 테스트 (period보다 적은 캔들)"
+            "testStrategy": "수작업 계산 vs 구현 결과 비교 (10개 캔들 샘플), pandas ewm 결과와 일치 검증, 경계 조건 테스트 (period보다 적은 캔들)",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -657,7 +708,8 @@
             ],
             "details": "calculate_vwap(candles, reset_daily=True, timezone='Asia/Seoul') → dict. VWAP = Σ(TP×Vol)/Σ(Vol), TP = (H+L+C)/3. 밴드 계산: vwap_upper/lower = VWAP ± (k × σ), k=1.5. calculate_macd(candles, fast=12, slow=26, signal=9) → dict(macd_line, signal_line, histogram). MACD Line = EMA12 - EMA26, Signal = EMA9(MACD). 히스토그램 연속 증가/감소 감지 헬퍼 추가.",
             "status": "pending",
-            "testStrategy": "VWAP 당일 KST 00:00 리셋 로직 검증, MACD 골든/데드 크로스 감지 테스트, TradingView 차트 값과 비교 검증"
+            "testStrategy": "VWAP 당일 KST 00:00 리셋 로직 검증, MACD 골든/데드 크로스 감지 테스트, TradingView 차트 값과 비교 검증",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -668,7 +720,8 @@
             ],
             "details": "calculate_rsi(candles, period=14, overbought=70, oversold=30) → dict(rsi, is_overbought, is_oversold). RSI = 100 - (100 / (1 + RS)), RS = Avg Gain / Avg Loss (EMA 방식). detect_rsi_divergence(candles, lookback=50, min_gap=5) → dict(bullish_divergence, bearish_divergence, divergence_strength). 가격-RSI 저점/고점 비교하여 다이버전스 탐지. pandas diff + rolling 활용.",
             "status": "pending",
-            "testStrategy": "알려진 RSI 값과 비교 검증, 과매수/과매도 경계 조건 테스트, Bullish/Bearish 다이버전스 샘플 데이터 검증"
+            "testStrategy": "알려진 RSI 값과 비교 검증, 과매수/과매도 경계 조건 테스트, Bullish/Bearish 다이버전스 샘플 데이터 검증",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -680,7 +733,8 @@
             ],
             "details": "calculate_stochastic(candles, period=14, signal=3, overbought=80, oversold=20) → dict(k, d, is_overbought, is_oversold). %K = (Close-LowestLow)/(HighestHigh-LowestLow)×100, Slow %D = SMA(3) of %K. calculate_williams_r(candles, period=14, overbought=-20, oversold=-80) → dict. Williams %R = -100 × (HH-Close)/(HH-LL). calculate_cci(candles, period=20, upper=100, lower=-100) → dict. CCI = (TP - SMA(TP)) / (0.015 × Mean Deviation).",
             "status": "pending",
-            "testStrategy": "각 지표별 수작업 계산 검증, 극단값(±200 CCI) 처리 테스트, Williams %R과 Stochastic 상관관계 확인"
+            "testStrategy": "각 지표별 수작업 계산 검증, 극단값(±200 CCI) 처리 테스트, Williams %R과 Stochastic 상관관계 확인",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -691,7 +745,8 @@
             ],
             "details": "calculate_bollinger_bands(candles, period=20, std_dev=2.0) → dict(middle, upper, lower, percent_b, bandwidth). Middle = SMA(20), Upper/Lower = SMA ± (2×σ), %B = (Price-Lower)/(Upper-Lower). calculate_bandwidth_squeeze(candles, lookback=120) → bool. calculate_atr(candles, period=14) → float. TR = max(H-L, |H-Close_prev|, |L-Close_prev|), ATR = EMA(14) of TR. 동적 손절/익절 계산 헬퍼 함수 포함.",
             "status": "pending",
-            "testStrategy": "BB 스퀴즈 탐지 정확도 검증, ATR 기반 손절/익절 값 계산 테스트, 표준편차 계산 정확도 확인"
+            "testStrategy": "BB 스퀴즈 탐지 정확도 검증, ATR 기반 손절/익절 값 계산 테스트, 표준편차 계산 정확도 확인",
+            "parentId": "undefined"
           },
           {
             "id": 7,
@@ -703,7 +758,8 @@
             ],
             "details": "calculate_adx(candles, period=14) → dict(adx, di_plus, di_minus, trend_strength). +DM/-DM 계산 → +DI/-DI → DX → ADX = EMA(14) of DX. trend_strength: 'strong'(>40), 'moderate'(>25), 'weak'(<20), 'transition'(20-25). DI 크로스오버 감지 헬퍼 함수(detect_di_crossover) 포함. 장세 분류 기준 지원: ADX > 25 = Trend, ADX < 20 = Range.",
             "status": "pending",
-            "testStrategy": "+DI/-DI 크로스 감지 테스트, ADX 값 범위 검증(0-100), 장세 분류 조건과 일치 여부 확인"
+            "testStrategy": "+DI/-DI 크로스 감지 테스트, ADX 값 범위 검증(0-100), 장세 분류 조건과 일치 여부 확인",
+            "parentId": "undefined"
           },
           {
             "id": 8,
@@ -715,7 +771,8 @@
             ],
             "details": "calculate_obv(candles, ema_period=20) → dict(obv, obv_ema, obv_trend). 양봉 시 +Volume, 음봉 시 -Volume 누적. obv_trend: 'bullish'(OBV > OBV_EMA), 'bearish'(OBV < OBV_EMA), 'neutral'. 거래량 급증 감지 헬퍼(detect_volume_spike(candles, threshold=1.5)) → bool. 최근 20봉 평균 대비 1.5배 이상 시 급증 판정. OBV 다이버전스 감지 선택적 구현.",
             "status": "pending",
-            "testStrategy": "양봉/음봉 판별 정확도 검증, OBV 누적 계산 테스트, 거래량 급증 임계값 경계 테스트"
+            "testStrategy": "양봉/음봉 판별 정확도 검증, OBV 누적 계산 테스트, 거래량 급증 임계값 경계 테스트",
+            "parentId": "undefined"
           },
           {
             "id": 9,
@@ -732,7 +789,8 @@
             ],
             "details": "__init__.py에 calculate_all_indicators(candles: list[Candle]) → IndicatorResult 구현. 출력: {ema_20, ema_50, ema_200, vwap, vwap_upper, vwap_lower, rsi, macd, signal, histogram, bb_upper, bb_middle, bb_lower, percent_b, bandwidth, adx, di_plus, di_minus, atr, stochastic_k, stochastic_d, obv, obv_ema, williams_r, cci, ema_alignment, rsi_divergence, ...}. 결측값 처리: NaN → None (JSON 직렬화 호환). 최소 캔들 수 검증(200개 권장, 최소 26개). 예외 발생 시 부분 결과 반환 옵션.",
             "status": "pending",
-            "testStrategy": "200개 캔들 샘플로 전체 지표 계산 검증, 성능 벤치마크 (1ms 이내 목표), 결측값/이상치 처리 테스트, JSON 직렬화 호환성 확인"
+            "testStrategy": "200개 캔들 샘플로 전체 지표 계산 검증, 성능 벤치마크 (1ms 이내 목표), 결측값/이상치 처리 테스트, JSON 직렬화 호환성 확인",
+            "parentId": "undefined"
           },
           {
             "id": 10,
@@ -743,19 +801,20 @@
             ],
             "details": "cache.py 모듈 생성. get_cached_indicators(exchange, market, timeframe) → IndicatorResult | None. set_cached_indicators(exchange, market, timeframe, result, ttl) → None. Redis 키 패턴: indicators:{exchange}:{market}:{timeframe}. TTL 차등: 1m=60s, 5m=300s, 15m=600s, 1h+=600s. 캔들 해시 기반 캐시 무효화 로직. pandas 벡터화 연산 최적화 검토. 선택적: numpy 기반 고성능 계산 함수 분리.",
             "status": "pending",
-            "testStrategy": "캐시 적중/미적중 시나리오 테스트, TTL 만료 후 재계산 검증, 동일 캔들 재계산 방지 확인, 벤치마크: 캐시 적중 시 < 5ms"
+            "testStrategy": "캐시 적중/미적중 시나리오 테스트, TTL 만료 후 재계산 검증, 동일 캔들 재계산 방지 확인, 벤치마크: 캐시 적중 시 < 5ms",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 16,
+        "id": "16",
         "title": "AI 장세 분석 엔진 구현",
         "description": "기술적 지표 기반 장세 분류 (Trend/Range/Transition), GPT 보조 검증, confidence score 산출",
         "details": "trading/regime/ 패키지:\n\nMarketRegimeDetector 클래스:\n- 입력: candles, indicators, news_context (선택)\n- 출력: {regime: 'Trend'|'Range'|'Transition', confidence: 0.7, details: {...}}\n\n1차 분류 (규칙 기반):\n- **Trend**: ADX > 25 AND (EMA 정/역배열 OR MACD 히스토그램 연속 증가/감소 3봉)\n- **Range**: ADX < 20 AND BB Bandwidth < 임계값 AND RSI 40~60\n- **Transition**: RSI 다이버전스 OR MACD 크로스오버 임박 OR ADX 20~25 급변\n\nConfidence Score 계산 (가중치 기반):\n- ADX 강도 (30%): (ADX - 20) / 20 정규화 (0~1)\n- EMA 배열 (20%): 정배열/역배열 + 정도\n- MACD 크로스 (15%): 크로스 거리/강도\n- RSI 다이버전스 (20%): 다이버전스 신뢰도\n- BB Bandwidth (15%): 수축도\n\n각 장세별 스코어 → softmax 정규화 → 최고점수 장세 선택\n\nGPT 보조 검증 (선택적):\n- confidence < 70% 또는 Transition 시\n- 지표 요약 + 뉴스 5건 + 규칙 결과 → GPT\n- GPT 응답: regime, reasoning, final_confidence\n- 결과 반영: GPT 동의 시 confidence +10% (최대 100), 불일치 시 -15% (50 미만 HOLD)\n\nOutput 저장:\n- MongoDB ai_decisions: user_id, coin_symbol, market_regime, regime_confidence(dict), indicators_snapshot, gpt_model, gpt_raw_response, analysis_duration_ms\n- Redis 캐시: regime:{exchange}:{market} (TTL 300s)",
         "testStrategy": "mock candles + indicators로 규칙 기반 분류 검증 (각 장세별 조건 만족/불만족 테스트), confidence score 계산 검증 (가중치 합 1.0 확인), GPT 통합 테스트 (mock GPT 응답), MongoDB 저장 검증, Redis 캐싱 동작 확인",
         "priority": "high",
         "dependencies": [
-          15
+          "15"
         ],
         "status": "pending",
         "subtasks": [
@@ -766,7 +825,8 @@
             "dependencies": [],
             "details": "trading/regime/ 디렉토리 생성 및 __init__.py, base.py, types.py 파일 구성. RegimeType Enum (Trend, Range, Transition), RegimeResult dataclass (regime, confidence, regime_scores: dict[RegimeType, float], details: dict, analysis_duration_ms: int), RegimeDetector ABC (detect(candles, indicators, news_context) -> RegimeResult) 정의. trading/types.py에 Candle, IndicatorsSnapshot 타입이 Task 15에서 정의되어 있으므로 import하여 활용. 순수 Python 패키지로 FastAPI/DB 의존성 없이 구현.",
             "status": "pending",
-            "testStrategy": "pytest로 타입 정의 검증 (RegimeType 멤버 확인, RegimeResult 필수 필드 검증, ABC 상속 구조 확인)"
+            "testStrategy": "pytest로 타입 정의 검증 (RegimeType 멤버 확인, RegimeResult 필수 필드 검증, ABC 상속 구조 확인)",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -777,7 +837,8 @@
             ],
             "details": "trading/regime/detector.py에 MarketRegimeDetector 클래스 구현. classify_regime_rule_based() 메서드: (1) Trend 조건 - ADX > 25 AND (EMA20 > EMA50 > EMA200 정배열 OR MACD 히스토그램 연속 증가/감소 3봉), (2) Range 조건 - ADX < 20 AND BB Bandwidth < 임계값 AND RSI 40~60, (3) Transition 조건 - RSI 다이버전스 감지 OR MACD 크로스오버 임박 OR ADX 20~25 급변. 각 조건 판별을 위한 헬퍼 함수 분리 (_is_ema_aligned, _is_macd_histogram_trending, _detect_rsi_divergence, _is_macd_crossover_imminent). 임계값은 클래스 상수로 관리.",
             "status": "pending",
-            "testStrategy": "mock candles + indicators로 각 장세별 조건 만족/불만족 테스트. Trend/Range/Transition 각각에 대해 경계값 테스트 (ADX 24.9 vs 25.1 등)"
+            "testStrategy": "mock candles + indicators로 각 장세별 조건 만족/불만족 테스트. Trend/Range/Transition 각각에 대해 경계값 테스트 (ADX 24.9 vs 25.1 등)",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -788,7 +849,8 @@
             ],
             "details": "trading/regime/detector.py에 calculate_confidence_scores() 메서드 추가. 각 지표별 정규화 점수 계산: (1) ADX 강도 - (ADX - 20) / 20 클램프(0~1), (2) EMA 배열 - 정배열/역배열 여부 + 이격도 기반 0~1 점수, (3) MACD 크로스 - 크로스 거리/강도 기반 0~1 점수, (4) RSI 다이버전스 - 다이버전스 신뢰도 0~1, (5) BB Bandwidth - 수축도 기반 0~1. 각 장세(Trend/Range/Transition)별로 해당 지표 점수를 가중 합산 후 softmax 정규화하여 regime_scores dict 반환. 최고 점수 장세 선택 및 해당 confidence 반환.",
             "status": "pending",
-            "testStrategy": "가중치 합계 1.0 확인, softmax 출력 합계 1.0 확인, 극단적 지표값에서 confidence 경계값 검증 (100% 초과 방지, 0% 미만 방지)"
+            "testStrategy": "가중치 합계 1.0 확인, softmax 출력 합계 1.0 확인, 극단적 지표값에서 confidence 경계값 검증 (100% 초과 방지, 0% 미만 방지)",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -799,7 +861,8 @@
             ],
             "details": "trading/regime/gpt_validator.py 신규 생성. GPTRegimeValidator 클래스: (1) validate(regime_result, indicators_summary, news_context) -> GPTValidationResult 메서드, (2) _build_prompt() - 지표 요약 + 뉴스 5건 + 규칙 기반 결과를 JSON 프롬프트로 구성, (3) _parse_response() - GPT JSON 응답 파싱 (regime, reasoning, final_confidence), (4) _apply_gpt_adjustment() - GPT 동의 시 confidence +10%(최대100), 불일치 시 -15%(50 미만 시 HOLD 권고). trading/gpt/client.py 활용 (타임아웃 30초, 실패 시 규칙 기반만 사용). GPTValidationResult dataclass 정의 (gpt_regime, gpt_reasoning, adjusted_confidence, gpt_raw_response).",
             "status": "pending",
-            "testStrategy": "mock GPT 응답으로 파싱 검증, confidence 보정 로직 테스트 (동의 시 +10%, 불일치 시 -15%), GPT 실패 시 fallback 동작 확인, JSON 파싱 오류 시 예외 처리 검증"
+            "testStrategy": "mock GPT 응답으로 파싱 검증, confidence 보정 로직 테스트 (동의 시 +10%, 불일치 시 -15%), GPT 실패 시 fallback 동작 확인, JSON 파싱 오류 시 예외 처리 검증",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -810,7 +873,8 @@
             ],
             "details": "app/documents/ai_decision.py에 AIDecisionDocument Beanie 도큐먼트 정의 (user_id, coin_symbol, market_regime, regime_confidence: dict, indicators_snapshot, gpt_model, gpt_raw_response, analysis_duration_ms, created_at, TTL 6개월). app/repositories/ai_decision_repo.py에 AIDecisionRepository 클래스 (save_decision, get_latest_decision). app/services/ai_trading_service.py에서 MarketRegimeDetector 호출 후 결과 저장 로직 추가. Redis 캐싱: regime:{exchange}:{market} 키 패턴, TTL 300초, 분석 완료 시 갱신. app/core/cache.py에 RegimeCacheService 추가.",
             "status": "pending",
-            "testStrategy": "MongoDB 저장 검증 (필수 필드 존재, TTL 인덱스 동작), Redis 캐싱 동작 확인 (set/get/TTL 만료), 동일 market 재분석 시 캐시 갱신 확인"
+            "testStrategy": "MongoDB 저장 검증 (필수 필드 존재, TTL 인덱스 동작), Redis 캐싱 동작 확인 (set/get/TTL 만료), 동일 market 재분석 시 캐시 갱신 확인",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -822,19 +886,20 @@
             ],
             "details": "trading/regime/detector.py의 MarketRegimeDetector.detect() 메서드 통합 구현: (1) 규칙 기반 1차 분류 호출, (2) confidence score 계산, (3) confidence < 70% 또는 Transition 시 GPT 검증 호출 (선택적), (4) 최종 RegimeResult 반환 (분석 소요시간 포함). trading/__init__.py에서 MarketRegimeDetector, RegimeResult, RegimeType 공개 export. ai_trading_service.py에서 사용 예제 docstring 추가. 에러 핸들링: 지표 부족 시 InsufficientDataError, GPT 실패 시 graceful degradation.",
             "status": "pending",
-            "testStrategy": "전체 파이프라인 통합 테스트 (mock candles → 장세 분류 → GPT 검증 → 결과 반환), 각 장세 케이스 E2E 테스트, 에러 시나리오 테스트 (지표 부족, GPT 타임아웃), 성능 측정 (분석 소요시간 기록 확인)"
+            "testStrategy": "전체 파이프라인 통합 테스트 (mock candles → 장세 분류 → GPT 검증 → 결과 반환), 각 장세 케이스 E2E 테스트, 에러 시나리오 테스트 (지표 부족, GPT 타임아웃), 성능 측정 (분석 소요시간 기록 확인)",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 17,
+        "id": "17",
         "title": "AI 매매 전략 선택 및 신호 생성 엔진 구현",
         "description": "5가지 매매 전략 구현, 장세→전략 매핑, 진입/청산 조건 평가, 매매 신호 생성",
         "details": "trading/strategy/ 패키지:\n\n5가지 전략 구현:\n1. **TrendMA 눌림목** (trend_ma.py)\n   - 조건: EMA20 > EMA50 > EMA200 + ADX > 25 + 가격 EMA20 근처 + 반등 양봉 + 거래량 증가 + RSI 40~65\n   - 청산: 익절 ATR×2.0 / 손절 EMA50 이탈 또는 ATR×1.5\n\n2. **VWAP 눌림목** (vwap_bounce.py)\n   - 조건: 가격 > VWAP + ADX > 20 + VWAP 터치 + 반전 캔들 + RSI 40~65 + OBV 상승\n   - 청산: 익절 VWAP 상단밴드 또는 ATR×2.0 / 손절 VWAP-ATR×0.5\n\n3. **VWAP 밴드 반전** (vwap_band_reversal.py)\n   - 조건: ADX < 20 + BB Bandwidth 수축 + VWAP 하단밴드 터치 + 반전 캔들 + RSI < 40 + %B < 0.1\n   - 청산: 익절 VWAP / 손절 밴드 이탈 + ATR×0.5\n\n4. **RSI+볼밴+반전캔들 3중 조건** (rsi_bb_reversal.py)\n   - 조건 3가지 모두 동시: RSI < 30 + Stochastic %K < 20 / BB Lower 터치 + %B < 0.05 / 반전 캔들\n   - 청산: 익절 BB Middle / 손절 BB 이탈 + ATR\n\n5. **RSI 다이버전스 + MACD** (rsi_divergence.py)\n   - 조건: RSI Bullish Divergence (50캔들, 5캔들 간격) + MACD Golden Cross + OBV 상승 전환\n   - 청산: 익절 ATR×2.5 / 손절 다이버전스 발생 저점\n\nStrategySelector:\n- 입력: regime (Trend/Range/Transition), indicators, candles\n- 규칙:\n  * Trend: ADX > 25일 때 TrendMA 또는 VWAP 눌림목 (EMA vs VWAP 조건 판단)\n  * Range: ADX < 20일 때 RSI+볼밴 또는 VWAP 밴드\n  * Transition: RSI 다이버전스 + MACD\n- 출력: 선택된 전략 클래스 + 파라미터\n\nSignal Generation:\n- 각 전략의 진입 조건 평가 → BUY/SELL/HOLD\n- 신호 강도: Strong/Medium/Weak (지표 조합 스코어)\n- 멀티 타임프레임 검증:\n  * 1h + 4h 같은 방향 → 허용 (가중치 1.0)\n  * 한쪽만 일치 → 허용 (0.75)\n  * 둘 다 반대 → 차단 (Counter-Trend 금지)\n  * 둘 다 neutral → 허용 (0.5, 포지션 축소)\n\nOutput:\n- {strategy_name, action, action_confidence, indicators_snapshot, signal_strength}",
         "testStrategy": "각 전략의 진입 조건을 mock candles로 만족/불만족 검증, StrategySelector가 장세별 올바른 전략 선택 확인, MTF 검증 로직 테스트 (다양한 타임프레임 조합), 신호 강도 점수 계산 검증",
         "priority": "high",
         "dependencies": [
-          16
+          "16"
         ],
         "status": "pending",
         "subtasks": [
@@ -845,7 +910,8 @@
             "dependencies": [],
             "details": "trading/strategy/base.py 파일에 TradingStrategy ABC 생성:\n- evaluate_entry(candles, indicators, regime) -> Optional[TradingSignal] 추상 메서드\n- evaluate_exit(position, candles, indicators) -> Optional[ExitSignal] 추상 메서드\n- get_strategy_name() -> str 추상 메서드\n- calculate_signal_strength(indicators) -> SignalStrength 추상 메서드\n\ntrading/types.py에 추가 타입 정의:\n- TradingSignal(action: BUY|SELL|HOLD, confidence: float, strength: SignalStrength, entry_price: Decimal, stop_loss: Decimal, take_profit: Decimal, strategy_name: str, indicators_snapshot: dict)\n- SignalStrength(enum: STRONG, MEDIUM, WEAK)\n- EntryCondition, ExitCondition dataclass\n- 반전 캔들 패턴 enum: CandlePattern(HAMMER, BULLISH_ENGULFING, SHOOTING_STAR, BEARISH_ENGULFING, DOJI)",
             "status": "pending",
-            "testStrategy": "ABC 인스턴스화 시 TypeError 발생 확인, 타입 정의 Pydantic 검증 테스트, dataclass 직렬화/역직렬화 테스트"
+            "testStrategy": "ABC 인스턴스화 시 TypeError 발생 확인, 타입 정의 Pydantic 검증 테스트, dataclass 직렬화/역직렬화 테스트",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -856,7 +922,8 @@
             ],
             "details": "trading/strategy/trend_ma.py 파일 생성:\n\n진입 조건 구현:\n1. EMA20 > EMA50 > EMA200 (정배열) 확인\n2. ADX > 25 AND +DI > -DI 확인\n3. |가격 - EMA20| / EMA20 < 0.5% 근접 확인\n4. EMA20에서 반등 양봉 (현재봉 종가 > 시가, 저점이 EMA20 근처)\n5. 거래량 >= 최근 20봉 평균 × 1.2\n6. RSI 40~65 범위 확인\n\n청산 조건:\n- 익절: entry_price + ATR × 2.0\n- 손절: EMA50 이탈 또는 entry_price - ATR × 1.5 (둘 중 먼저 도달)\n- RR 비율 1:2\n\n신호 강도 계산: 6가지 조건 중 만족 개수와 ADX 강도, RSI 위치 기반 Strong/Medium/Weak 판정",
             "status": "pending",
-            "testStrategy": "mock 캔들로 6가지 진입 조건 개별 만족/불만족 테스트, ATR 기반 손절/익절 계산 정확성 검증, 신호 강도 계산 테스트"
+            "testStrategy": "mock 캔들로 6가지 진입 조건 개별 만족/불만족 테스트, ATR 기반 손절/익절 계산 정확성 검증, 신호 강도 계산 테스트",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -867,7 +934,8 @@
             ],
             "details": "trading/strategy/vwap_bounce.py 파일 생성:\n\n진입 조건 구현:\n1. 현재 가격 > VWAP 확인\n2. ADX > 20 확인\n3. 가격이 VWAP ± 0.3% 범위 터치 확인\n4. 반전 캔들 패턴 (해머, Bullish Engulfing) 감지 - CandlePatternDetector 유틸 사용\n5. RSI 40~65 범위\n6. OBV 상승 추세 유지 (OBV > OBV의 EMA20)\n\n청산 조건:\n- 익절: VWAP 상단밴드(k=1.5) 또는 entry_price + ATR × 2.0 중 먼저 도달\n- 손절: VWAP - ATR × 0.5\n- RR 비율 1:2\n\n반전 캔들 패턴 판별 로직 공통 유틸로 분리: _detect_reversal_candle(candles, direction) 함수 구현",
             "status": "pending",
-            "testStrategy": "VWAP 터치 + 반전 캔들 조합 시나리오 테스트, OBV 상승/하락 판정 테스트, 반전 캔들 패턴 개별 검증 (해머, Engulfing 등)"
+            "testStrategy": "VWAP 터치 + 반전 캔들 조합 시나리오 테스트, OBV 상승/하락 판정 테스트, 반전 캔들 패턴 개별 검증 (해머, Engulfing 등)",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -878,7 +946,8 @@
             ],
             "details": "trading/strategy/vwap_band_reversal.py 파일 생성:\n\n진입 조건 구현:\n1. ADX < 20 (횡보 장세 확인)\n2. BB Bandwidth 수축 상태 (Bandwidth < 최근 6개월 최저의 120%)\n3. 가격이 VWAP 하단밴드(k=1.5) 터치\n4. 반전 캔들 패턴 감지\n5. RSI < 40 (과매도 근접)\n6. Bollinger %B < 0.1\n\n청산 조건:\n- 익절: VWAP 중심선 도달\n- 손절: 밴드 이탈 + ATR × 0.5\n- RR 비율 1:1.5\n\n매도 시그널도 대칭적으로 구현 (상단밴드 터치 + RSI > 60 + %B > 0.9)",
             "status": "pending",
-            "testStrategy": "횡보 장세(ADX<20) 조건 테스트, BB Bandwidth 수축 판정 테스트, %B 계산 정확성 검증, 익절/손절 가격 계산 검증"
+            "testStrategy": "횡보 장세(ADX<20) 조건 테스트, BB Bandwidth 수축 판정 테스트, %B 계산 정확성 검증, 익절/손절 가격 계산 검증",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -889,7 +958,8 @@
             ],
             "details": "trading/strategy/rsi_bb_reversal.py 파일 생성:\n\n진입 조건 (3조건 모두 동시 충족 필수):\n[조건 1] RSI(14) < 30 AND Stochastic %K < 20\n[조건 2] 가격이 BB Lower Band 터치 AND %B < 0.05\n[조건 3] 반전 캔들 (해머 / Bullish Engulfing / 도지 중 하나)\n\n청산 조건:\n- 익절: BB Middle Band (SMA20) 도달\n- 손절: BB 이탈 + ATR × 1.0\n- RR 비율 1:1.5 ~ 2.0\n\n3중 조건 동시 만족 검증 로직: _check_triple_condition() 메서드로 분리하여 모든 조건 AND 연산 후 시그널 생성. 부분 만족 시 HOLD 반환",
             "status": "pending",
-            "testStrategy": "3중 조건 개별/동시 만족 시나리오 테스트, 2개 조건만 만족 시 HOLD 반환 확인, Stochastic %K 계산 검증, 도지 패턴 판별 테스트"
+            "testStrategy": "3중 조건 개별/동시 만족 시나리오 테스트, 2개 조건만 만족 시 HOLD 반환 확인, Stochastic %K 계산 검증, 도지 패턴 판별 테스트",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -900,7 +970,8 @@
             ],
             "details": "trading/strategy/rsi_divergence.py 파일 생성:\n\n진입 조건 (Bullish):\n1. RSI Bullish Divergence 탐지: 최근 50캔들 내 가격 저점 하락 BUT RSI 저점 상승, 저점 간격 5캔들 이상\n2. MACD Golden Cross (MACD Line > Signal Line) + 히스토그램 음→양 전환\n3. ADX < 25 또는 ADX 감소 추세\n4. OBV 상승 전환 시작\n\n다이버전스 탐지 알고리즘:\n- _find_divergence(candles, rsi_values, lookback=50, min_gap=5) 메서드\n- 로컬 최저점/최고점 탐지 (scipy.signal 또는 직접 구현)\n- 가격-RSI 방향 비교\n\n청산 조건:\n- 익절: entry_price + ATR × 2.5\n- 손절: 다이버전스 발생 저점 이탈\n- RR 비율 1:2.5",
             "status": "pending",
-            "testStrategy": "Bullish/Bearish 다이버전스 탐지 정확성 테스트, 저점 간격 5캔들 미만 시 무시 확인, MACD 크로스 타이밍 검증, 다이버전스 저점 기반 손절가 계산 테스트"
+            "testStrategy": "Bullish/Bearish 다이버전스 탐지 정확성 테스트, 저점 간격 5캔들 미만 시 무시 확인, MACD 크로스 타이밍 검증, 다이버전스 저점 기반 손절가 계산 테스트",
+            "parentId": "undefined"
           },
           {
             "id": 7,
@@ -915,7 +986,8 @@
             ],
             "details": "trading/strategy/selector.py 파일 생성:\n\nStrategySelector 클래스:\n- select_strategy(regime: RegimeResult, indicators: dict, candles: list) -> Tuple[TradingStrategy, StrategyParams]\n\n장세별 전략 선택 규칙:\n\n[Trend 장세 (ADX > 25)]:\n- EMA20-EMA50 정배열 + 가격 EMA20 근처 → TrendMA 눌림목\n- VWAP 위 가격 + 거래량 평균 이상 → VWAP 눌림목\n- 둘 다 충족 → TrendMA 우선 (더 보수적)\n\n[Range 장세 (ADX < 20)]:\n- BB 상/하단 터치 + RSI 과매수/과매도 → RSI+볼밴+반전캔들\n- VWAP 밴드 상/하단 근접 → VWAP 밴드 반전\n- 둘 다 충족 → RSI+볼밴+반전캔들 우선 (신호 더 강함)\n\n[Transition 장세 (ADX 20~25)]:\n- RSI 다이버전스 + MACD 전략 선택\n\nConfidence 기반 필터링:\n- confidence >= 70% → 풀 포지션\n- 50% <= confidence < 70% → 포지션 50% 축소\n- confidence < 50% → HOLD 반환, 매매 보류",
             "status": "pending",
-            "testStrategy": "장세별(Trend/Range/Transition) 올바른 전략 선택 검증, confidence 임계값별 포지션 조정 테스트, 경계 조건(ADX=20, 25) 테스트, 복수 조건 충족 시 우선순위 검증"
+            "testStrategy": "장세별(Trend/Range/Transition) 올바른 전략 선택 검증, confidence 임계값별 포지션 조정 테스트, 경계 조건(ADX=20, 25) 테스트, 복수 조건 충족 시 우선순위 검증",
+            "parentId": "undefined"
           },
           {
             "id": 8,
@@ -926,33 +998,34 @@
             ],
             "details": "trading/strategy/signal_generator.py 파일 생성:\n\nSignalGenerator 클래스:\n- generate_signal(strategy, candles_by_tf, indicators_by_tf) -> TradingSignal\n\n신호 강도 계산 로직:\n- Strong (> +0.6): 주요 지표 3개 이상 매수 일치\n- Medium (+0.3 ~ +0.6): 주요 지표 2개 매수 + 보조 확인\n- Weak (+0.1 ~ +0.3): 단일 강한 지표 또는 복수 약한 지표\n\n멀티 타임프레임(MTF) 검증:\n- _validate_mtf(signal_5m, trend_1h, trend_4h) -> Tuple[bool, float]\n\nMTF 규칙:\n1. 1h + 4h 같은 방향 → 허용 (가중치 1.0)\n2. 한 타임프레임만 일치 → 허용 (가중치 0.75)\n3. 둘 다 반대 방향 → 차단 (Counter-Trend 금지, return False)\n4. 둘 다 neutral → 허용 (가중치 0.5, 포지션 축소)\n\n최종 출력:\n- {strategy_name, action, action_confidence, indicators_snapshot, signal_strength, mtf_weight}",
             "status": "pending",
-            "testStrategy": "신호 강도 점수 계산 검증 (Strong/Medium/Weak 경계값 테스트), MTF 검증 다양한 조합 테스트 (같은 방향, 반대 방향, neutral 등), Counter-Trend 차단 확인, 최종 출력 스키마 검증"
+            "testStrategy": "신호 강도 점수 계산 검증 (Strong/Medium/Weak 경계값 테스트), MTF 검증 다양한 조합 테스트 (같은 방향, 반대 방향, neutral 등), Counter-Trend 차단 확인, 최종 출력 스키마 검증",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 18,
+        "id": "18",
         "title": "주문 실행 및 리스크 관리 엔진 구현",
         "description": "포지션 사이징 (Fixed Fractional, Half-Kelly), 동적 손절/익절(ATR 기반), 드로다운 관리, 주문 상태 추적",
         "details": "trading/execution/ 패키지:\n\nRiskManager 클래스:\n- 기본 리스크 파라미터:\n  * 단일 손실: 2% (최소 0.5%, 최대 5%)\n  * 일일 손실: 5% (최소 1%, 최대 10%)\n  * MDD: 15% (최소 5%, 최대 30%)\n  * 최대 동시 포지션: 3개\n  * 단일 투자 비율: 10% (최소 2%, 최대 20%)\n  * 연속 손실: 3회\n\nPosSizing:\n1. **Fixed Fractional** (기본):\n   ```\n   투자금 = (총자산 × 리스크비율) / 손절비율\n   예: (1000만 × 2%) / 3% = 666만\n   최대 10% 캡 적용\n   ```\n\n2. **Half-Kelly** (보조):\n   ```\n   Kelly% = W - (1-W)/R (W: 승률, R: 수익/손실비율)\n   Half-Kelly = Kelly × 0.5\n   Fixed와 Kelly 중 더 보수적 값\n   ```\n\n   신호 강도에 따른 조정:\n   - Strong: ×1.0\n   - Medium: ×0.75\n   - Weak: ×0.5\n\nDynamic SL/TP (ATR 기반):\n- 손절: ATR × strategy_multiplier (1.0~1.5)\n- 익절: ATR × strategy_multiplier (1.5~3.75)\n- Trailing Stop: 익절 50% 도달 시 → ATR×1.0로 추적\n\nDrawdown Management:\n- 일일 손실 > 5% → 당일 AI 매매 중지\n- 총 낙폭 > 15% → 일시 정지\n- 연속 손실 3회 → 4시간 쿨다운\n\nExecutionEngine:\n- 입력: trading_signal, account_balance, open_positions\n- 리스크 검증:\n  * 충분 자산 확인\n  * 포지션 한도 확인\n  * 드로다운 한도 확인\n- 포지션 사이징 계산\n- ExchangeProvider.place_order() 호출\n- 주문 상태 추적 (pending → filled/partial/failed)\n- 예외 처리:\n  * 부분 체결: 60초 대기 → 잔량 처리\n  * 실패: 30초 간격 최대 2회 재시도\n  * Circuit Breaker: 이미 적용됨 (providers)\n\nLogging:\n- MongoDB trade_logs에 모든 주문 기록\n- execution_timestamp, entry_price, signal_confidence, risk_params 포함",
         "testStrategy": "포지션 사이징 계산 (Fixed Fractional vs Half-Kelly) 검증, ATR 기반 손절/익절 계산 정확성 확인, 드로다운 한도 초과 시 중지 확인, 주문 상태 머신 (PENDING→FILLED 등) 검증, 부분 체결 후 잔량 처리 테스트, 재시도 로직 검증",
         "priority": "high",
         "dependencies": [
-          17
+          "17"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 19,
+        "id": "19",
         "title": "Celery 비동기 작업 및 스케줄 구성",
         "description": "Celery Beat 설정, AI 매매 주기(5분), 뉴스 스크랩(1시간), 일일 PnL 리포트, 토큰 정리",
         "details": "tasks/celery_app.py:\n- Celery 앱 초기화 (Redis broker)\n- 큐 정의:\n  * ai: AI 매매 전용\n  * scraper: 뉴스 스크랩\n  * default: 기타 (리포트, 정리)\n- Beat 스케줄:\n  * 0~59분 매 5분마다: run_all_active_configs (ai 큐)\n  * 매 1시간: scrape_news (scraper 큐)\n  * 매일 00:00 UTC: generate_daily_pnl_reports (default)\n  * 매일 03:00 UTC: cleanup_expired_tokens (default)\n\n태스크 구현:\n\ntasks/ai_trading.py:\n- run_all_active_configs()\n  * 모든 활성 사용자의 ai_trading_configs 조회\n  * 각 config마다 run_single_config() 호출 (병렬, max_retries=2)\n  * timeout: soft 240초, hard 300초\n  * 결과 집계 (성공/실패 로그)\n\n- run_single_config(user_id, coin_symbol, config_id)\n  * Stage 1~5 파이프라인 실행 (trading/ 패키지 호출)\n  * timeout: soft 90초, hard 120초\n  * 예외 처리: GPT 폴백, DLQ (Dead Letter Queue), Sentry 알림\n  * Redis ai:signal:{user_id} pub/sub으로 결과 발행\n  * MongoDB trade_logs, ai_decisions 저장\n  * FCM 푸시 알림 발송 (매매 신호)\n\n- run_backtest(user_id, coin_symbol, ...)\n  * 백테스팅 실행 (M9)\n  * 진행 상태 업데이트 (Redis)\n\ntasks/news_scraper.py:\n- scrape_news()\n  * 뉴스 소스에서 최근 뉴스 수집\n  * GPT로 감성 분석 (optional)\n  * MongoDB news_data 저장\n  * 각 코인별 최신 5건만 유지\n\ntasks/reports.py:\n- generate_daily_pnl_reports()\n  * 모든 사용자에 대해 어제 손익 계산\n  * PG trade_orders + Mongo trade_logs 조회\n  * daily_pnl_reports upsert (멱등성)\n  * ai_pnl vs manual_pnl 분리\n  * 전략별, 장세별 성과 계산\n\ntasks/cleanup.py:\n- cleanup_expired_tokens()\n  * Redis auth:refresh:* 만료된 키 삭제\n  * MongoDB TTL 인덱스 자동 정리 (MongoDB 내장)\n\nWorker 설정:\n- 동시성: --concurrency=4 (CPU 코어 기반)\n- 타임아웃: 위 참조\n- 에러 처리: Sentry, DLQ\n- 모니터링: Prometheus 메트릭 (태스크 실행 횟수, 성공/실패율)\n\nFlow 제어:\n- 마스터 스위치: users.ai_trading_enabled (FALSE → 모든 매매 중지)\n- 사용자별 disable_at: ai_trading_configs 비활성 날짜",
         "testStrategy": "Celery 태스크 로컬 실행 (CELERY_ALWAYS_EAGER=true), 5분 주기 스케줄 동작 확인, 각 태스크의 성공/실패 처리 테스트, DLQ 동작 검증, Redis pub/sub 메시지 발행 확인, MongoDB 데이터 저장 검증",
         "priority": "high",
         "dependencies": [
-          3,
-          18
+          "3",
+          "18"
         ],
         "status": "pending",
         "subtasks": [
@@ -963,7 +1036,8 @@
             "dependencies": [],
             "details": "tasks/celery_app.py 파일 생성:\n- Celery 앱 인스턴스 초기화 (앱 이름: 'cointrader')\n- Redis 브로커 URL: 환경변수 CELERY_BROKER_URL (기본: redis://localhost:6379/0)\n- 결과 백엔드: 환경변수 CELERY_RESULT_BACKEND (기본: redis://localhost:6379/1)\n- 큐 정의:\n  * 'ai': AI 매매 전용 (높은 우선순위)\n  * 'scraper': 뉴스 스크랩\n  * 'default': 리포트, 정리 등 기타\n- 기본 설정:\n  * task_serializer='json', result_serializer='json'\n  * accept_content=['json']\n  * timezone='UTC'\n  * enable_utc=True\n  * task_track_started=True\n  * task_acks_late=True (재시작 시 미완료 작업 재처리)\n  * worker_prefetch_multiplier=1 (공정한 큐 분배)\n- 태스크 자동 검색 설정 (autodiscover_tasks)",
             "status": "pending",
-            "testStrategy": "pytest로 Celery 앱 인스턴스 생성 확인, Redis 연결 테스트 (CELERY_ALWAYS_EAGER=true 모드), 큐 라우팅 설정 검증"
+            "testStrategy": "pytest로 Celery 앱 인스턴스 생성 확인, Redis 연결 테스트 (CELERY_ALWAYS_EAGER=true 모드), 큐 라우팅 설정 검증",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -974,7 +1048,8 @@
             ],
             "details": "celery_app.py의 beat_schedule 설정:\n- 'run-ai-trading-every-5-minutes':\n  * task: 'tasks.ai_trading.run_all_active_configs'\n  * schedule: crontab(minute='*/5') (0, 5, 10, ..., 55분)\n  * options: {'queue': 'ai'}\n- 'scrape-news-hourly':\n  * task: 'tasks.news_scraper.scrape_news'\n  * schedule: crontab(minute=0) (매 정시)\n  * options: {'queue': 'scraper'}\n- 'generate-daily-pnl-reports':\n  * task: 'tasks.reports.generate_daily_pnl_reports'\n  * schedule: crontab(hour=0, minute=0) (00:00 UTC)\n  * options: {'queue': 'default'}\n- 'cleanup-expired-tokens':\n  * task: 'tasks.cleanup.cleanup_expired_tokens'\n  * schedule: crontab(hour=3, minute=0) (03:00 UTC)\n  * options: {'queue': 'default'}\n- celery.conf.beat_schedule_filename 설정 (영속화)",
             "status": "pending",
-            "testStrategy": "Beat 스케줄 설정 파싱 검증, crontab 표현식 정확성 테스트, 각 태스크가 올바른 큐에 라우팅되는지 확인"
+            "testStrategy": "Beat 스케줄 설정 파싱 검증, crontab 표현식 정확성 테스트, 각 태스크가 올바른 큐에 라우팅되는지 확인",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -985,7 +1060,8 @@
             ],
             "details": "tasks/ai_trading.py 구현:\n\n1. run_all_active_configs():\n- @app.task 데코레이터: bind=True, queue='ai', soft_time_limit=240, time_limit=300\n- ai_trading_enabled=True인 사용자의 활성 ai_trading_configs 조회\n- 마스터 스위치(users.ai_trading_enabled) 확인\n- disabled_at이 None 또는 미래인 config만 필터링\n- group().apply_async로 run_single_config 병렬 호출\n- 결과 집계: 성공/실패 수, 실패 사유 로깅\n\n2. run_single_config(user_id, coin_symbol, config_id):\n- @app.task: bind=True, queue='ai', max_retries=2, soft_time_limit=90, time_limit=120\n- retry_backoff=30, retry_backoff_max=60\n- Stage 1~5 파이프라인 실행 (trading/ 패키지 호출)\n- 예외 처리: GPT 타임아웃→규칙 기반 폴백, 기타 오류→DLQ+Sentry\n- 결과 발행: Redis Pub/Sub (ai:signal:{user_id})\n- 데이터 저장: MongoDB trade_logs, ai_decisions\n- FCM 푸시 알림: 매매 신호 발생 시\n\n3. run_backtest(user_id, coin_symbol, ...):\n- @app.task: bind=True, queue='ai'\n- 백테스팅 실행, Redis 진행 상태 업데이트",
             "status": "pending",
-            "testStrategy": "CELERY_ALWAYS_EAGER=true로 태스크 동기 실행 테스트, Mock trading 패키지로 파이프라인 호출 검증, 타임아웃/재시도 로직 테스트, Redis pub/sub 메시지 발행 확인, DLQ 동작 검증"
+            "testStrategy": "CELERY_ALWAYS_EAGER=true로 태스크 동기 실행 테스트, Mock trading 패키지로 파이프라인 호출 검증, 타임아웃/재시도 로직 테스트, Redis pub/sub 메시지 발행 확인, DLQ 동작 검증",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -996,7 +1072,8 @@
             ],
             "details": "tasks/news_scraper.py 구현:\n\n1. scrape_news():\n- @app.task 데코레이터: bind=True, queue='scraper', soft_time_limit=180, time_limit=240\n- 뉴스 소스 목록 (환경변수 또는 설정)에서 HTTP 요청\n- 각 코인별 최근 뉴스 수집 (제목, 본문 요약, 발행 시간, URL)\n- GPT 감성 분석 (선택적):\n  * Redis 캐시 확인: ai:news_sentiment:{coin} (TTL 30분)\n  * 캐시 미스 시 GPT API 호출\n  * 결과: positive/negative/neutral + score(-1.0~1.0)\n- MongoDB news_data 컬렉션 저장:\n  * coin_symbol, title, summary, sentiment_score, source, published_at\n  * 각 코인별 최신 5건만 유지 (오래된 것 삭제)\n- 에러 처리: 개별 소스 실패 시 계속 진행, Sentry 알림\n- 감성 결과 Redis 캐싱: ai:news_sentiment:{coin}",
             "status": "pending",
-            "testStrategy": "Mock HTTP 응답으로 뉴스 수집 로직 테스트, GPT 감성 분석 Mock 테스트, MongoDB 저장 및 5건 제한 검증, Redis 캐시 TTL 동작 확인"
+            "testStrategy": "Mock HTTP 응답으로 뉴스 수집 로직 테스트, GPT 감성 분석 Mock 테스트, MongoDB 저장 및 5건 제한 검증, Redis 캐시 TTL 동작 확인",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -1007,7 +1084,8 @@
             ],
             "details": "tasks/reports.py 구현:\n\n1. generate_daily_pnl_reports():\n- @app.task: bind=True, queue='default', soft_time_limit=300, time_limit=360\n- 어제 날짜(UTC 기준) 손익 계산\n- 모든 활성 사용자 조회\n- 각 사용자별:\n  * PostgreSQL trade_orders: 어제 체결된 주문 조회\n  * MongoDB trade_logs: 상세 매매 로그 조회\n  * AI vs 수동(is_ai_order) 분리 계산\n  * 전략별(strategy_stats), 장세별(regime_stats) 성과 집계\n- MongoDB daily_pnl_reports upsert (report_date + user_id 키, 멱등성)\n- 필드: total_pnl, trade_count, win_rate, ai_pnl, ai_trade_count, ai_win_count, manual_pnl, manual_trade_count, cumulative_pnl\n\ntasks/cleanup.py 구현:\n\n2. cleanup_expired_tokens():\n- @app.task: bind=True, queue='default'\n- Redis auth:refresh:* 패턴의 만료된 키 삭제\n- SCAN 명령으로 키 조회 (blocking 방지)\n- TTL 확인 후 만료된 키만 삭제\n- MongoDB TTL 인덱스는 자동 정리 (별도 처리 불필요)\n- 삭제 건수 로깅",
             "status": "pending",
-            "testStrategy": "Mock 데이터로 PnL 계산 정확성 검증 (수익/손실 케이스), upsert 멱등성 테스트 (동일 날짜 중복 실행), 전략별/장세별 집계 검증, Redis 키 삭제 동작 테스트"
+            "testStrategy": "Mock 데이터로 PnL 계산 정확성 검증 (수익/손실 케이스), upsert 멱등성 테스트 (동일 날짜 중복 실행), 전략별/장세별 집계 검증, Redis 키 삭제 동작 테스트",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -1022,71 +1100,72 @@
             ],
             "details": "celery_app.py에 추가 설정:\n\n1. Worker 설정:\n- worker_concurrency=4 (또는 환경변수 CELERY_CONCURRENCY)\n- task_soft_time_limit, task_time_limit: 태스크별 차등\n- task_reject_on_worker_lost=True\n- task_default_queue='default'\n- task_routes: 큐별 라우팅 규칙\n\n2. 에러 처리:\n- Sentry 연동: sentry_sdk.init() + CeleryIntegration()\n- DLQ 구현: 실패 태스크를 'dlq' 큐로 라우팅\n- task_failure 시그널 핸들러: 실패 로깅, DLQ 전송\n- on_failure 콜백: Sentry 추가 컨텍스트\n\n3. Prometheus 메트릭:\n- celery-exporter 또는 커스텀 메트릭\n- 메트릭: celery_task_total{task, status}, celery_task_duration_seconds, celery_worker_up\n- task_prerun, task_postrun 시그널로 메트릭 수집\n\n4. Flow 제어:\n- run_all_active_configs에서 마스터 스위치 확인: users.ai_trading_enabled=False → 전체 스킵\n- ai_trading_configs.disabled_at 확인: 지정 날짜 이후 비활성화\n- 개별 config 비활성 시 해당 코인만 스킵\n\n5. Docker Compose 설정 (참고용):\n- celery worker 서비스: celery -A tasks.celery_app worker -Q ai,scraper,default --concurrency=4 -l info\n- celery beat 서비스: celery -A tasks.celery_app beat -l info",
             "status": "pending",
-            "testStrategy": "Worker 동시성 설정 검증, Sentry 에러 전송 테스트 (Mock), DLQ 라우팅 테스트, Prometheus 메트릭 엔드포인트 확인, 마스터 스위치 OFF 시 태스크 스킵 검증, disabled_at 날짜 기반 비활성화 테스트"
+            "testStrategy": "Worker 동시성 설정 검증, Sentry 에러 전송 테스트 (Mock), DLQ 라우팅 테스트, Prometheus 메트릭 엔드포인트 확인, 마스터 스위치 OFF 시 태스크 스킵 검증, disabled_at 날짜 기반 비활성화 테스트",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 20,
+        "id": "20",
         "title": "포트폴리오/자산 조회 API 구현",
         "description": "거래소별 보유 자산 실시간 조회, 총자산/수익률 계산, 자산 비중 조회",
         "details": "엔드포인트:\n- GET /api/v1/portfolio (전체 자산 요약)\n  * 응답: {\n      total_balance (원화 환산),\n      total_pnl (수익금),\n      total_pnl_ratio (수익률 %),\n      total_trades,\n      ai_pnl, ai_pnl_ratio, ai_trade_count (AI만),\n      manual_pnl, manual_pnl_ratio, manual_trade_count (수동만),\n      by_exchange: [{exchange_id, balance, pnl, pnl_ratio}],\n      top_coins: [{symbol, quantity, avg_price, current_price, pnl}] (상위 5)\n    }\n\n- GET /api/v1/portfolio/{exchange_id} (거래소별 상세)\n  * 응답: {\n      exchange_type, exchange_name,\n      total_balance (거래소 원화 환산),\n      coins: [\n        {symbol, quantity, avg_entry_price, current_price, pnl_amount, pnl_ratio, % of total}\n      ]\n    }\n\n데이터 수집:\n1. ExchangeProvider.get_balance() → 현재 보유 수량\n2. 실시간 시세 (WS 또는 REST) → 현재 가격\n3. trade_orders (PG) → 평균 매입가 계산\n4. 원화 환산: 각 코인 현재가 × KRW 환율 (또는 KRW 기축 코인은 직접)\n\n평균 매입가 계산:\n- 모든 매수 주문: Σ(quantity × price) / Σ(quantity)\n- 또는 FIFO (First In First Out) 방식\n\nPnL 계산:\n- pnl = (current_price - avg_price) × quantity\n- pnl_ratio = ((current_price - avg_price) / avg_price) × 100%\n- 청산된 포지션: 청산 수익 (trade_logs에서)\n\nCaching:\n- 포트폴리오 요약은 5분마다 갱신 (Redis 캐시)\n- 거래소 잔고는 1분마다 갱신\n- WS 구독 시 실시간 업데이트\n\nUI 표시:\n- 도넛 차트: 자산 비중 (원화 기준)\n- 손익률 색상: 빨강(손실) / 초록(수익) / 회색(중립)",
         "testStrategy": "Mock Exchange balance로 자산 계산 검증, 평균 매입가 계산 정확성 (여러 매수 주문), PnL 계산 (수익/손실 케이스), 원화 환산 정확성 (환율 적용), 캐싱 동작 검증, 도넛 차트 데이터 형식 확인",
         "priority": "high",
         "dependencies": [
-          14
+          "14"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 21,
+        "id": "21",
         "title": "가격 알림 시스템 구현 (M9)",
         "description": "특정 가격 도달 시 알림, 조건 설정(상승/하강), 미읽 알림 관리",
         "details": "엔드포인트:\n- POST /api/v1/price-alerts (알림 생성)\n  * 요청: coin_id, exchange_account_id, condition(above/below), target_price, is_active\n  * 응답: price_alert_id\n  * price_alerts 테이블에 저장\n\n- GET /api/v1/price-alerts?active={true/false}\n  * 사용자의 가격 알림 목록\n\n- PUT /api/v1/price-alerts/{id} (알림 수정)\n  * target_price, condition 변경\n\n- DELETE /api/v1/price-alerts/{id} (알림 삭제)\n\n백그라운드 감지:\n- 실시간 시세 수신 시 활성 알림 조건 판단\n- 조건 만족 시:\n  * is_triggered = True (alert 업데이트)\n  * FCM 푸시 알림 발송\n  * MongoDB notifications 컬렉션에 기록\n  * 미읽 카운트 Redis 업데이트\n  * 자동 비활성화 (is_active = False)\n\n알림 기록:\n- MongoDB notifications:\n  * user_id, type(price_alert), title, body, data({coin_symbol, price, target})\n  * is_read, created_at, TTL: 90일\n\nUI:\n- 활성 알림 목록 (현재 가격 + 목표 가격 표시)\n- 도달한 알림 → Notification Center에 표시\n- 미읽 뱃지 카운트",
         "testStrategy": "가격 알림 생성 및 조회 테스트, 실시간 시세 수신 시 조건 판단 검증 (above/below), 알림 발송 및 기록 확인, 자동 비활성화 검증, 미읽 카운트 정확성 확인",
         "priority": "medium",
         "dependencies": [
-          13
+          "13"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 22,
+        "id": "22",
         "title": "푸시 알림 시스템 (FCM) 구현",
         "description": "Firebase Cloud Messaging 통합, 주문 체결/AI 매매/가격 알림, 기기별 FCM 토큰 관리",
         "details": "FCM 통합:\n- Firebase 프로젝트 설정\n- Server SDK (firebase-admin) 설치\n- 서비스 계정 JSON 키 환경변수 로드\n\n푸시 알림 종류:\n1. 주문 체결 (order_execution)\n   - \"BTC 매수 체결 완료 | 0.1 BTC @ 50,000,000원\"\n   - 데이터: {order_id, symbol, side, quantity, price}\n\n2. AI 매매 신호 (ai_trading_signal)\n   - \"AI 매수 신호 | BTC 강한 상승 추세 감지\"\n   - 데이터: {coin_symbol, action, confidence, market_regime}\n\n3. 가격 알림 (price_alert)\n   - \"BTC 목표 가격 도달 | 현재: 51M\"\n   - 데이터: {coin_symbol, target_price, current_price}\n\n4. 시스템 알림 (system_alert)\n   - \"거래소 연결 불안정\", \"일일 손실 한도 도달\" 등\n\nFCM 토큰 관리:\n- clients 테이블: fcm_token, device_type\n- POST /api/v1/clients (토큰 등록)\n  * 요청: device_type, fcm_token\n  * 새로운 client 생성 또는 기존 토큰 갱신\n- 로그인 시 자동 갱신\n- 앱 삭제/언인스톨 시 수동 정리 (DELETE /api/v1/clients/{id})\n\n알림 발송:\n- notification.send_multicast(client_ids, message)\n- silent push (silent=True) 옵션 지원 (UI 표시 없음, 백그라운드 처리)\n\nNotification 저장:\n- 모든 알림을 MongoDB notifications에 기록\n- user_id, type, title, body, is_read, created_at\n- TTL 90일 (자동 삭제)\n\nRateLimiting:\n- 사용자병 분당 최대 10건 (spam 방지)\n- 같은 알림 반복 방지 (dedup key)",
         "testStrategy": "FCM 토큰 등록 및 갱신 테스트, 각 알림 유형별 발송 검증 (Firebase Emulator), 토큰 만료/유효하지 않은 경우 처리, 알림 저장 및 미읽 카운트 검증, Rate Limiting 동작 확인",
         "priority": "medium",
         "dependencies": [
-          4
+          "4"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 23,
+        "id": "23",
         "title": "클라이언트 (Flutter) 프로젝트 기본 구조 및 상태 관리 설정",
         "description": "Flutter 프로젝트 초기화, Riverpod 상태 관리, Dio HTTP 클라이언트, 라우팅 설정",
         "details": "pubspec.yaml 핵심 의존성:\n- riverpod 2.x (상태 관리)\n- dio (HTTP 클라이언트, 인터셉터)\n- web_socket_channel (WebSocket)\n- shared_preferences / hive (로컬 저장)\n- flutter_localizations + intl (다국어)\n- fl_chart (도넛 차트 등)\n- webview_flutter (TradingView 차트)\n- firebase_messaging (FCM 푸시)\n- local_auth (생체 인증, M9)\n\nProject Structure:\n- lib/\n  * main.dart (앱 진입점, Riverpod 프로바이더 설정)\n  * app/\n    - router.dart (GoRouter 라우팅)\n    - theme.dart (Material 3 테마, Light/Dark)\n  * features/\n    - auth/ (로그인, 회원가입, 소셜 로그인)\n    - home/ (코인 목록, 실시간 시세)\n    - trading/ (차트, 호가, 주문)\n    - exchange/ (거래소 설정)\n    - ai_trading/ (AI 매매 대시보드)\n    - portfolio/ (자산)\n    - history/ (거래 내역)\n    - notifications/ (알림, M9)\n    - settings/ (설정)\n  * core/\n    - api/ (Dio 클라이언트, 인터셉터)\n    - websocket/ (WS 클라이언트)\n    - utils/ (유틸리티)\n  * l10n/ (다국어 ARB 파일)\n\nRiverpod 상태 관리:\n- providers/\n  * auth_provider.dart (JWT 토큰, 현재 사용자)\n  * exchange_provider.dart (선택된 거래소 계정)\n  * coin_provider.dart (관심 코인 목록)\n  * portfolio_provider.dart (자산 정보)\n  * websocket_provider.dart (WS 연결)\n\nDio 클라이언트:\n- BaseURL 설정 (환경별: localhost, staging, prod)\n- Authorization 헤더 자동 추가 (Riverpod auth token)\n- 요청/응답 로깅\n- Token 갱신 인터셉터 (401 시)\n- Error 처리 (NetworkException 등)\n\nRouting (GoRouter):\n- 경로 정의: /, /login, /signup, /home, /trading/:coin_id, /portfolio, ...\n- Guard: 인증 필수 경로 자동 리다이렉트\n- Deep linking 지원\n\nTheme:\n- Material 3 색상 체계\n- Light/Dark 모드 토글\n- 한국식/글로벌 가격 색상 설정\n\nLocalization:\n- 다국어 ARB 파일 (ko, en, ja, zh, es)\n- AppLocalizations 클래스 자동 생성\n- 설정에서 언어 전환",
         "testStrategy": "Flutter 테스트 환경 구성 (Android Emulator, iOS Simulator), 라우팅 경로 검증 (모든 화면 네비게이션 테스트), Riverpod 상태 업데이트 확인, Dio 인터셉터 동작 (토큰 갱신), 다국어 로드 및 전환 테스트",
         "priority": "high",
         "dependencies": [
-          1
+          "1"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 24,
+        "id": "24",
         "title": "Flutter 클라이언트 UI 화면 구현 (M1~M8)",
         "description": "스플래시, 로그인/회원가입, 홈(코인 목록), 트레이딩(차트/호가/주문), 거래소 설정, AI 매매 대시보드, 포트폴리오, 거래 내역, 프로필, 설정 화면",
         "details": "각 화면별 구현 가이드:\n\n1. **스플래시 화면** (splash_screen.dart)\n   - 앱 로고 표시\n   - 토큰 갱신 시도 (Riverpod auth_provider)\n   - 기존 세션 복구\n   - 로그인 또는 홈으로 네비게이션\n\n2. **로그인/회원가입 화면** (auth/)\n   - 이메일 입력 + 비밀번호 입력\n   - 회원가입 → 이메일 인증 코드\n   - 소셜 로그인 버튼 (Google, Apple)\n   - 비밀번호 찾기 링크\n   - 로딩 상태 표시\n   - 에러 메시지 표시\n\n3. **메인/홈 화면** (home/)\n   - Bottom Navigation Bar (5탭)\n   - 거래소 탭 선택기\n   - 관심 코인 목록 (리스트 또는 그리드)\n   - 각 코인: 심볼, 가격, 변동률(%, 색상), 차트 미니\n   - 우측 스와이프 → 관심코인 추가\n   - 코인 검색 (상단 검색바)\n   - 새로고침 (Pull-to-Refresh)\n   - 실시간 시세 업데이트 (WS)\n\n4. **트레이딩 화면** (trading/)\n   - TradingView Lightweight Charts WebView\n   - 호가창 (Bid/Ask)\n   - 매매 탭 (시장가/지정가 선택)\n   - 수량, 가격, 예상 수수료, 실제 수령 수량 입력\n   - 매수/매도 버튼\n   - 활성 주문 표시\n\n5. **거래소 설정 화면** (exchange/)\n   - 등록된 거래소 계정 목록\n   - API 키 등록 (모달)\n   - 권한 검증 결과 표시 (경고 포함)\n   - 수정/삭제 버튼\n   - 테스트 버튼 (API 키 검증)\n\n6. **AI 매매 대시보드** (ai_trading/)\n   - 마스터 스위치 (ON/OFF)\n   - 현재 장세 표시 (Trend/Range/Transition + confidence %)\n   - 선택된 전략 표시\n   - 카운트다운 타이머 (다음 분석까지)\n   - 손익 요약 (AI vs 수동)\n   - 최근 매매 신호 (BUY/SELL/HOLD)\n\n7. **포트폴리오 화면** (portfolio/)\n   - 총 자산 (원화, 큰 폰트)\n   - 손익금 + 손익률 (색상)\n   - 거래소별 잔고\n   - 코인별 보유량, 평균매입가, 현재가, 손익\n   - 자산 비중 도넛 차트\n   - 수평 스크롤 (도넛 차트 터치)\n\n8. **매매 내역 화면** (history/)\n   - 주문/체결 내역 리스트\n   - 기간 필터 (1일/1주/1개월/전체)\n   - 상태 필터 (체결/미체결/취소)\n   - 요약 통계 (총 거래 수, 승률, 손익)\n   - 각 거래: 심볼, 매수/매도, 가격, 수량, 수수료, 손익\n\n9. **프로필 수정 화면** (settings/profile)\n   - 닉네임 수정\n   - 아바타 업로드 (이미지 피커)\n   - 계정 삭제 버튼 (확인 다이얼로그)\n\n10. **설정 화면** (settings/)\n    - 언어 선택 (ko/en/ja/zh/es)\n    - 테마 선택 (Light/Dark)\n    - 가격 색상 설정 (한국식/글로벌)\n    - 알림 설정 (주문/AI/가격 알림 토글)\n    - 이용약관/개인정보 처리방침 (WebView)\n    - 로그아웃 버튼\n\n11. **알림 화면** (notifications/, M9)\n    - 알림 목록 (최신순)\n    - 미읽 뱃지\n    - 읽음/삭제 기능\n    - 종류별 필터 (주문/AI/가격)\n\nUI 공통 요소:\n- Loading Spinner (Dio 요청 중)\n- 에러 스냅바 (네트워크 에러)\n- Empty State (데이터 없음)\n- 확인 다이얼로그 (삭제 등)\n- Bottom Sheet (옵션 선택)\n- Responsive Layout (모바일/태블릿)",
         "testStrategy": "각 화면 로드 및 네비게이션 테스트 (integration_test), UI 요소 렌더링 확인 (스크린샷), 실시간 데이터 업데이트 (WS 모의 데이터), 폼 입력 검증 (빈 필드, 숫자만 입력 등), 에러 처리 표시, 다국어 UI 텍스트 확인",
         "priority": "high",
         "dependencies": [
-          23
+          "23"
         ],
         "status": "pending",
         "subtasks": [
@@ -1097,7 +1176,8 @@
             "dependencies": [],
             "details": "lib/core/widgets/ 디렉토리에 핵심 공통 컴포넌트 구현:\n\n1. **디자인 토큰** (lib/app/theme.dart 확장)\n   - AppColors: 시맨틱 컬러 (매수색 #F23645, 매도색 #1E88E5, AI 활성 #00BCD4, 수익 #26A69A, 손실 #EF5350)\n   - 가격 색상 스타일 (한국식/글로벌) 전환 지원\n   - 다크/라이트 테마 팔레트 (design-concept.md §3 기준)\n\n2. **PriceText 위젯**\n   - 실시간 가격 표시 + 플래시 애니메이션 (300ms)\n   - Inter tabular figures 폰트 적용\n   - 상승/하락 색상 자동 적용\n\n3. **ChangeRateText 위젯**\n   - 등락률 표시 (▲ +2.34% / ▼ -0.87%)\n   - 색상 + 화살표 자동 적용\n\n4. **CoinListTile 위젯**\n   - 코인 아이콘 (36dp) + 이름 + 심볼 + 가격 + 등락률\n   - 스와이프 액션 (관심코인 추가)\n   - Shimmer 로딩 상태\n\n5. **PnlText 위젯**\n   - 손익 금액/비율 표시\n   - 양수=수익색, 음수=손실색\n\n6. **OrderButton 위젯**\n   - 전체 너비 매수/매도 버튼\n   - 매수=빨강, 매도=파랑 테마 적용\n\n7. **AiStatusBadge 위젯**\n   - ON (민트색), OFF (회색), 분석중 (펄스 애니메이션)\n\n8. **MarketRegimeCard 위젯**\n   - 추세/횡보/전환 장세 표시\n   - confidence % 프로그레스 바\n\n9. **공통 상태 위젯**\n   - LoadingShimmer (Skeleton UI)\n   - EmptyState (일러스트 + 안내 텍스트)\n   - ErrorState (오류 아이콘 + 재시도 버튼)\n   - ConfirmDialog (삭제 등 확인 다이얼로그)\n\n10. **ExchangeChip 위젯**\n    - 거래소 선택 칩 (Upbit, CoinOne 로고)\n\n11. **WebSocket 연결 상태 인디케이터**\n    - 연결됨(녹색점), 연결중(황색+스피너), 끊김(적색)",
             "status": "pending",
-            "testStrategy": "Widget Test: 각 컴포넌트 렌더링 확인, Golden Test로 스크린샷 비교, 다크/라이트 테마 전환 테스트, 애니메이션 동작 확인 (pump), 접근성 Semantics 검증"
+            "testStrategy": "Widget Test: 각 컴포넌트 렌더링 확인, Golden Test로 스크린샷 비교, 다크/라이트 테마 전환 테스트, 애니메이션 동작 확인 (pump), 접근성 Semantics 검증",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -1108,7 +1188,8 @@
             ],
             "details": "lib/features/splash/splash_screen.dart 구현:\n\n1. **UI 레이아웃**\n   - Primary 다크 그래디언트 배경 (#0D1B3E → #12131A)\n   - 중앙 앱 로고 SVG (assets/images/logo.svg)\n   - 앱명 'CoinTrader' + 서브 타이틀 '코인 자동매매 플랫폼'\n   - LinearProgressIndicator (Material 3)\n   - 로딩 상태 텍스트 ('로딩 중...', '세션 복구 중...' 등)\n   - 앱 버전 표시 (v1.0.0)\n\n2. **초기화 로직 (Riverpod auth_provider 연동)**\n   - SharedPreferences에서 저장된 refresh token 확인\n   - 토큰 존재 시: /api/v1/auth/refresh 호출로 access token 갱신\n   - 토큰 갱신 성공: 사용자 정보 로드 후 홈 화면으로 이동\n   - 토큰 갱신 실패/토큰 없음: 로그인 화면으로 이동\n   - 네트워크 오류: 재시도 버튼 표시\n\n3. **네비게이션**\n   - GoRouter 사용\n   - 인증 성공: context.go('/home')\n   - 인증 실패: context.go('/login')\n\n4. **애니메이션**\n   - 로고 FadeIn (500ms)\n   - 프로그레스 바 진행 애니메이션\n   - 화면 전환 시 FadeTransition\n\n5. **에러 처리**\n   - 네트워크 타임아웃 (10초)\n   - 서버 에러 시 오프라인 모드 안내",
             "status": "pending",
-            "testStrategy": "Widget Test: 로고/텍스트 렌더링 확인, Integration Test: 토큰 유효 시 홈 이동, 토큰 무효 시 로그인 이동, 네트워크 오류 시 재시도 버튼 표시 확인"
+            "testStrategy": "Widget Test: 로고/텍스트 렌더링 확인, Integration Test: 토큰 유효 시 홈 이동, 토큰 무효 시 로그인 이동, 네트워크 오류 시 재시도 버튼 표시 확인",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -1119,7 +1200,8 @@
             ],
             "details": "lib/features/auth/ 디렉토리 구현:\n\n1. **login_screen.dart**\n   - 상단 브랜드 영역 (로고 + 환영 메시지)\n   - 이메일 TextField (validation: 이메일 형식)\n   - 비밀번호 TextField (obscure, 보이기/숨기기 토글)\n   - '로그인' FilledButton (Primary)\n   - 로딩 상태: 버튼 내 CircularProgressIndicator\n   - 에러 표시: TextField errorText 또는 SnackBar\n   - '비밀번호 찾기' TextButton\n   - '회원가입' OutlinedButton\n\n2. **register_screen.dart**\n   - 이메일, 비밀번호, 비밀번호 확인 입력\n   - 비밀번호 강도 표시 (약함/보통/강함)\n   - 이용약관/개인정보처리방침 동의 체크박스\n   - '회원가입' 버튼 → 이메일 인증 코드 화면 이동\n\n3. **email_verification_screen.dart**\n   - 6자리 인증 코드 입력 (OTP 스타일 UI)\n   - 인증 코드 재발송 버튼 (60초 쿨다운)\n   - 타이머 표시 (10분 만료)\n   - 인증 완료 시 로그인 화면 또는 홈으로 이동\n\n4. **forgot_password_screen.dart**\n   - 이메일 입력\n   - '재설정 링크 발송' 버튼\n   - 발송 완료 안내 화면\n\n5. **social_login_buttons.dart**\n   - Google 로그인 버튼 (google_sign_in 패키지)\n   - Apple 로그인 버튼 (sign_in_with_apple 패키지)\n   - 소셜 로그인 구분선 ('─── 또는 ───')\n   - 로딩/에러 상태 처리\n\n6. **auth_provider.dart (Riverpod)**\n   - AuthState: unauthenticated, authenticating, authenticated, error\n   - login(), register(), socialLogin(), logout() 메서드\n   - 토큰 저장/삭제 (SecureStorage)\n\n7. **Form Validation**\n   - 이메일: 형식 검증\n   - 비밀번호: 최소 8자, 영문+숫자+특수문자\n   - 실시간 유효성 피드백",
             "status": "pending",
-            "testStrategy": "Widget Test: 폼 입력 및 유효성 검사, 로딩/에러 상태 표시. Integration Test: 로그인 성공/실패 시나리오, 소셜 로그인 플로우 (Mock), 이메일 인증 코드 입력 및 검증"
+            "testStrategy": "Widget Test: 폼 입력 및 유효성 검사, 로딩/에러 상태 표시. Integration Test: 로그인 성공/실패 시나리오, 소셜 로그인 플로우 (Mock), 이메일 인증 코드 입력 및 검증",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -1130,7 +1212,8 @@
             ],
             "details": "lib/features/home/ 디렉토리 구현:\n\n1. **home_screen.dart (메인 컨테이너)**\n   - Scaffold + AppBar + BottomNavigationBar\n   - AppBar: 'CoinTrader' 타이틀, 알림 아이콘(뱃지), 프로필 아이콘\n   - BottomNavigationBar: 홈, 트레이딩, AI 매매, 자산, 더보기 (4-5탭)\n\n2. **거래소 탭 바 (TabBar)**\n   - [Upbit] [CoinOne] 탭 (거래소별 필터)\n   - 탭 선택 시 해당 거래소 코인 목록 표시\n   - TabBarView 연동\n\n3. **코인 검색 바 (SearchBar)**\n   - 상단 고정 검색 입력\n   - 실시간 필터링 (debounce 300ms)\n   - 검색 결과 하이라이트\n\n4. **코인 목록 (ListView)**\n   - CoinListTile 사용 (공통 컴포넌트)\n   - 각 코인: 아이콘, 심볼, 이름, 현재가, 등락률, 미니 차트 (선택)\n   - 정렬 옵션: 이름순, 가격순, 등락률순, 거래량순\n   - 정렬 헤더 버튼 (탭 시 오름차순/내림차순 토글)\n\n5. **관심 코인 스와이프 액션**\n   - 우측 스와이프 → 별 아이콘 버튼 노출\n   - 탭 시 관심코인 추가/제거 API 호출\n   - Haptic 피드백\n\n6. **Pull-to-Refresh**\n   - RefreshIndicator 적용\n   - 새로고침 시 코인 목록 + 시세 재조회\n\n7. **실시간 시세 업데이트 (WebSocket)**\n   - WS 연결 상태 인디케이터 (AppBar 우측)\n   - ticker 채널 구독\n   - 가격 변동 시 PriceText 플래시 애니메이션\n   - 연결 끊김 시 재연결 배너\n\n8. **로딩/에러/빈 상태**\n   - 로딩: Shimmer Effect (CoinListTile 스켈레톤)\n   - 에러: ErrorState + 재시도 버튼\n   - 빈 목록: EmptyState ('관심 코인을 추가해보세요')\n\n9. **코인 탭 → 트레이딩 화면 이동**\n   - ListTile onTap → context.push('/trading/{symbol}')\n\n10. **home_provider.dart (Riverpod)**\n    - 코인 목록 상태 관리\n    - 관심 코인 CRUD\n    - 정렬/필터 상태\n    - WebSocket 구독 관리",
             "status": "pending",
-            "testStrategy": "Widget Test: 코인 목록 렌더링, 탭 전환, 검색 필터링. Integration Test: 실시간 시세 업데이트 (Mock WS), Pull-to-Refresh, 관심코인 추가/제거, 트레이딩 화면 네비게이션"
+            "testStrategy": "Widget Test: 코인 목록 렌더링, 탭 전환, 검색 필터링. Integration Test: 실시간 시세 업데이트 (Mock WS), Pull-to-Refresh, 관심코인 추가/제거, 트레이딩 화면 네비게이션",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -1141,7 +1224,8 @@
             ],
             "details": "lib/features/trading/ 디렉토리 구현:\n\n1. **trading_screen.dart (메인 컨테이너)**\n   - AppBar: '← BTC/KRW', 관심코인 별 아이콘, 더보기 메뉴\n   - 현재가 섹션 (항상 표시): 대형 가격 + 등락률\n   - TabBar: [차트] [호가창] [주문]\n   - TabBarView: 각 탭 콘텐츠\n\n2. **chart_tab.dart (TradingView 차트)**\n   - webview_flutter로 TradingView Lightweight Charts 임베드\n   - JavaScript Bridge: 테마 동기화 (다크/라이트)\n   - 시간봉 선택 칩: [1분][5분][15분][30분][1시][4시][일]\n   - 기술적 지표 토글: MA, VWAP, Bollinger Bands, RSI, MACD\n   - 핀치-줌, 드래그 제스처 지원\n   - 크로스헤어 + 캔들 정보 팝업\n\n3. **orderbook_tab.dart (호가창)**\n   - OrderBookRow 컴포넌트 사용\n   - 매도 호가 (상단, 파랑) + 매수 호가 (하단, 빨강)\n   - 잔량 대비 컬러 바 (상대 너비)\n   - 현재가 구분선 (중간 고정)\n   - 호가 행 탭 → 주문창 가격 필드 자동 입력\n   - 실시간 업데이트 (WS orderbook 채널)\n   - 변동 행 플래시 애니메이션 (100ms)\n   - 스크롤 가능 (상하)\n\n4. **order_tab.dart (주문창)**\n   - SegmentedButton: [매수] [매도]\n   - 주문 유형 Dropdown: [시장가] [지정가]\n   - 가격 입력 (지정가 시): TextFormField + 호가 단위 스텝 버튼 (↑↓)\n   - 수량 입력: TextFormField\n   - 잔고 비율 칩: [25%][50%][75%][100%]\n   - 주문 요약: 총액, 예상 수수료, 실제 수령 수량\n   - 사용 가능 잔고 표시\n   - 매수/매도 버튼 (OrderButton, 전체 너비)\n   - 주문 확인 BottomSheet 다이얼로그\n   - 주문 성공/실패 SnackBar\n\n5. **active_orders_section.dart**\n   - 현재 미체결 주문 목록\n   - 각 주문: 가격, 수량, 주문 시간, 취소 버튼\n   - 일괄 취소 버튼\n\n6. **trading_provider.dart (Riverpod)**\n   - 현재 코인 정보, 현재가, 등락률\n   - 호가창 데이터 (asks, bids)\n   - 주문 상태 관리\n   - 미체결 주문 목록\n   - WebSocket 구독 (ticker, orderbook, my-orders)\n\n7. **주문 실행 로직**\n   - POST /api/v1/orders 호출\n   - 주문 유형: market/limit\n   - 검증: 잔고 부족, 최소 주문 수량\n   - 로딩 상태 표시\n   - 에러 처리 (네트워크, 서버 에러)",
             "status": "pending",
-            "testStrategy": "Widget Test: 탭 전환, 호가창 렌더링, 주문 폼 입력/유효성. Integration Test: TradingView WebView 로드, 호가창 실시간 업데이트 (Mock WS), 주문 제출 및 성공/실패 시나리오, 미체결 주문 취소"
+            "testStrategy": "Widget Test: 탭 전환, 호가창 렌더링, 주문 폼 입력/유효성. Integration Test: TradingView WebView 로드, 호가창 실시간 업데이트 (Mock WS), 주문 제출 및 성공/실패 시나리오, 미체결 주문 취소",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -1152,7 +1236,8 @@
             ],
             "details": "lib/features/exchange/ 디렉토리 구현:\n\n1. **exchange_settings_screen.dart (메인)**\n   - AppBar: '← 거래소 설정'\n   - 연결된 거래소 목록 (ListView)\n   - 각 거래소 카드: 로고, 이름, API Key 마스킹 (****1234), 상태 배지\n   - 수정/삭제/테스트 버튼\n   - '+ 거래소 추가' OutlinedButton\n   - 보안 안내 텍스트 ('API 키는 AES-256-GCM 방식으로 암호화 저장됩니다')\n\n2. **add_exchange_modal.dart (API 키 등록 모달/화면)**\n   - 거래소 선택 RadioButton: Upbit, CoinOne (Phase1)\n   - Access Key 입력 TextField\n   - Secret Key 입력 TextField (obscure, 보이기/숨기기)\n   - '연결 테스트' 버튼 → POST /api/v1/exchanges/verify\n   - 테스트 결과 표시:\n     - 성공: 녹색 체크 + '연결 성공'\n     - 실패: 빨간색 X + 오류 메시지\n     - 출금 권한 감지: 경고 다이얼로그 ('출금 권한이 포함된 API 키입니다...')\n   - '저장' 버튼 (테스트 성공 후 활성화)\n\n3. **exchange_card.dart (거래소 카드 컴포넌트)**\n   - 거래소 로고 (Upbit 파랑, CoinOne 노랑)\n   - 거래소 이름\n   - API Key: ****마지막4자리\n   - 연결 상태 배지 (연결됨/오류)\n   - 액션 버튼: 수정, 삭제, 연결 테스트\n\n4. **edit_exchange_modal.dart**\n   - 기존 API 키 표시 (마스킹)\n   - 새 API 키 입력 (선택적)\n   - 연결 테스트 + 저장\n\n5. **삭제 확인 다이얼로그**\n   - '정말 삭제하시겠습니까?' 확인\n   - 삭제 시 관련 관심코인/AI 설정 경고\n\n6. **exchange_provider.dart (Riverpod)**\n   - 거래소 계정 목록 상태\n   - CRUD 메서드: add, update, delete, verify\n   - API 호출: /api/v1/exchanges\n\n7. **보안 고려사항**\n   - API Key/Secret은 화면에서 마스킹\n   - 입력 시에만 일시적으로 메모리에 보관\n   - 서버로 전송 후 즉시 메모리에서 삭제",
             "status": "pending",
-            "testStrategy": "Widget Test: 거래소 목록 렌더링, 모달 입력 폼. Integration Test: API 키 등록 플로우, 연결 테스트 성공/실패, 출금 권한 경고 표시, 수정/삭제 작업"
+            "testStrategy": "Widget Test: 거래소 목록 렌더링, 모달 입력 폼. Integration Test: API 키 등록 플로우, 연결 테스트 성공/실패, 출금 권한 경고 표시, 수정/삭제 작업",
+            "parentId": "undefined"
           },
           {
             "id": 7,
@@ -1163,7 +1248,8 @@
             ],
             "details": "lib/features/ai_trading/ 디렉토리 구현:\n\n1. **ai_dashboard_screen.dart (메인)**\n   - AppBar: 'AI 자동매매'\n   - 마스터 스위치 카드: 전체 AI 매매 ON/OFF (대형 Switch)\n   - ON 전환 시 확인 다이얼로그 ('AI 자동매매를 시작합니다...')\n\n2. **market_regime_card.dart (현재 장세 표시)**\n   - MarketRegimeCard 공통 컴포넌트 사용\n   - 3개 장세 세그먼트: 추세(빨강), 횡보(그레이), 전환(오렌지)\n   - 각 장세별 confidence % 표시\n   - 마지막 분석 시간 표시\n   - 다음 분석까지 카운트다운 타이머 (5분 주기)\n\n3. **ai_pnl_summary_card.dart (오늘의 손익)**\n   - 총 손익 금액 + 비율 (PnlText 사용)\n   - AI 매매 vs 수동 매매 분리 표시\n   - 미니 손익 차트 (fl_chart LineChart)\n   - 기간 필터: 오늘, 이번 주, 이번 달\n\n4. **coin_ai_config_list.dart (코인별 AI 설정)**\n   - ListView: 관심 코인별 AI 설정\n   - 각 코인 카드:\n     - 코인 아이콘 + 이름\n     - AI 스위치 (개별 코인 ON/OFF)\n     - 현재 선택된 전략 이름\n     - 진입가 (포지션 보유 시)\n     - 손익 (포지션 보유 시)\n   - 코인 탭 → AI 상세 설정 화면\n\n5. **ai_config_detail_screen.dart (코인별 AI 상세 설정)**\n   - 코인 정보 헤더\n   - AI 활성화 스위치\n   - 설정 항목:\n     - 최대 투자 비율 슬라이더 (2%~20%)\n     - 손절 비율 (0.5%~5%)\n     - 익절 비율 (1%~10%)\n     - 일일 최대 손실 (1%~10%)\n   - 전략 선택 (자동/수동)\n   - 저장 버튼\n\n6. **recent_ai_signals_card.dart (최근 매매 신호)**\n   - 최근 5개 AI 매매 신호 목록\n   - 각 신호: 시간, 코인, 액션 (BUY/SELL/HOLD), 가격\n   - BUY=빨강 배지, SELL=파랑 배지, HOLD=그레이\n   - '전체 보기' 버튼 → 매매 내역 화면\n\n7. **ai_status_indicator.dart**\n   - AI 상태 배지: ON (민트), OFF (그레이), 분석중 (펄스 애니메이션)\n   - 분석 중 상태: '장세 분석 중...' 텍스트 + 스피너\n\n8. **ai_trading_provider.dart (Riverpod)**\n   - 마스터 스위치 상태\n   - 장세 분석 결과\n   - 코인별 AI 설정\n   - 손익 통계\n   - WebSocket 구독 (ai:signal:{user_id})\n\n9. **카운트다운 타이머**\n   - Redis에서 마지막 분석 시간 조회\n   - 5분 주기 기반 다음 분석 시간 계산\n   - 실시간 카운트다운 (mm:ss)",
             "status": "pending",
-            "testStrategy": "Widget Test: 마스터 스위치 토글, 장세 카드 렌더링, 코인별 설정 리스트. Integration Test: AI ON/OFF 전환, 장세 데이터 로드, 실시간 신호 수신 (Mock WS), 카운트다운 타이머 동작"
+            "testStrategy": "Widget Test: 마스터 스위치 토글, 장세 카드 렌더링, 코인별 설정 리스트. Integration Test: AI ON/OFF 전환, 장세 데이터 로드, 실시간 신호 수신 (Mock WS), 카운트다운 타이머 동작",
+            "parentId": "undefined"
           },
           {
             "id": 8,
@@ -1174,7 +1260,8 @@
             ],
             "details": "lib/features/portfolio/ + lib/features/history/ 구현:\n\n**포트폴리오 화면 (portfolio_screen.dart)**\n\n1. **총 자산 요약 카드**\n   - 총 자산 (KRW, 대형 폰트)\n   - 총 손익금 + 손익률 (PnlText 사용)\n   - 어제 대비 변동\n\n2. **거래소별 잔고 탭**\n   - TabBar: [전체] [Upbit] [CoinOne]\n   - 거래소별 자산 요약\n\n3. **코인별 보유 목록 (ListView)**\n   - 각 코인 행:\n     - 코인 아이콘 + 이름\n     - 보유 수량\n     - 평균 매입가\n     - 현재가\n     - 평가 금액\n     - 손익금 + 손익률 (색상 적용)\n\n4. **자산 비중 도넛 차트**\n   - fl_chart PieChart 사용\n   - 코인별 비중 % 표시\n   - 중앙에 총 자산 표시\n   - 도넛 조각 탭 시 해당 코인 상세 표시\n   - 수평 스크롤 (여러 거래소)\n\n5. **portfolio_provider.dart (Riverpod)**\n   - 자산 데이터 조회 (/api/v1/portfolio)\n   - 거래소별 필터링\n   - 실시간 평가 금액 업데이트\n\n**매매 내역 화면 (history_screen.dart)**\n\n1. **기간 필터 칩**\n   - [1일] [1주] [1개월] [전체] [직접 선택]\n   - 직접 선택 시 DateRangePicker\n\n2. **상태 필터 칩**\n   - [전체] [체결] [미체결] [취소]\n\n3. **요약 통계 카드**\n   - 총 거래 수\n   - 승률 %\n   - 총 손익\n   - AI 거래 vs 수동 거래 분리\n\n4. **주문/체결 탭 (TabBar)**\n   - [주문 내역] [체결 내역]\n\n5. **거래 내역 목록 (ListView)**\n   - 날짜별 그룹 헤더 (SliverStickyHeader)\n   - 각 거래 행 (TradeHistoryTile):\n     - 코인 아이콘 + 이름\n     - 매수/매도 뱃지\n     - 체결가 × 수량\n     - 수수료\n     - 손익금 + 비율\n     - 시간\n     - AI/수동 구분 배지\n\n6. **무한 스크롤**\n   - 페이지네이션 (20건씩)\n   - 스크롤 끝 감지 → 추가 로드\n\n7. **history_provider.dart (Riverpod)**\n   - 거래 내역 조회 (/api/v1/orders)\n   - 필터 상태 관리\n   - 페이지네이션 상태",
             "status": "pending",
-            "testStrategy": "Widget Test: 자산 카드 렌더링, 도넛 차트, 거래 내역 리스트. Integration Test: 포트폴리오 데이터 로드, 기간/상태 필터링, 무한 스크롤, 날짜별 그룹핑"
+            "testStrategy": "Widget Test: 자산 카드 렌더링, 도넛 차트, 거래 내역 리스트. Integration Test: 포트폴리오 데이터 로드, 기간/상태 필터링, 무한 스크롤, 날짜별 그룹핑",
+            "parentId": "undefined"
           },
           {
             "id": 9,
@@ -1185,7 +1272,8 @@
             ],
             "details": "lib/features/settings/profile/ 디렉토리 구현:\n\n1. **profile_edit_screen.dart (메인)**\n   - AppBar: '← 프로필 수정'\n   - 아바타 섹션\n   - 닉네임 입력 섹션\n   - 이메일 표시 (읽기 전용)\n   - 저장 버튼\n   - 계정 삭제 버튼 (하단)\n\n2. **아바타 업로드 섹션**\n   - 현재 아바타 표시 (CircleAvatar, 80dp)\n   - 기본 아바타 (이니셜)\n   - '사진 변경' 버튼 → BottomSheet\n   - 옵션: 갤러리에서 선택, 카메라 촬영, 기본 이미지로 변경\n   - image_picker 패키지 사용\n   - 이미지 크롭 (image_cropper)\n   - 업로드 진행 표시 (CircularProgressIndicator)\n   - POST /api/v1/auth/me/avatar 호출\n\n3. **닉네임 수정**\n   - TextField: 현재 닉네임 표시\n   - 유효성 검사: 2~20자, 특수문자 제한\n   - 중복 확인 (debounce 500ms)\n   - 에러 메시지 인라인 표시\n\n4. **저장 버튼**\n   - 변경사항 있을 때만 활성화\n   - PUT /api/v1/auth/me 호출\n   - 성공 시 SnackBar + 이전 화면 복귀\n\n5. **계정 삭제**\n   - '계정 삭제' 버튼 (빨간색 텍스트)\n   - 탭 시 확인 다이얼로그:\n     - 경고 텍스트 ('30일 후 완전 삭제됩니다...')\n     - 비밀번호 재입력 요구\n     - '삭제 요청' 버튼 (빨간색)\n   - DELETE /api/v1/auth/me 호출\n   - 성공 시 로그아웃 + 로그인 화면 이동\n\n6. **profile_provider.dart (Riverpod)**\n   - 사용자 프로필 상태\n   - updateNickname() 메서드\n   - uploadAvatar() 메서드\n   - deleteAccount() 메서드\n\n7. **이미지 처리**\n   - 최대 파일 크기: 5MB\n   - 허용 형식: JPEG, PNG\n   - 크롭 비율: 1:1 (정사각형)\n   - 업로드 전 리사이즈 (300x300)",
             "status": "pending",
-            "testStrategy": "Widget Test: 아바타 표시, 닉네임 입력 유효성. Integration Test: 아바타 업로드 플로우 (Mock), 닉네임 변경, 계정 삭제 확인 다이얼로그 및 삭제 요청"
+            "testStrategy": "Widget Test: 아바타 표시, 닉네임 입력 유효성. Integration Test: 아바타 업로드 플로우 (Mock), 닉네임 변경, 계정 삭제 확인 다이얼로그 및 삭제 요청",
+            "parentId": "undefined"
           },
           {
             "id": 10,
@@ -1196,29 +1284,34 @@
             ],
             "details": "lib/features/settings/ 디렉토리 구현:\n\n1. **settings_screen.dart (메인)**\n   - AppBar: '설정'\n   - 섹션별 ListTile 그룹:\n     - 계정, 앱 설정, 알림 설정, 보안, 정보\n\n2. **계정 섹션**\n   - 이메일 표시\n   - 닉네임 표시\n   - '프로필 수정' → profile_edit_screen\n\n3. **앱 설정 섹션**\n   - **테마 선택**: [라이트/다크/시스템] DropdownButton\n     - 선택 즉시 적용 (Riverpod theme_provider)\n   - **언어 선택**: [한국어/English/日本語/中文/Español]\n     - flutter_localizations 연동\n     - 선택 시 앱 재시작 안내 (필요시)\n   - **가격 색상 스타일**: [한국식/글로벌] DropdownButton\n     - 한국식: 매수=빨강, 매도=파랑\n     - 글로벌: 매수=녹색, 매도=빨강\n     - 선택 즉시 적용\n\n4. **알림 설정 섹션**\n   - **알림 전체**: Switch (마스터 토글)\n   - **가격 알림**: Switch (목표가 도달 시)\n   - **AI 매매 알림**: Switch (매매 실행 시)\n   - **체결 알림**: Switch (주문 체결 시)\n   - 각 설정 PUT /api/v1/notifications/settings 연동\n\n5. **보안 섹션**\n   - **비밀번호 변경** → 비밀번호 변경 화면\n   - **생체 인증**: Switch (M9, local_auth 패키지)\n   - **2FA (TOTP)**: Switch (M9)\n   - **활성 세션 관리** → 세션 목록 화면 (M9)\n\n6. **정보 섹션**\n   - 앱 버전: v1.0.0 (빌드 번호)\n   - **이용약관**: → WebView 또는 마크다운 뷰어\n   - **개인정보처리방침**: → WebView\n   - **오픈소스 라이선스**: → LicensePage\n\n7. **로그아웃 버튼**\n   - 확인 다이얼로그\n   - 로그아웃 시:\n     - POST /api/v1/auth/logout\n     - 로컬 토큰 삭제\n     - 로그인 화면 이동\n\n8. **change_password_screen.dart**\n   - 현재 비밀번호 입력\n   - 새 비밀번호 입력 (강도 표시)\n   - 새 비밀번호 확인\n   - 변경 버튼\n\n9. **terms_screen.dart / privacy_screen.dart**\n   - webview_flutter로 외부 URL 로드\n   - 또는 assets의 마크다운 파일 렌더링 (flutter_markdown)\n\n10. **settings_provider.dart (Riverpod)**\n    - 테마 설정 (ThemeMode)\n    - 언어 설정 (Locale)\n    - 가격 색상 스타일\n    - 알림 설정\n    - SharedPreferences 영속화",
             "status": "pending",
-            "testStrategy": "Widget Test: 설정 항목 렌더링, 테마/언어 전환. Integration Test: 테마 변경 즉시 적용, 가격 색상 스타일 변경, 로그아웃 플로우, 비밀번호 변경 폼 유효성"
+            "testStrategy": "Widget Test: 설정 항목 렌더링, 테마/언어 전환. Integration Test: 테마 변경 즉시 적용, 가격 색상 스타일 변경, 로그아웃 플로우, 비밀번호 변경 폼 유효성",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 25,
+        "id": "25",
         "title": "통합 테스트 및 배포 파이프라인 구성",
         "description": "E2E 테스트 (pytest + httpx), 성능 최적화, CI/CD 파이프라인 완성, 모니터링 대시보드, 프로덕션 배포",
         "details": "E2E 테스트 (tests/):\n- 인증 흐름: 회원가입 → 로그인 → 토큰 갱신 → 로그아웃\n- 거래소 연동: API 키 등록 → 검증 → 시세 조회 → 주문 생성 → 취소\n- AI 매매: 장세 분석 → 전략 선택 → 신호 생성 → 주문 실행\n- 포트폴리오: 자산 조회 → 손익 계산\n- WebSocket: 연결 → 구독 → 메시지 수신 → 구독 해제\n\npytest 설정:\n- conftest.py: 픽스처 (test_db, test_redis, test_http_client)\n- 테스트 데이터베이스 자동 생성/정리 (Alembic migrate)\n- Mock Exchange 프로바이더\n\n성능 테스트:\n- 로컬테스트 또는 pytest-benchmark\n- API 응답 시간 (< 200ms)\n- WebSocket 처리량\n- 데이터베이스 쿼리 성능\n\nCI/CD Pipeline (GitHub Actions):\n1. Lint (ruff):\n   - Python 코드 스타일\n   - import 정렬\n\n2. Type Check (mypy):\n   - 타입 검증\n\n3. Test:\n   - pytest 전체 실행\n   - 커버리지 80%+ 검증\n   - 결과 리포트 생성\n\n4. Build:\n   - Docker 이미지 빌드 (python:3.12-slim)\n   - 레지스트리 푸시 (Docker Hub, ECR)\n\n5. Deploy:\n   - 스테이징 환경: 자동 배포\n   - 프로덕션: 수동 승인 후 배포 (Rolling Update)\n\nMonitoring:\n- Prometheus: 메트릭 수집 (요청 횟수, 응답 시간, 에러율, DB 연결)\n- Grafana: 대시보드 (실시간 메트릭)\n- Sentry: 에러 트래킹 (서버 + 클라이언트)\n- Loki: 로그 중앙화 (JSON 구조화 로그)\n\nProduction Deployment:\n- 환경: Docker Compose (또는 K8s)\n- 무중단 배포: Rolling Update\n- 롤백: 1-click 롤백\n- Backup: PostgreSQL WAL 아카이빙, MongoDB oplog\n- Health Check: GET /health (의존성 상태)\n\nSecurity Hardening:\n- HTTPS/WSS 적용\n- API 속도 제한 (Rate Limiting)\n- CORS 화이트리스트\n- SQL Injection 방지 (SQLAlchemy ORM)\n- XSS 방지 (JSON 응답)\n- CSRF 토큰 (선택적)\n\nLogging & Audit:\n- structlog JSON 로깅\n- 민감한 행동 audit_logs 기록\n- 모든 API 요청 로그 (correlation_id)\n\nVersion Management:\n- GET /api/v1/app-version: 최소 지원 버전, 강제 업데이트 여부\n- API v1 Deprecation 시 3개월 유예",
         "testStrategy": "E2E 테스트 실행 및 통과율 검증 (100%), 성능 테스트 (API < 200ms, WS < 100ms), 커버리지 리포트 (80%+), CI/CD 파이프라인 모든 단계 검증, 스테이징 배포 후 smoke 테스트, 프로덕션 배포 후 health check, 로그 수집 및 대시보드 표시 확인",
         "priority": "high",
         "dependencies": [
-          19,
-          24
+          "19",
+          "24"
         ],
         "status": "pending",
         "subtasks": []
       }
     ],
     "metadata": {
-      "created": "2026-03-05T04:37:04.599Z",
-      "updated": "2026-03-05T04:37:04.599Z",
-      "description": "Tasks for v1 context"
+      "version": "1.0.0",
+      "lastModified": "2026-03-05T12:44:20.602Z",
+      "taskCount": 25,
+      "completedCount": 2,
+      "tags": [
+        "v1"
+      ]
     }
   }
 }
