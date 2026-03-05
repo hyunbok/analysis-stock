@@ -61,6 +61,16 @@ ws/hub.py -> Redis Pub/Sub (services 직접 호출 금지)
 - PRD 5.1: `POST /api/v1/ai-trading/toggle` vs 코드 아키텍처 규칙 `PATCH .../activation`
 - 구현 시 `PATCH /api/v1/ai-trading/configs/{id}/activation` 으로 통일 (PRD 수정 대상)
 
+## PRD 누락/불일치 항목 (Stitch 화면 대조 결과)
+
+- `api/v1/notifications.py` 라우터 파일 구조에 누락 (API 엔드포인트는 PRD 5.1에 정의됨)
+- `POST /api/v1/auth/me/avatar` 아바타 업로드 엔드포인트 PRD 5.1 미정의 (M2에 기능 포함)
+- 소셜 로그인 엔드포인트 PRD 5.1 완전 누락: `POST /api/v1/auth/social/google|apple` 추가 필요
+- `api/v1/social_auth.py` 분리 권장 (SRP 원칙, OAuth 로직 복잡성)
+- Flutter `features/notifications/` 디렉토리 PRD 11.2에 누락
+- 파일 업로드(아바타): 별도 스토리지 인프라 결정 필요 (S3/MinIO/로컬 - PRD 미정의)
+- WS notifications 채널 불필요 - `clients.fcm_token`으로 FCM 처리 (백그라운드 알림)
+
 ## 상세 참조
 
 - architecture.md: 디렉토리 구조 전체 최종안
