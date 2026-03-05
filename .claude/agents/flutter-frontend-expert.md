@@ -4,6 +4,8 @@ description: "Use this agent when building the Flutter cross-platform coin tradi
 model: sonnet
 color: blue
 tools: Read, Edit, Write, Glob, Grep, Bash, WebFetch, WebSearch
+mcpServers:
+  - stitch
 memory: project
 permissionMode: bypassPermissions
 ---
@@ -13,6 +15,7 @@ permissionMode: bypassPermissions
 ## 참조 문서
 
 > **참조 문서**: `docs/refs/project-prd.md` (마스터), `docs/refs/api-spec.md` (API/WS), `docs/refs/client-screens.md` (화면)
+> **디자인시안**: stitch mcp 를 이용하여 디자인 시안 확인 또는 `project-architect` 에게 `app-designer` 를 통해 시안 전달 받음.
 > **원본**: `docs/prd.md`. **아키텍처 결정**: project-architect. 이 에이전트는 Flutter 구현 규칙과 코드 작성에 집중합니다.
 
 ## 핵심 전문 영역
