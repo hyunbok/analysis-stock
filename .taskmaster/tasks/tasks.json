@@ -9,7 +9,7 @@
         "testStrategy": "Docker Compose 실행 후 모든 서비스 헬스체크(postgres, mongodb, redis 연결 확인), GitHub Actions workflow 정상 실행 검증, 초기 API 엔드포인트(GET /health) 응답 확인",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -17,7 +17,7 @@
             "description": "PRD에 정의된 server/, client/, shared/ 모노레포 디렉토리 구조를 생성하고 .gitignore, .editorconfig, README.md 템플릿을 설정합니다.",
             "dependencies": [],
             "details": "프로젝트 루트에 다음 디렉토리 구조 생성:\n- server/ (FastAPI 백엔드)\n- client/ (Flutter 프론트엔드)\n- shared/api-spec/ (OpenAPI 스펙)\n- shared/ws-spec/ (WebSocket 이벤트 스펙)\n- docs/ (기존 PRD 문서 유지)\n\n.gitignore 파일에 Python(__pycache__, .venv, .env), Flutter(.dart_tool, build), Docker(.env.local), IDE(.idea, .vscode) 패턴 추가. .editorconfig로 코드 스타일 통일 (indent_size=4 for Python, indent_size=2 for Dart/YAML).",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "모든 디렉토리 경로 존재 확인, .gitignore 패턴 적용 검증 (git status에서 무시 파일 확인)"
           },
           {
@@ -28,7 +28,7 @@
               1
             ],
             "details": "docker-compose.yml 파일 생성:\n- postgres: image: postgres:16-alpine, ports: 5432:5432, volumes: postgres_data, 환경변수(POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB), healthcheck\n- mongodb: image: mongo:7, ports: 27017:27017, volumes: mongodb_data, 환경변수(MONGO_INITDB_ROOT_USERNAME, MONGO_INITDB_ROOT_PASSWORD), healthcheck\n- redis: image: redis:7-alpine, ports: 6379:6379, volumes: redis_data, healthcheck\n\n각 서비스에 restart: unless-stopped 설정. 네트워크: cointrader-network (bridge). 볼륨: named volumes로 데이터 영속성 보장. 개발 환경용 .env.example 템플릿 작성.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "docker-compose up -d 실행 후 docker-compose ps로 모든 서비스 healthy 상태 확인, docker exec로 각 DB 연결 테스트"
           },
           {
@@ -39,7 +39,7 @@
               1
             ],
             "details": "server/ 디렉토리 구조 생성:\n- app/main.py: FastAPI 인스턴스, 라우터 등록, lifespan 이벤트\n- app/core/config.py: Pydantic BaseSettings (환경변수 로딩)\n- app/core/database.py: SQLAlchemy async 세션 팩토리 (PostgreSQL)\n- app/core/mongodb.py: Beanie init_beanie(), Motor 클라이언트\n- app/core/deps.py: FastAPI Depends (세션, 현재 사용자)\n- app/api/v1/__init__.py: 라우터 집합\n- app/models/: SQLAlchemy 모델 디렉토리\n- app/documents/: Beanie 도큐먼트 디렉토리\n- app/schemas/: Pydantic v2 스키마 디렉토리\n- app/repositories/: 레포지토리 베이스 클래스\n- app/services/: 서비스 레이어 디렉토리\n- app/providers/: 거래소 프로바이더 디렉토리\n- app/trading/: AI 매매 엔진 패키지\n- app/ws/: WebSocket 허브\n- tasks/: Celery 태스크 디렉토리\n- alembic/: 마이그레이션\n- tests/: 테스트\n\n__init__.py 파일 생성하여 Python 패키지화.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Python import 테스트 (python -c \"from app.main import app\"), 디렉토리 구조 tree 명령으로 검증"
           },
           {
@@ -50,7 +50,7 @@
               3
             ],
             "details": "server/pyproject.toml 생성:\n- [project]: name, version, python_requires>=3.12\n- 핵심 의존성: fastapi>=0.109.0, uvicorn[standard], sqlalchemy[asyncio]>=2.0, asyncpg, beanie>=1.26, motor, redis>=5.0, pydantic>=2.6, pydantic-settings, python-jose[cryptography], bcrypt, httpx, structlog, sentry-sdk[fastapi]\n- 개발 의존성: pytest>=8.0, pytest-asyncio, pytest-cov, httpx, ruff>=0.2, mypy>=1.8, pre-commit\n- Celery: celery[redis]>=5.3\n\n[tool.ruff]: line-length=100, select=[\"E\", \"F\", \"I\", \"N\", \"W\", \"UP\"], target-version=\"py312\"\n[tool.mypy]: python_version=\"3.12\", strict=true, plugins=[\"pydantic.mypy\"]\n\nserver/requirements.txt도 함께 생성 (Docker 빌드용).",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "pip install -e . 또는 pip install -r requirements.txt 실행 후 모든 패키지 import 확인, ruff check . 및 mypy app/ 실행"
           },
           {
@@ -61,7 +61,7 @@
               4
             ],
             "details": "app/api/v1/health.py 생성:\n- GET /health 엔드포인트\n- 응답 스키마: {status: 'healthy'|'unhealthy', components: {postgres: 'up'|'down', mongodb: 'up'|'down', redis: 'up'|'down'}, timestamp: ISO8601}\n- 각 컴포넌트 연결 테스트:\n  * PostgreSQL: SELECT 1 쿼리\n  * MongoDB: ping 명령\n  * Redis: PING 명령\n- 모든 컴포넌트 정상 시 status='healthy', HTTP 200\n- 하나라도 실패 시 status='unhealthy', HTTP 503\n\napp/main.py에 health 라우터 등록. CORS 미들웨어 설정 (localhost, 프로덕션 도메인 화이트리스트). 구조화 로깅(structlog) 설정.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Docker Compose 서비스 실행 후 curl http://localhost:8000/health 호출, 모든 컴포넌트 'up' 확인. 개별 서비스 중지 후 'unhealthy' 상태 및 503 응답 확인"
           },
           {
@@ -72,7 +72,7 @@
               1
             ],
             "details": "client/ 디렉토리에 Flutter 프로젝트 생성:\n- flutter create cointrader --org com.cointrader --platforms=ios,android,web,macos,windows\n\npubspec.yaml 핵심 의존성:\n- flutter_riverpod: ^2.5.0 (상태 관리)\n- riverpod_annotation: ^2.3.0\n- dio: ^5.4.0 (HTTP 클라이언트)\n- web_socket_channel: ^2.4.0 (WebSocket)\n- shared_preferences: ^2.2.0 (로컬 저장)\n- hive: ^2.2.0, hive_flutter: ^1.1.0\n- flutter_localizations: sdk: flutter (다국어)\n- intl: ^0.18.0\n- go_router: ^13.0.0 (라우팅)\n- fl_chart: ^0.66.0 (차트)\n\n개발 의존성:\n- riverpod_generator: ^2.4.0\n- build_runner: ^2.4.0\n- flutter_lints: ^3.0.0\n\nlib/ 디렉토리 구조:\n- main.dart (앱 진입점)\n- app/router.dart, app/theme.dart\n- features/ (auth, home, trading 등 빈 디렉토리)\n- core/api/, core/websocket/, core/utils/\n- l10n/ (다국어 ARB 파일)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "flutter pub get 실행 성공, flutter analyze로 린트 오류 없음 확인, flutter build apk --debug로 빌드 테스트"
           },
           {
@@ -84,7 +84,7 @@
               4
             ],
             "details": "server/ 디렉토리에 환경 파일 생성:\n- .env.example: 모든 환경변수 템플릿 (주석 설명 포함)\n- .env.dev: 개발 환경 (localhost DB, DEBUG=true)\n- .env.staging: 스테이징 환경 예시\n- .env.prod: 프로덕션 환경 예시 (민감 정보 제외)\n\n환경변수 목록:\n- DATABASE_URL (PostgreSQL 연결 문자열)\n- MONGODB_URL (MongoDB 연결 문자열)\n- REDIS_URL (Redis 연결 문자열)\n- JWT_SECRET_KEY, JWT_ALGORITHM=HS256\n- JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30\n- JWT_REFRESH_TOKEN_EXPIRE_DAYS=14\n- EXCHANGE_API_KEY_SECRET (AES-256 암호화 키)\n- OPENAI_API_KEY, OPENAI_MODEL=gpt-4o-mini\n- SENTRY_DSN\n- DEBUG, LOG_LEVEL\n- CORS_ORIGINS (쉼표 구분 도메인)\n\napp/core/config.py에서 pydantic-settings로 환경변수 자동 로딩. 환경별 설정 클래스 상속 구조 (Settings, DevSettings, ProdSettings).",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ".env.dev 파일로 서버 실행 후 config 값 로깅 확인, 필수 환경변수 누락 시 ValidationError 발생 검증"
           },
           {
@@ -96,7 +96,7 @@
               6
             ],
             "details": ".github/workflows/ 디렉토리 생성:\n\nci.yml (서버 CI):\n- trigger: push, pull_request (main, develop 브랜치)\n- jobs:\n  * lint: ruff check app/ tests/\n  * type-check: mypy app/\n  * test: pytest tests/ --cov=app --cov-report=xml --cov-fail-under=80\n- services: postgres:16, mongodb:7, redis:7 (GitHub Actions services)\n- cache: pip 캐시\n- artifacts: 커버리지 리포트 업로드\n\nci-flutter.yml (클라이언트 CI):\n- trigger: push, pull_request\n- jobs:\n  * analyze: flutter analyze\n  * test: flutter test --coverage\n- cache: pub 캐시\n\n공통 설정:\n- runs-on: ubuntu-latest\n- fail-fast: false\n- 브랜치 보호 규칙 권장 사항 문서화",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "테스트 브랜치 푸시 후 GitHub Actions 실행 확인, 모든 job 성공 여부 검증, 커버리지 리포트 생성 확인"
           },
           {
@@ -107,7 +107,7 @@
               8
             ],
             "details": "server/Dockerfile 생성:\n- Base: python:3.12-slim\n- 멀티스테이지 빌드 (builder → runtime)\n- 비루트 사용자 (appuser) 실행\n- COPY requirements.txt → pip install → COPY app/\n- EXPOSE 8000\n- CMD [\"uvicorn\", \"app.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]\n- 헬스체크: HEALTHCHECK CMD curl -f http://localhost:8000/health || exit 1\n\n.github/workflows/docker.yml:\n- trigger: push (main, develop), release\n- jobs:\n  * build-and-push:\n    - docker/setup-buildx-action\n    - docker/login-action (Docker Hub 또는 ECR)\n    - docker/build-push-action\n    - 태그: latest, commit SHA, 버전 태그\n- secrets: DOCKER_USERNAME, DOCKER_PASSWORD (또는 AWS credentials)\n\ndocker-compose.yml에 server 서비스 추가 (Dockerfile 빌드 또는 이미지 참조).",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "docker build -t cointrader-server . 로컬 빌드 성공, docker run으로 헬스체크 통과, GitHub Actions에서 이미지 푸시 성공 확인"
           },
           {
@@ -118,7 +118,7 @@
               5
             ],
             "details": "Sentry 통합 (app/main.py):\n- sentry_sdk.init(dsn=settings.SENTRY_DSN, traces_sample_rate=0.1, profiles_sample_rate=0.1)\n- FastAPI 통합: sentry_sdk.integrations.fastapi.FastApiIntegration\n- 환경변수: SENTRY_DSN (비어있으면 비활성화)\n- 에러 자동 캡처, 성능 트레이싱\n\nPrometheus 메트릭 (app/core/metrics.py):\n- prometheus_fastapi_instrumentator 라이브러리 사용\n- 기본 메트릭: http_requests_total, http_request_duration_seconds\n- 커스텀 메트릭: db_connections_active, websocket_connections\n- /metrics 엔드포인트 노출\n\ndocker-compose.yml에 Prometheus 서비스 추가 (선택적):\n- prometheus: image: prom/prometheus, volumes: prometheus.yml, ports: 9090\n- prometheus.yml: FastAPI /metrics 스크래핑 설정\n\nGrafana 대시보드 템플릿 (선택적):\n- docs/monitoring/grafana-dashboard.json",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "SENTRY_DSN 설정 후 의도적 에러 발생 → Sentry 대시보드 이벤트 확인, /metrics 엔드포인트 호출 → Prometheus 포맷 메트릭 반환 확인"
           }
         ]
