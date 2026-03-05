@@ -1,5 +1,7 @@
+import logging
 from contextlib import asynccontextmanager
 
+import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -9,8 +11,26 @@ from app.core.mongodb import init_mongodb
 from app.core.redis import init_redis, close_redis
 
 
+def configure_logging() -> None:
+    structlog.configure(
+        processors=[
+            structlog.contextvars.merge_contextvars,
+            structlog.stdlib.add_log_level,
+            structlog.stdlib.add_logger_name,
+            structlog.processors.TimeStamper(fmt="iso"),
+            structlog.dev.ConsoleRenderer() if settings.DEBUG else structlog.processors.JSONRenderer(),
+        ],
+        wrapper_class=structlog.make_filtering_bound_logger(
+            logging.getLevelName(settings.LOG_LEVEL)
+        ),
+        context_class=dict,
+        logger_factory=structlog.PrintLoggerFactory(),
+    )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    configure_logging()
     # Startup
     await init_db()
     await init_mongodb(settings.MONGODB_URL, settings.MONGODB_DB_NAME)
@@ -38,11 +58,5 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Routers will be registered here as they are implemented
-# from app.api.v1 import router as v1_router
-# app.include_router(v1_router, prefix="/api/v1")
-
-
-@app.get("/health")
-async def health_check():
-    return {"status": "ok", "version": app.version}
+from app.api.v1 import router as v1_router  # noqa: E402
+app.include_router(v1_router, prefix="/api/v1")

@@ -1,6 +1,10 @@
 from fastapi import APIRouter
 
+from app.api.v1.health import router as health_router
+
 router = APIRouter()
+
+router.include_router(health_router, tags=["health"])
 
 # Routers will be included here as they are implemented:
 # from app.api.v1 import auth, users, exchanges, orders, wallets, auto_trading, market
