@@ -27,6 +27,7 @@ dev = [
     "pytest>=8.0",
     "pytest-asyncio",
     "pytest-cov",
+    "mongomock-motor",
     "ruff>=0.2",
     "mypy>=1.8",
     "pre-commit",
