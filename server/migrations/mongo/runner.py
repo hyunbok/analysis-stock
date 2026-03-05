@@ -43,9 +43,13 @@ async def run_migrations():
             continue
         description = getattr(module, "DESCRIPTION", "")
         print(f"Applying migration {version}: {description}")
-        await module.upgrade(db)
-        await record_version(db, version, description)
-        print(f"  Applied {version}")
+        try:
+            await module.upgrade(db)
+            await record_version(db, version, description)
+            print(f"  Applied {version}")
+        except Exception as e:
+            print(f"  FAILED {version}: {e}")
+            raise
 
     client.close()
 

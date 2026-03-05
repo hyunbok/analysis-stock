@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 
 import sqlalchemy.dialects.postgresql as pg
-from sqlalchemy import DateTime, ForeignKey, Index, String, Text, UniqueConstraint, text
+from sqlalchemy import DateTime, ForeignKey, Index, LargeBinary, String, Text, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -33,7 +33,7 @@ class User(Base):
     ai_trading_enabled: Mapped[bool] = mapped_column(
         pg.BOOLEAN, default=False, server_default=text("false")
     )
-    totp_secret: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    totp_secret_encrypted: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
     is_2fa_enabled: Mapped[bool] = mapped_column(
         pg.BOOLEAN, default=False, server_default=text("false")
     )

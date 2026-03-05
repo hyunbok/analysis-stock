@@ -16,7 +16,7 @@ async def upgrade(db):
 
     # daily_pnl_reports unique 인덱스
     await db.daily_pnl_reports.create_index(
-        [("user_id", 1), ("report_date", -1)], unique=True
+        [("user_id", 1), ("report_date", 1)], unique=True
     )
 
     # notifications TTL + 인덱스

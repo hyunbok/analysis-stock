@@ -93,5 +93,4 @@ async def init_timeseries_collections(db: AsyncIOMotorDatabase) -> None:
                 ("meta.market_code", 1),
                 ("timestamp", -1),
             ],
-            background=True,
         )

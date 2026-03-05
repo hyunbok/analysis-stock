@@ -15,6 +15,7 @@ class AuditLog(Document):
     details: Optional[dict] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
+    # TTL 없음: 전자금융거래법 등 법적 보관 요건에 따라 영구 보관
     class Settings:
         name = "audit_logs"
         indexes = [

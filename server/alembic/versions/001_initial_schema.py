@@ -47,7 +47,7 @@ def upgrade() -> None:
             server_default=sa.text("false"),
             nullable=False,
         ),
-        sa.Column("totp_secret", sa.String(32), nullable=True),
+        sa.Column("totp_secret_encrypted", sa.LargeBinary(), nullable=True),
         sa.Column(
             "is_2fa_enabled",
             sa.Boolean(),

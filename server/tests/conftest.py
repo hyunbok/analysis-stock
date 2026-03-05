@@ -1,6 +1,5 @@
 """공통 pytest fixtures: PostgreSQL + MongoDB."""
 
-import asyncio
 import os
 
 import pytest
@@ -27,14 +26,6 @@ def _get_test_mongo_db() -> str:
 
 
 # ── PostgreSQL fixtures ───────────────────────────────────────────────────────
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """세션 범위 이벤트 루프 (session-scoped async fixture 지원용)."""
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
-
 
 @pytest.fixture(scope="session")
 async def pg_engine():

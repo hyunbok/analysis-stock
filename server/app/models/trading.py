@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from decimal import Decimal
 
 import sqlalchemy.dialects.postgresql as pg
 from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, Numeric, String, text
@@ -44,22 +45,21 @@ class AiTradingConfig(Base):
         pg.UUID(as_uuid=True),
         ForeignKey("watchlist_coins.id", ondelete="CASCADE"),
         nullable=False,
-        unique=True,
     )
     is_enabled: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default=text("false")
     )
-    max_investment_ratio: Mapped[float] = mapped_column(
-        Numeric(5, 4), default=0.10, server_default=text("0.10")
+    max_investment_ratio: Mapped[Decimal] = mapped_column(
+        Numeric(5, 4), default=Decimal("0.10"), server_default=text("0.10")
     )
-    stop_loss_ratio: Mapped[float] = mapped_column(
-        Numeric(5, 4), default=0.02, server_default=text("0.02")
+    stop_loss_ratio: Mapped[Decimal] = mapped_column(
+        Numeric(5, 4), default=Decimal("0.02"), server_default=text("0.02")
     )
-    take_profit_ratio: Mapped[float] = mapped_column(
-        Numeric(5, 4), default=0.03, server_default=text("0.03")
+    take_profit_ratio: Mapped[Decimal] = mapped_column(
+        Numeric(5, 4), default=Decimal("0.03"), server_default=text("0.03")
     )
-    daily_max_loss_ratio: Mapped[float] = mapped_column(
-        Numeric(5, 4), default=0.05, server_default=text("0.05")
+    daily_max_loss_ratio: Mapped[Decimal] = mapped_column(
+        Numeric(5, 4), default=Decimal("0.05"), server_default=text("0.05")
     )
     primary_timeframe: Mapped[str] = mapped_column(
         String(10), default="5m", server_default="5m"
@@ -162,13 +162,13 @@ class TradeOrder(Base):
     )
     order_type: Mapped[str] = mapped_column(String(10), nullable=False)
     order_method: Mapped[str] = mapped_column(String(10), nullable=False)
-    price: Mapped[float | None] = mapped_column(Numeric(20, 8), nullable=True)
-    quantity: Mapped[float] = mapped_column(Numeric(20, 8), nullable=False)
-    executed_quantity: Mapped[float] = mapped_column(
-        Numeric(20, 8), default=0, server_default=text("0")
+    price: Mapped[Decimal | None] = mapped_column(Numeric(20, 8), nullable=True)
+    quantity: Mapped[Decimal] = mapped_column(Numeric(20, 8), nullable=False)
+    executed_quantity: Mapped[Decimal] = mapped_column(
+        Numeric(20, 8), default=Decimal("0"), server_default=text("0")
     )
-    fee: Mapped[float] = mapped_column(
-        Numeric(20, 8), default=0, server_default=text("0")
+    fee: Mapped[Decimal] = mapped_column(
+        Numeric(20, 8), default=Decimal("0"), server_default=text("0")
     )
     status: Mapped[str] = mapped_column(String(20), nullable=False)
     is_ai_order: Mapped[bool] = mapped_column(
@@ -229,7 +229,7 @@ class PriceAlert(Base):
         nullable=True,
     )
     condition: Mapped[str] = mapped_column(String(10), nullable=False)
-    target_price: Mapped[float] = mapped_column(Numeric(20, 8), nullable=False)
+    target_price: Mapped[Decimal] = mapped_column(Numeric(20, 8), nullable=False)
     is_triggered: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default=text("false")
     )

@@ -117,8 +117,7 @@ class AiDecision(Document):
         indexes = [
             pymongo.IndexModel([("user_id", pymongo.ASCENDING)]),
             pymongo.IndexModel([("coin_symbol", pymongo.ASCENDING)]),
-            pymongo.IndexModel([("created_at", pymongo.ASCENDING)]),
-            # TTL: 180 days = 15552000 seconds
+            # TTL: 180 days = 15552000 seconds (TTL 인덱스가 created_at 조회 역할도 함)
             pymongo.IndexModel(
                 [("created_at", pymongo.ASCENDING)],
                 expireAfterSeconds=15552000,
