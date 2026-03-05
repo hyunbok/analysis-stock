@@ -2,7 +2,7 @@
   "v1": {
     "tasks": [
       {
-        "id": "1",
+        "id": 1,
         "title": "프로젝트 인프라 및 개발 환경 설정 (M1-Phase1)",
         "description": "모노레포 구조 정립, Docker Compose 환경 구성(PostgreSQL, MongoDB, Redis), FastAPI/Flutter 기본 골격, GitHub Actions CI/CD 초기화",
         "details": "- 프로젝트 루트에 server/, client/ 디렉토리 분리\n- Docker Compose 파일: postgres 16, mongodb 7, redis 7 서비스 정의\n- FastAPI 기본 앱 구조: app/main.py, core/, api/, models/, schemas/\n- Flutter 프로젝트: pubspec.yaml 기본 의존성 (Riverpod, Dio, web_socket_channel)\n- GitHub Actions: lint(ruff), test(pytest), coverage(80%+) workflow\n- 개발/스테이징/프로덕션 환경별 수 분리 (.env.example 작성)\n- Sentry, Prometheus 기본 연동 설정\n- Docker 이미지 빌드 및 레지스트리 푸시 파이프라인",
@@ -134,7 +134,7 @@
         ]
       },
       {
-        "id": "2",
+        "id": 2,
         "title": "데이터베이스 스키마 설계 및 마이그레이션 구성 (DB Setup)",
         "description": "PostgreSQL 테이블 정의(users, user_social_accounts, clients, user_exchange_accounts, coins, watchlist_coins, ai_trading_configs, trade_orders 등), MongoDB 컬렉션 설계, Alembic/Beanie 마이그레이션 틀",
         "details": "PostgreSQL:\n- users: email, password_hash(nullable), nickname, avatar_url, language, theme, price_color_style, ai_trading_enabled, totp_secret, is_2fa_enabled, email_verified_at\n- user_social_accounts: provider(google/apple), provider_id, provider_email\n- clients: device_type, fcm_token\n- user_exchange_accounts: exchange_type, api_key_encrypted(AES-256-GCM), api_secret_encrypted\n- coins: symbol, name_ko, name_en, exchange_type, market_code\n- watchlist_coins: sort_order\n- ai_trading_configs: is_enabled, max_investment_ratio(0.10), stop_loss_ratio(0.02), take_profit_ratio(0.03), daily_max_loss_ratio(0.05), primary_timeframe('5m'), confirmation_timeframes(ARRAY), strategy_params(JSONB)\n- trade_orders: order_type, order_method, price, quantity, fee, status, is_ai_order\n- price_alerts: condition(above/below), target_price, is_triggered\n- user_consents: consent_type, agreed_at, version\n\nMongoDB:\n- trade_logs: user_id, trade_order_id, coin_symbol, market_regime, strategy_name, entry_price, pnl_amount, pnl_ratio, status\n- ai_decisions: user_id, coin_symbol, market_regime, selected_strategy, action(buy/sell/hold), indicators_snapshot(JSON), gpt_model, gpt_raw_response, celery_task_id, TTL: 180일\n- daily_pnl_reports: upsert key (user_id, report_date), total_pnl, trade_count, ai_pnl, manual_pnl, strategy_stats\n- candle_data_* (타임프레임별): Time Series 컬렉션, TTL 차등 (1m=7일, 5m=90일, 15m=180일, 1h=1년, 4h=2년, 1d=5년)\n- notifications: user_id, type, title, body, is_read, TTL: 90일\n- audit_logs: user_id, action, ip_address, user_agent, created_at, TTL: 1년\n\nAlembic 초기화, Beanie 마이그레이션 스크립트 틀 구성",
@@ -279,7 +279,7 @@
         "updatedAt": "2026-03-05T12:44:20.602Z"
       },
       {
-        "id": "3",
+        "id": 3,
         "title": "Redis 캐시 및 Pub/Sub 구성",
         "description": "Redis 키 패턴 정의, TTL 설정, Pub/Sub 채널 구성, Rate Limiting 토큰 버킷 알고리즘의 구현",
         "details": "Redis 키 패턴:\n- auth:refresh:{user_id}:{client_id} — JWT refresh token 저장\n- rate:{ip} / rate:{user_id} — Rate limiting 토큰 버킷\n- ticker:{exchange}:{market} — 실시간 시세 Pub/Sub\n- notifications:unread_count:{user_id} — 미읽 알림 수 캐시\n- indicators:{exchange}:{market}:{timeframe} — 기술적 지표 스냅샷 (TTL 60~600s)\n- regime:{exchange}:{market} — 장세 분석 결과 (TTL 300s)\n- ai_decision:{user_id}:{market}:latest — AI 최신 결정 (TTL 300s)\n- candles:{exchange}:{market}:{timeframe}:{count} — 캔들 캐시 (TTL 30s)\n- ai:news_sentiment:{coin} — 뉴스 감성 캐시 (TTL 30분)\n- ai:last_run:{user_id}:{coin} — 마지막 분석 시간 (TTL 10분)\n- ai:signal:{user_id} — AI 실시간 신호 Pub/Sub\n\nRate Limiting: Token Bucket 알고리즘, 거래소별 차등 한도 (Upbit: 초당 10회, 분당 600회)\nPub/Sub: Redis 채널 구독 관리, 메시지 포맷 정의 (JSON)",
@@ -289,10 +289,125 @@
           "1"
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Redis 키 패턴 및 TTL 정책 정의 (code-architect)",
+            "description": "모든 Redis 키에 대한 표준화된 패턴 정의 및 TTL 설정 가이드라인 작성",
+            "dependencies": [],
+            "details": "인증(auth:refresh), 속도 제한(rate), 시세 데이터(ticker), 알림(notifications), 기술적 지표(indicators), 장세 분석(regime), AI 결정(ai_decision), 캔들 데이터(candles), 뉴스 감성(ai:news_sentiment), 마지막 분석 시간(ai:last_run)의 키 패턴을 정의하고 각각의 TTL(30초~10분~300초~600초)을 문서화합니다. Redis 키 명명 규칙(콜론 구분자), 버전 관리 전략을 포함합니다.",
+            "status": "pending",
+            "testStrategy": "Redis CLI를 사용하여 키 패턴별로 SET/GET 명령으로 저장/조회 검증, TTL 설정 확인(PTTL 명령), 키 만료 시간 정확도 테스트(초과 만료 모니터링)"
+          },
+          {
+            "id": 2,
+            "title": "Redis 키 상수 정의 및 헬퍼 함수 구현 (python-backend-expert)",
+            "description": "Redis 키 패턴과 TTL을 Python 상수로 정의하고 키 생성 헬퍼 함수 작성",
+            "dependencies": [
+              1
+            ],
+            "details": "server/app/core/redis_keys.py 파일 생성. 각 키 카테고리(AUTH, RATE, TICKER, NOTIFICATIONS, INDICATORS, REGIME, AI_DECISION, CANDLES, NEWS_SENTIMENT, LAST_RUN, SIGNALS)별로 상수 정의. format_key() 함수를 통한 매개변수 기반 키 생성. get_ttl() 함수로 각 키의 TTL 반환. 기본값으로 사용할 DEFAULT_TTL 정의. Enum 또는 타입힌트를 사용한 강타입화.",
+            "status": "pending",
+            "testStrategy": "pytest로 각 헬퍼 함수의 출력 형식 검증(올바른 키 패턴), TTL 값 일관성 테스트, 누락된 매개변수 처리 테스트"
+          },
+          {
+            "id": 3,
+            "title": "Rate Limiting 토큰 버킷 알고리즘 구현 (python-backend-expert)",
+            "description": "Token Bucket 알고리즘을 이용한 API 레이트 제한 기능 구현",
+            "dependencies": [
+              2
+            ],
+            "details": "server/app/core/rate_limiter.py 파일 생성. RateLimiter 클래스: Redis 저장 키는 rate:{identifier}(IP 또는 user_id). 각 거래소별 차등 한도(Upbit: 초당 10회, 분당 600회) 설정. allow_request() 비동기 메서드로 토큰 소비 여부 판단. refill_tokens() 메서드로 정기적 토큰 재충전. 토큰 버킷 상태(남은 토큰 수, 마지막 갱신 시간)를 Redis 해시로 저장. 토큰 소비 원자성 보장(Lua 스크립트 또는 watch/multi/exec 사용).",
+            "status": "pending",
+            "testStrategy": "토큰 소비 검증(허용 요청 카운트), 한도 초과 시 거부 확인(429 응답), 시간 경과 후 토큰 재충전 테스트, 동시성 요청 처리(멀티스레드) 검증"
+          },
+          {
+            "id": 4,
+            "title": "Rate Limiting 미들웨어 및 의존성 주입 통합 (python-backend-expert)",
+            "description": "Rate Limiter를 FastAPI 의존성으로 통합하고 엔드포인트별 제한 미들웨어 작성",
+            "dependencies": [
+              3
+            ],
+            "details": "server/app/core/deps.py에 get_rate_limiter() 의존성 함수 추가. RateLimiter 인스턴스 캐싱 및 재사용. FastAPI 라우트에 @limiter.limit() 데코레이터 패턴 구현 또는 Middleware로 전역 제한 적용. 거래소별 IP 또는 user_id 기반 제한 선택. 제한 초과 시 헤더 정보(Retry-After, X-RateLimit-*) 포함 429 응답. 관리자용 rate limiter 체크/리셋 엔드포인트 추가.",
+            "status": "pending",
+            "testStrategy": "FastAPI 테스트 클라이언트로 여러 요청 시뮬레이션, 한도 초과 시 429 응답 확인, 응답 헤더에 Retry-After 값 검증, 시간 경과 후 다시 요청 허용 확인"
+          },
+          {
+            "id": 5,
+            "title": "Pub/Sub 채널 구조 및 메시지 포맷 정의 (code-architect)",
+            "description": "Redis Pub/Sub 채널 구조와 JSON 메시지 포맷 표준화",
+            "dependencies": [
+              1
+            ],
+            "details": "실시간 시세 채널: ticker:{exchange}:{market}, AI 신호 채널: ai:signal:{user_id}, 알림 채널: notifications:{user_id}, 거래 실행 채널: trading:orders:{user_id}. 각 채널별 메시지 JSON 스키마(구조, 필수 필드, 데이터 타입) 정의. 타임스탬프, 메시지 ID, 발행자 정보 포함. 버전 관리 전략(메시지 버전 필드). 에러 메시지 포맷 정의. API 문서 또는 README에 채널 카탈로그 작성.",
+            "status": "pending",
+            "testStrategy": "각 채널별로 메시지 발행 후 JSON 유효성 검증(json schema), 필수 필드 존재 여부 확인, 타임스탬프 정확도 테스트, 메시지 ID 중복 여부 테스트"
+          },
+          {
+            "id": 6,
+            "title": "Redis Pub/Sub 발행자(Publisher) 클래스 구현 (python-backend-expert)",
+            "description": "Redis Pub/Sub 메시지 발행을 위한 Publisher 클래스 작성",
+            "dependencies": [
+              2,
+              5
+            ],
+            "details": "server/app/core/pubsub.py 파일 생성. RedisPublisher 클래스: publish() 메서드로 JSON 메시지 발행. 채널명 자동 생성 함수(publish_ticker, publish_signal, publish_notification). 발행 실패 시 로깅 및 재시도 로직. 메시지 ID 생성(uuid4 또는 nanoid). 발행 시간 자동 기록. 메시지 검증(JSON 스키마). 메시지 압축 옵션(선택사항, 대용량 데이터용). 성능 모니터링(발행 대기시간).",
+            "status": "pending",
+            "testStrategy": "Redis CLI로 SUBSCRIBE로 메시지 수신 후 올바른 데이터 확인, 발행된 메시지 개수 검증, 발행 실패 케이스(Redis 오프라인) 처리 확인, 메시지 ID 중복 없음 검증"
+          },
+          {
+            "id": 7,
+            "title": "WebSocket을 통한 Pub/Sub 구독자(Subscriber) 구현 (python-backend-expert)",
+            "description": "WebSocket 클라이언트가 Redis Pub/Sub 메시지를 수신할 수 있는 구독자 구현",
+            "dependencies": [
+              5,
+              6
+            ],
+            "details": "server/app/ws/pubsub_handler.py 파일 생성. RedisSubscriber 클래스: subscribe() 메서드로 채널 구독. listen() 메서드로 메시지 대기(asyncio.Queue 또는 스트림). WebSocket 연결별 PubSub 인스턴스 생성(메모리 누수 방지). 구독 취소 시 정리(unsubscribe, aclose). 패턴 기반 구독(psubscribe) 지원 선택. 재연결 로직 및 상태 추적. 메시지 필터링(클라이언트 관심도 기반). 구독 확인 메시지(ack).",
+            "status": "pending",
+            "testStrategy": "WebSocket 테스트 클라이언트로 구독 후 메시지 수신 검증, 다중 채널 동시 구독 테스트, 구독 취소 후 메시지 미수신 확인, Redis 재연결 후 구독 상태 복구 테스트"
+          },
+          {
+            "id": 8,
+            "title": "인증 관련 Redis 캐시 기능 구현 (python-backend-expert)",
+            "description": "JWT refresh token 저장 및 사용자 세션 캐시 구현",
+            "dependencies": [
+              2
+            ],
+            "details": "server/app/services/auth_cache.py 파일 생성. AuthCacheService 클래스: refresh token 저장(key: auth:refresh:{user_id}:{client_id}). 토큰 갱신 시 기존 토큰 무효화. 사용자 로그아웃 시 모든 토큰 삭제. 활성 세션 추적(사용자별 client_id 목록). TTL은 JWT_REFRESH_TOKEN_EXPIRE_DAYS와 일치. get_valid_tokens(), invalidate_token() 메서드. 토큰 유효성 검증 성능 최적화(DB 쿼리 대신 캐시 사용).",
+            "status": "pending",
+            "testStrategy": "토큰 저장/조회 검증, 토큰 만료 후 조회 실패 확인, 사용자 로그아웃 시 모든 토큰 삭제 검증, 동시 다중 클라이언트 세션 관리 테스트"
+          },
+          {
+            "id": 9,
+            "title": "기술적 지표 및 장세 분석 캐시 구현 (python-backend-expert)",
+            "description": "실시간 기술적 지표 및 장세 분석 결과를 Redis에 저장하고 관리",
+            "dependencies": [
+              2
+            ],
+            "details": "server/app/services/indicator_cache.py 파일 생성. IndicatorCacheService 클래스: 기술적 지표(indicators:{exchange}:{market}:{timeframe}) 저장, TTL 60~600초. 장세 분석 결과(regime:{exchange}:{market}) 저장, TTL 300초. AI 최신 결정(ai_decision:{user_id}:{market}:latest) 저장, TTL 300초. 캔들 데이터(candles:{exchange}:{market}:{timeframe}:{count}) 저장, TTL 30초. 각 캐시 항목의 JSON 직렬화/역직렬화. 캐시 무효화 전략(교환 시장 변경 시 관련 캐시 제거). 캐시 히트율 모니터링.",
+            "status": "pending",
+            "testStrategy": "지표 저장/조회 검증, TTL별 만료 시간 정확도 테스트, JSON 직렬화 후 역직렬화 데이터 무결성 확인, 다수 market 동시 저장/조회 성능 테스트"
+          },
+          {
+            "id": 10,
+            "title": "AI 신호 및 알림 캐시 구현 및 통합 테스트 (python-backend-expert)",
+            "description": "AI 신호 발생, 뉴스 감성, 알림 데이터를 Redis 캐시로 관리하고 통합 테스트 작성",
+            "dependencies": [
+              2,
+              6,
+              7,
+              8,
+              9
+            ],
+            "details": "server/app/services/ai_signal_cache.py 파일 생성. AISignalCacheService 클래스: AI 신호(ai:signal:{user_id}, Pub/Sub) 발행. 뉴스 감성(ai:news_sentiment:{coin}, TTL 30분). 마지막 분석 시간(ai:last_run:{user_id}:{coin}, TTL 10분). 미읽 알림 수(notifications:unread_count:{user_id}) 캐시. Pub/Sub로 신호 발행하면서 캐시에도 저장(중복 검증). 알림 조회 최적화. tests/integration/test_redis_cache.py에서 모든 캐시 기능 통합 테스트. Redis 클라이언트, Publisher, Subscriber 모두 협동하는 엔드-투-엔드 시나리오 테스트. 성능 벤치마크(캐시 조회 < 10ms).",
+            "status": "pending",
+            "testStrategy": "캐시 저장/조회 검증, TTL별 만료 시간 정확도, Pub/Sub과 캐시 동기성 테스트, 미읽 알림 수 정합성 검증, 동시 요청 성능(1000+ req/s), Redis 메모리 사용량 모니터링(설정된 maxmemory 이내)"
+          }
+        ]
       },
       {
-        "id": "4",
+        "id": 4,
         "title": "FastAPI 기본 프로젝트 구조 및 미들웨어 구성",
         "description": "FastAPI 앱 초기화, 의존성 주입 설정, 미들웨어(CORS, 요청 로깅, 에러 처리), 헬스체크 엔드포인트",
         "details": "app/main.py:\n- FastAPI 앱 인스턴스 생성\n- CORS 화이트리스트 설정 (localhost, 프로덕션 도메인)\n- 구조화된 로깅 (structlog JSON)\n- Correlation ID 미들웨어 (요청 추적)\n- 글로벌 에러 핸들러 (ValidationError, HTTPException)\n- 헬스체크 GET /health (PostgreSQL, MongoDB, Redis 연결 상태 포함)\n\ncore/deps.py:\n- Database 세션 의존성 (AsyncSession)\n- MongoDB 세션 의존성 (Beanie)\n- 현재 사용자 의존성 (JWT 검증)\n- Rate Limit 의존성\n\napp/core/config.py:\n- 환경별 수 로딩 (pydantic-settings)\n- 데이터베이스 연결 문자열\n- JWT 시크릿, 토큰 만료 설정\n- OpenAI 모델 설정 (환경별 수 OPENAI_MODEL)\n- Redis 연결 설정",
@@ -304,10 +419,125 @@
           "3"
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "FastAPI 앱 인스턴스 및 Lifespan 구성 (project-architect)",
+            "description": "FastAPI 앱 초기화 및 lifespan 컨텍스트 관리자 패턴 구현하여 시작/종료 시 의존성 초기화 및 정리",
+            "dependencies": [],
+            "details": "app/main.py에서 FastAPI() 인스턴스 생성, @asynccontextmanager로 lifespan 정의. 시작 시 PostgreSQL, MongoDB, Redis 초기화, 종료 시 정리. 기존 lifespan 패턴 유지하면서 필요한 초기화 함수 통합",
+            "status": "pending",
+            "testStrategy": "FastAPI 테스트 클라이언트로 앱 시작/종료 시 리소스 정상 초기화 확인, 중복 초기화 방지 검증"
+          },
+          {
+            "id": 2,
+            "title": "CORS 미들웨어 설정 및 환경별 화이트리스트 구성 (code-architect)",
+            "description": "CORSMiddleware 추가 및 환경별 CORS_ORIGINS 설정(localhost, staging, production 도메인) 구현",
+            "dependencies": [
+              1
+            ],
+            "details": "app/core/config.py에 CORS_ORIGINS 환경변수 추가 (쉼표 구분). main.py에서 CORSMiddleware 등록 시 cors_origins_list 속성 사용. allow_credentials=True, allow_methods=[*], allow_headers=[*] 설정. .env.example에 기본값 문서화",
+            "status": "pending",
+            "testStrategy": "pytest에서 OPTIONS preflight 요청 응답 확인, 허용된 도메인 OK, 비허용 도메인 거부 검증"
+          },
+          {
+            "id": 3,
+            "title": "구조화된 로깅 설정 (structlog + JSON) (python-backend-expert)",
+            "description": "structlog 설정으로 개발/프로덕션 환경별 로그 포맷 구분 (ConsoleRenderer vs JSONRenderer) 및 contextvar 통합",
+            "dependencies": [
+              1
+            ],
+            "details": "configure_logging() 함수: structlog.configure()에 processors 설정 (contextvars.merge_contextvars, add_log_level, TimeStamper, 환경별 Renderer). DEBUG=True면 ConsoleRenderer, 아니면 JSONRenderer. LOG_LEVEL 환경변수로 필터링 레벨 제어",
+            "status": "pending",
+            "testStrategy": "DEBUG/PROD 모드에서 로그 출력 형식 확인, contextvar에 저장된 값이 로그에 포함되는지 검증"
+          },
+          {
+            "id": 4,
+            "title": "Correlation ID 미들웨어 구현 (요청 추적) (python-backend-expert)",
+            "description": "요청마다 고유한 Correlation ID 생성/추출 및 contextvar에 저장하여 전체 요청 추적 체인 구성",
+            "dependencies": [
+              3
+            ],
+            "details": "app/core/middleware.py 생성, BaseHTTPMiddleware 상속해 CorrelationIdMiddleware 구현. 헤더 'x-correlation-id' 확인, 없으면 uuid4 생성. contextvars.ContextVar('correlation_id')에 저장. 응답 헤더에도 추가. main.py에 app.add_middleware() 등록",
+            "status": "pending",
+            "testStrategy": "Correlation ID 없는 요청 → uuid 자동생성 확인, 기존 ID 전달 시 보존 검증, 로그에 ID 포함 확인"
+          },
+          {
+            "id": 5,
+            "title": "글로벌 에러 핸들러 구현 (ValidationError, HTTPException, 일반 예외) (python-backend-expert)",
+            "description": "Pydantic ValidationError, FastAPI HTTPException, 일반 Exception 캐치하여 구조화된 에러 응답 반환",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "app/core/exceptions.py에 커스텀 예외 정의 (AppException, ValidationErrorResponse 스키마). main.py에 @app.exception_handler() 등록: ValidationError → 400, HTTPException → pass-through, Exception → 500 (상세는 DEBUG 모드만). Correlation ID 및 타임스탐프 포함",
+            "status": "pending",
+            "testStrategy": "잘못된 request body → 400 ValidationError 응답 검증, 명시적 HTTPException → 해당 상태코드 확인, 예상치 못한 예외 → 500 에러 응답 확인"
+          },
+          {
+            "id": 6,
+            "title": "헬스체크 엔드포인트 구현 (GET /health) (python-backend-expert)",
+            "description": "PostgreSQL, MongoDB, Redis 연결 상태를 병렬로 확인하는 GET /health 엔드포인트 구현",
+            "dependencies": [
+              1
+            ],
+            "details": "app/api/v1/health.py에 기존 health_check() 함수 유지. _check_postgres/mongodb/redis() 함수로 각 DB 연결 확인 (asyncio.gather 병렬 실행). 모든 DB up → status='healthy'/200, 하나라도 down → status='unhealthy'/503. timestamp 포함",
+            "status": "pending",
+            "testStrategy": "모든 DB 정상 → 200 'healthy' 응답 확인, DB 하나 장애 → 503 'unhealthy' 응답 확인, 응답 스키마 검증"
+          },
+          {
+            "id": 7,
+            "title": "의존성 주입 설정 (DbSession, RedisClient 타입 별칭) (code-architect)",
+            "description": "FastAPI Depends 패턴으로 데이터베이스 세션 및 Redis 클라이언트 타입 별칭 정의",
+            "dependencies": [
+              1
+            ],
+            "details": "app/core/deps.py에 기존 DbSession, RedisClient Annotated 타입 별칭 유지. PostgreSQL 세션은 get_db(), Redis는 get_redis() 의존성 주입. 향후 인증 의존성(CurrentUser 등) 주석 코드 활용. 라우터에서 함수 파라미터로 사용 가능하도록 구조화",
+            "status": "pending",
+            "testStrategy": "API 엔드포인트에서 DbSession, RedisClient 의존성 정상 주입 확인, 테스트 클라이언트로 DB 접근 검증"
+          },
+          {
+            "id": 8,
+            "title": "환경 설정 (pydantic-settings) 및 Sentry 통합 (project-architect)",
+            "description": "pydantic-settings로 .env 파일 로드, 환경별 설정 구분 및 Sentry DSN 기반 에러 추적 설정",
+            "dependencies": [],
+            "details": "app/core/config.py Settings 클래스: DATABASE_URL, MONGODB_URL, REDIS_URL, JWT_SECRET/ALGORITHM/EXPIRE, OPENAI_MODEL, CORS_ORIGINS, SENTRY_DSN 환경변수. model_config={env_file:.env}로 로드. main.py에서 settings.SENTRY_DSN 존재 시 sentry_sdk.init() 호출 (FastApiIntegration, 샘플레이트 0.1). .env.example 파일 작성",
+            "status": "pending",
+            "testStrategy": ".env 파일 로드 및 설정값 확인, 환경변수 우선순위 테스트, Sentry 초기화 성공 검증"
+          },
+          {
+            "id": 9,
+            "title": "Prometheus 메트릭 통합 및 /metrics 엔드포인트 (python-backend-expert)",
+            "description": "prometheus-fastapi-instrumentator로 HTTP 요청/응답 메트릭 수집 및 /metrics 엔드포인트 노출",
+            "dependencies": [
+              1
+            ],
+            "details": "app/core/metrics.py에 instrumentator 설정 (기본 메트릭 포함, skip_paths=[/health, /docs]). main.py에서 instrumentator.instrument(app).expose(endpoint=/metrics) 호출. 모든 HTTP 메서드의 레이턴시, 상태코드, 요청 수 추적",
+            "status": "pending",
+            "testStrategy": "GET /metrics 엔드포인트 Prometheus 형식 응답 확인, HTTP 요청 후 메트릭 증가 검증"
+          },
+          {
+            "id": 10,
+            "title": "통합 테스트 및 코드 리뷰 (e2e-test-expert, code-review-expert)",
+            "description": "FastAPI 테스트 클라이언트로 전체 미들웨어 체인 통합 테스트 및 코드 품질 검증 (lint, coverage 80%+)",
+            "dependencies": [
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9
+            ],
+            "details": "tests/integration/test_app_startup.py 작성: lifespan 초기화 확인, 헬스 체크, CORS preflight, 에러 응답, Correlation ID 로그 포함 검증. ruff/black 린트, pytest --cov 커버리지 80% 이상 확인. GitHub Actions workflow에서 자동 실행",
+            "status": "pending",
+            "testStrategy": "전체 통합 테스트 실행 및 커버리지 80% 이상 달성, 린트 에러 없음 확인, CI/CD 파이프라인 자동 검증"
+          }
+        ]
       },
       {
-        "id": "5",
+        "id": 5,
         "title": "JWT 인증 시스템 구현 (회원가입, 로그인, 토큰 갱신)",
         "description": "이메일 기반 회원가입(인증 코드 메일 발송), 로그인, JWT access/refresh 토큰 발급 및 갱신, 인증 미들웨어",
         "details": "엔드포인트:\n- POST /api/v1/auth/register — 회원가입 (email, password, nickname)\n  → 비밀번호 bcrypt(12) 해싱\n  → 인증 코드(6자리) 이메일 발송 (Redis TTL 10분)\n  → user 생성 (email_verified_at: null)\n- POST /api/v1/auth/verify-email — 이메일 인증 (email, code)\n  → 코드 검증 후 email_verified_at 업데이트\n- POST /api/v1/auth/login — 로그인 (email, password)\n  → 비밀번호 검증\n  → JWT access token (30분) + refresh token (14일) 발급\n  → refresh token Redis 저장: auth:refresh:{user_id}:{client_id}\n  → client_id 자동 생성 또는 요청값 사용\n- POST /api/v1/auth/refresh — 토큰 갱신 (refresh_token)\n  → Redis에서 refresh token 검증\n  → 새 access token 발급\n- POST /api/v1/auth/logout — 로그아웃\n  → refresh token Redis에서 삭제\n- GET /api/v1/auth/me — 현재 사용자 정보\n  → JWT 검증 필수\n- PUT /api/v1/auth/me — 프로필 수정 (nickname, language, theme, price_color_style)\n  → JWT 검증 필수\n- DELETE /api/v1/auth/me — 계정 삭제\n  → 30일 유예 기간 후 영구 삭제 예약\n  → user 상태 soft_deleted = True\n\nJWT 미들웨어:\n- Authorization 헤더에서 token 추출\n- Token 서명 검증 (HS256)\n- 만료 시간 확인\n- User 조회 및 `request.user` 주입\n\nEmail 서비스:\n- SMTP 연결 설정\n- 이메일 템플릿 (인증 코드, 비밀번호 재설정)\n- 비동기 이메일 발송 (Celery 또는 백그라운드 태스크)",
@@ -421,7 +651,7 @@
         ]
       },
       {
-        "id": "6",
+        "id": 6,
         "title": "소셜 로그인 구현 (Google/Apple OAuth2)",
         "description": "Google 및 Apple OAuth2 통합, 소셜 계정 연동, 기존 계정과의 병합",
         "details": "엔드포인트:\n- POST /api/v1/auth/social/google (id_token)\n  → Google JWT 검증\n  → provider_id 추출\n  → 기존 social account 확인\n    - 있으면: 로그인 (access/refresh token 발급)\n    - 없으면: 신규 사용자 등록 → social account 생성\n  → email_verified_at 자동 설정 (소셜 로그인은 이미 검증됨)\n- POST /api/v1/auth/social/apple (id_token, user)\n  → Apple JWT 검증\n  → 동일 로직\n\nuser_social_accounts 테이블:\n- user_id (FK)\n- provider (google / apple)\n- provider_id (고유 ID)\n- provider_email\n\nFlow:\n1. 클라이언트가 Google/Apple SDK로 OAuth 인증\n2. id_token 서버로 전송\n3. 서버가 토큰 서명 검증 (Google/Apple 공개키)\n4. 신규/기존 사용자 처리\n5. JWT token 반환\n\nSocial Account 병합:\n- 기존 이메일 사용자 + 소셜 로그인 시도 → 두 계정 병합 (사용자 확인 후)\n- 또는 자동 병합 (provider_email 일치 시)",
@@ -431,10 +661,124 @@
           "5"
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "OAuth2 설정 및 환경변수 구성 (code-architect)",
+            "description": "Google/Apple OAuth2 서드파티 라이브러리 설정 및 환경변수(GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_TEAM_ID 등) 추가",
+            "dependencies": [],
+            "details": "1. config.py에 Google/Apple OAuth2 관련 환경변수 추가 (GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_KEY_ID, APPLE_TEAM_ID, APPLE_BUNDLE_ID)\n2. PyJWT, cryptography 라이브러리 버전 확정\n3. 타사 공개키 캐싱 전략 정의 (예: JWKS 엔드포인트에서 주기적으로 갱신)\n4. 라이브러리 dependency 해결 및 requirements.txt 업데이트",
+            "status": "pending",
+            "testStrategy": "환경변수가 올바르게 로드되는지 테스트, 라이브러리 import 검증"
+          },
+          {
+            "id": 2,
+            "title": "Google/Apple JWT 검증 서비스 구현 (python-backend-expert)",
+            "description": "Google/Apple에서 발급한 id_token을 검증하는 재사용 가능한 서비스 클래스 작성",
+            "dependencies": [
+              1
+            ],
+            "details": "1. app/services/oauth2_verification.py 생성\n2. OAuthVerificationService 클래스 구현:\n   - verify_google_token(id_token: str) → dict (subject, email, email_verified, name, picture)\n   - verify_apple_token(id_token: str, user_input: dict) → dict (subject, email)\n3. Google JWKS 캐싱 (TTL 1시간)\n4. Apple JWT 서명 검증 (private key 사용)\n5. 토큰 만료 시간 확인\n6. ISS, AUD, ALG 클레임 검증\n7. 예외 처리: InvalidTokenError, ExpiredTokenError, SignatureVerificationError",
+            "status": "pending",
+            "testStrategy": "Google/Apple OAuth Playground에서 실제 id_token 생성 후 검증 테스트, 위조된 토큰 거부 확인, 만료 토큰 처리 검증"
+          },
+          {
+            "id": 3,
+            "title": "UserSocialAccount 저장소(Repository) 구현 (python-backend-expert)",
+            "description": "UserSocialAccount 모델에 대한 CRUD 작업을 수행하는 저장소 클래스 작성",
+            "dependencies": [],
+            "details": "1. app/repositories/user_social_account.py 생성\n2. UserSocialAccountRepository 클래스 구현:\n   - find_by_provider_id(provider: str, provider_id: str) → UserSocialAccount | None\n   - find_by_user_id(user_id: UUID) → list[UserSocialAccount]\n   - find_by_provider_email(provider_email: str) → UserSocialAccount | None (선택적)\n   - create(user_id: UUID, provider: str, provider_id: str, provider_email: str) → UserSocialAccount\n   - delete(id: UUID) → bool\n3. 인덱스 활용 최적화 (provider + provider_id는 unique constraint 활용)",
+            "status": "pending",
+            "testStrategy": "단위 테스트: 기존 소셜 계정 조회, 신규 계정 생성, 없는 계정 조회 시 None 반환 검증"
+          },
+          {
+            "id": 4,
+            "title": "User 저장소 확장 및 이메일 기반 조회 (python-backend-expert)",
+            "description": "기존 User 저장소에 이메일 기반 조회 및 소셜 계정 병합 관련 메서드 추가",
+            "dependencies": [],
+            "details": "1. app/repositories/user.py 생성 (또는 기존 파일 확장)\n2. UserRepository 클래스 구현:\n   - find_by_email(email: str) → User | None\n   - find_by_id(id: UUID) → User | None\n   - create(email: str, password_hash: str | None, nickname: str | None) → User\n   - update(user_id: UUID, **kwargs) → User (email_verified_at 포함)\n3. 트랜잭션 처리: 소셜 계정 생성 시 User 생성과 함께 원자성 보장",
+            "status": "pending",
+            "testStrategy": "기존 유저 조회, 신규 유저 생성, 트랜잭션 롤백 검증"
+          },
+          {
+            "id": 5,
+            "title": "소셜 로그인 비즈니스 로직 서비스 구현 (python-backend-expert)",
+            "description": "Google/Apple OAuth2 flow를 처리하는 고수준 비즈니스 로직 서비스",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "1. app/services/social_auth.py 생성\n2. SocialAuthService 클래스 구현:\n   - login_or_register_google(id_token: str) → LoginResponse(user, access_token, refresh_token)\n   - login_or_register_apple(id_token: str, user_input: dict) → LoginResponse\n3. Flow 구현:\n   a. id_token 검증 → provider_id, email 추출\n   b. provider + provider_id로 기존 social account 조회\n   c. 있으면: 관련 User 조회 → 로그인 (토큰 발급)\n   d. 없으면:\n      - provider_email과 일치하는 기존 User 조회 (선택적: 병합 로직)\n      - 없으면: 신규 User 생성, UserSocialAccount 생성\n   e. email_verified_at 자동 설정 (소셜 로그인은 검증됨)\n4. 중복 방지: 동일 provider + provider_id의 중복 로그인 불가",
+            "status": "pending",
+            "testStrategy": "신규 사용자 회원가입, 기존 사용자 로그인, 중복 소셜 계정 거부, 토큰 발급 검증"
+          },
+          {
+            "id": 6,
+            "title": "소셜 로그인 API 엔드포인트 구현 (python-backend-expert)",
+            "description": "POST /api/v1/auth/social/google, POST /api/v1/auth/social/apple 엔드포인트 작성",
+            "dependencies": [
+              5
+            ],
+            "details": "1. app/api/v1/auth.py 라우터 생성\n2. Pydantic 스키마 정의 (app/schemas/auth.py):\n   - SocialLoginRequest(id_token: str, user: dict | None)\n   - LoginResponse(access_token: str, refresh_token: str, user: UserResponse)\n3. 엔드포인트 구현:\n   - POST /social/google: id_token만 필요\n   - POST /social/apple: id_token + user (이름 등 추가정보)\n4. 에러 처리:\n   - 400: 잘못된 토큰\n   - 401: 토큰 검증 실패\n   - 409: 이미 다른 계정과 연결된 소셜 ID (충돌)\n5. 응답: 200 + LoginResponse",
+            "status": "pending",
+            "testStrategy": "각 엔드포인트에 유효한 id_token 전송 및 응답 검증, 잘못된 토큰 거부, 중복 요청 처리"
+          },
+          {
+            "id": 7,
+            "title": "JWT 토큰 발급/갱신 서비스 확장 (python-backend-expert)",
+            "description": "기존 JWT 토큰 발급 로직을 서비스화하여 소셜 로그인에서 재사용 가능하도록 구성",
+            "dependencies": [
+              4
+            ],
+            "details": "1. app/services/auth.py (또는 기존) 확장\n2. TokenService 클래스 구현:\n   - create_access_token(user_id: UUID, expires_delta: int | None) → str\n   - create_refresh_token(user_id: UUID, client_id: str | None, expires_delta: int | None) → str\n   - verify_token(token: str) → TokenPayload\n   - refresh_access_token(refresh_token: str) → str\n3. Redis 캐싱 활용:\n   - refresh token을 auth:refresh:{user_id}:{client_id}에 저장\n   - TTL: JWT_REFRESH_TOKEN_EXPIRE_DAYS\n4. 토큰 클레임: sub (user_id), type (access/refresh), exp, iat",
+            "status": "pending",
+            "testStrategy": "토큰 생성 및 검증, 만료 토큰 거부, 리프레시 토큰 갱신, Redis 저장 확인"
+          },
+          {
+            "id": 8,
+            "title": "소셜 계정 병합 로직 (선택) (python-backend-expert)",
+            "description": "동일 이메일로 기존 계정과 소셜 계정이 있을 때 병합하는 로직 (선택 사항)",
+            "dependencies": [
+              2,
+              3,
+              4,
+              5
+            ],
+            "details": "1. SocialAuthService에 merge_accounts 메서드 추가 (선택사항)\n2. Flow:\n   a. provider_email로 기존 social account 확인\n   b. 있으면 관련 User 조회\n   c. 확인 절차: 사용자에게 병합 여부 확인 또는 자동 병합\n   d. 자동 병합 시: 신규 social account 생성, 기존 user_id 사용\n3. 중복 방지: 한 user가 동일 provider의 여러 계정 연결 불가\n4. 선택사항: 나중에 추가 구현 가능",
+            "status": "pending",
+            "testStrategy": "동일 이메일 소셜 계정 병합, 중복 계정 거부, 병합 후 로그인 검증"
+          },
+          {
+            "id": 9,
+            "title": "E2E 테스트 작성 (e2e-test-expert)",
+            "description": "Google/Apple OAuth2 로그인 전체 flow에 대한 통합 테스트",
+            "dependencies": [
+              2,
+              6,
+              7
+            ],
+            "details": "1. tests/integration/test_social_auth.py 생성\n2. 테스트 케이스:\n   a. test_google_login_new_user: Google id_token으로 신규 사용자 가입\n   b. test_google_login_existing_user: 기존 social account로 로그인\n   c. test_apple_login_new_user: Apple id_token으로 신규 사용자 가입\n   d. test_apple_login_existing_user: 기존 social account로 로그인\n   e. test_invalid_google_token: 위조된 Google token 거부\n   f. test_invalid_apple_token: 위조된 Apple token 거부\n   g. test_duplicate_social_login_prevention: 동일 provider_id 중복 방지\n   h. test_email_verified_auto_set: 소셜 로그인 시 email_verified_at 자동 설정\n3. Mock JWT 토큰 생성 유틸리티 작성\n4. Fixture: test_user, test_social_account",
+            "status": "pending",
+            "testStrategy": "pytest로 모든 테스트 실행, 커버리지 80% 이상, 주요 분기점 검증"
+          },
+          {
+            "id": 10,
+            "title": "코드 리뷰 및 보안 검증 (code-review-expert)",
+            "description": "구현된 소셜 로그인 코드의 보안성, 성능, 스타일 검증 및 개선",
+            "dependencies": [
+              6,
+              8,
+              9
+            ],
+            "details": "1. 보안 검증:\n   - JWT 토큰 서명 검증 (Google/Apple 공개키 사용)\n   - Token 만료시간 확인 필수\n   - 토큰 재사용 방지 (nonce 확인, 일회성 검증)\n   - Rate limiting 검토 (과도한 로그인 시도 차단)\n   - SQL Injection 방지 (SQLAlchemy 파라미터화 쿼리)\n   - XSS 방지 (응답 데이터 sanitization)\n2. 성능 검증:\n   - Google JWKS 캐시 적중률 확인\n   - 데이터베이스 쿼리 최적화\n   - N+1 쿼리 문제 확인\n3. 코드 스타일:\n   - ruff lint 검증\n   - mypy 타입 검사\n   - 함수/클래스 문서화\n4. 예외 처리:\n   - 모든 에러 경로 검증\n   - 사용자 친화적 에러 메시지\n5. 개선 사항 적용 및 최종 테스트",
+            "status": "pending",
+            "testStrategy": "Lint, 타입 체크, 보안 스캔 도구 실행, 수동 코드 리뷰, 성능 프로파일링"
+          }
+        ]
       },
       {
-        "id": "7",
+        "id": 7,
         "title": "2FA (TOTP) 및 세션 관리 시스템 구현 (M9)",
         "description": "Time-based One-Time Password (TOTP) 설정, 로그인/주문/API키 변경 시 2차 인증, 활성 세션(디바이스) 관리, 새 디바이스 로그인 알림",
         "details": "2FA 엔드포인트:\n- POST /api/v1/auth/2fa/setup\n  → TOTP 비밀키 생성 (pyotp.random_base32())\n  → QR 코드 생성 (qrcode 라이브러리)\n  → QR 이미지 + 백업 코드(8개) 반환\n  → user.totp_secret 미리 저장 (is_2fa_enabled: False)\n- POST /api/v1/auth/2fa/verify\n  → 사용자가 Google Authenticator에서 생성한 6자리 코드 제출\n  → pyotp.TOTP(user.totp_secret).verify(code) 검증\n  → user.is_2fa_enabled = True\n- POST /api/v1/auth/2fa/disable\n  → 현재 2FA 코드 재검증\n  → user.is_2fa_enabled = False, totp_secret NULL\n\n세션 관리:\n- clients 테이블: user_id, device_type(ios/android/web/windows/macos), device_name, fcm_token, last_login, user_agent, ip_address\n- POST /api/v1/auth/login 시 client 자동 생성/갱신\n- GET /api/v1/auth/sessions — 활성 세션 목록 (디바이스명, 마지막 로그인)\n- DELETE /api/v1/auth/sessions/{client_id} — 개별 세션 강제 종료 (해당 client의 refresh token Redis 삭제)\n- POST /api/v1/auth/logout-all — 모든 세션 종료\n\n새 디바이스 알림:\n- 로그인 시 device_fingerprint(user_agent + ip) 확인\n- 신규 디바이스면 audit_logs 기록 + FCM 푸시 알림 \"새 기기에서 로그인했습니다\"\n\nAudit Logging:\n- MongoDB audit_logs 컬렉션: action(login/logout/api_key_change/password_change/2fa_toggle), user_id, ip_address, user_agent, timestamp",
@@ -444,10 +788,122 @@
           "5"
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Client 모델 확장 및 마이그레이션 (code-architect)",
+            "description": "기존 Client 테이블에 device_name, user_agent, ip_address, device_fingerprint 컬럼 추가 및 Alembic 마이그레이션 작성",
+            "dependencies": [],
+            "details": "server/app/models/user.py의 Client 모델에 device_name(String), user_agent(String 500), ip_address(String), device_fingerprint(String)를 추가합니다. 새로운 마이그레이션 파일을 server/alembic/versions/에 작성하여 ALTER TABLE 명령어로 컬럼을 추가합니다. device_fingerprint는 (user_agent + ip_address)의 해시값으로 사용됩니다. 관련 인덱스도 생성합니다.",
+            "status": "pending",
+            "testStrategy": "Alembic 마이그레이션 실행 후 테이블 스키마 검증, 컬럼 조회 및 기본값 확인"
+          },
+          {
+            "id": 2,
+            "title": "TOTP 암호화/복호화 유틸리티 함수 (python-backend-expert)",
+            "description": "pyotp 라이브러리를 사용하여 TOTP 시크릿 생성, 암호화(AES-256-GCM), 복호화 및 코드 검증 함수 구현",
+            "dependencies": [],
+            "details": "server/app/core/crypto.py 파일을 새로 생성하여 totp_secret_encrypted(bytes)를 처리합니다. 함수: generate_totp_secret() → str (base32), encrypt_totp_secret(secret: str) → bytes (AES-256-GCM), decrypt_totp_secret(encrypted: bytes) → str, verify_totp_code(secret: str, code: str) → bool. User 모델의 totp_secret_encrypted 컬럼과 연동됩니다.",
+            "status": "pending",
+            "testStrategy": "단위 테스트: TOTP 비밀키 생성 및 암호화/복호화 검증, pyotp 라이브러리로 생성한 코드 검증 테스트"
+          },
+          {
+            "id": 3,
+            "title": "QR 코드 생성 및 백업 코드 생성 함수 (python-backend-expert)",
+            "description": "qrcode 라이브러리를 사용하여 TOTP QR 코드 생성 및 8개의 백업 코드 생성 함수 구현",
+            "dependencies": [],
+            "details": "server/app/core/crypto.py에 generate_2fa_qr_code(email: str, totp_secret: str) → bytes (PNG 이미지), generate_backup_codes() → list[str] (8개, 8자리 랜덤 코드) 함수를 추가합니다. QR 코드는 otpauth:// URI로 생성되며, 반환값은 PNG 바이너리입니다. 백업 코드는 base32 인코딩된 난수입니다.",
+            "status": "pending",
+            "testStrategy": "QR 코드 생성 후 바이너리 유효성 검증, 백업 코드 포맷 및 개수 확인, 중복 없음 검증"
+          },
+          {
+            "id": 4,
+            "title": "User 레포지토리 - 2FA 관련 메서드 (python-backend-expert)",
+            "description": "User 모델 조회, TOTP 비밀키 업데이트, 2FA 활성화/비활성화 메서드를 담당하는 UserRepository 구현",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "server/app/repositories/user_repository.py 파일 생성. 메서드: get_user_by_email(email: str) → User, get_user_by_id(user_id: UUID) → User, update_totp_secret(user_id: UUID, totp_secret_encrypted: bytes) → User, enable_2fa(user_id: UUID) → bool, disable_2fa(user_id: UUID) → bool. AsyncSession을 사용한 비동기 DB 작업입니다.",
+            "status": "pending",
+            "testStrategy": "단위 테스트: 데이터베이스 조회 및 업데이트 테스트, 2FA 플래그 상태 변경 검증"
+          },
+          {
+            "id": 5,
+            "title": "Device Fingerprint 감지 및 신규 디바이스 판별 로직 (python-backend-expert)",
+            "description": "로그인 시 device_fingerprint(user_agent + ip_address 해시)를 계산하여 신규 디바이스 여부 판별 로직 구현",
+            "dependencies": [
+              4
+            ],
+            "details": "server/app/services/auth_service.py에 is_new_device(user_id: UUID, ip_address: str, user_agent: str) → bool 메서드를 추가합니다. 기존 Client 테이블에서 사용자의 모든 device_fingerprint를 조회하여 현재 fingerprint와 비교합니다. 신규 디바이스면 True를 반환합니다. Device fingerprint는 hashlib.sha256(f\"{user_agent}{ip_address}\".encode()).hexdigest()로 계산합니다.",
+            "status": "pending",
+            "testStrategy": "동일 디바이스는 False, 새로운 디바이스는 True 반환 검증, 여러 디바이스 관리 테스트"
+          },
+          {
+            "id": 6,
+            "title": "2FA Setup/Verify/Disable 엔드포인트 구현 (python-backend-expert)",
+            "description": "POST /api/v1/auth/2fa/setup, /verify, /disable 엔드포인트 구현 및 비즈니스 로직 처리",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "server/app/api/v1/auth.py 파일 생성. 엔드포인트 3개: POST /2fa/setup (암호화된 TOTP 시크릿 저장, is_2fa_enabled=False, QR코드+백업코드 반환), POST /2fa/verify (6자리 코드 검증, is_2fa_enabled=True 설정), POST /2fa/disable (현재 2FA 코드 재검증, is_2fa_enabled=False, totp_secret 삭제). Request/Response 스키마는 server/app/schemas/auth.py에 정의합니다.",
+            "status": "pending",
+            "testStrategy": "Pytest + httpx: 2FA 설정 → 검증 → 비활성화 완전 흐름 테스트, 잘못된 코드 거부 검증, 중복 활성화 방지 검증"
+          },
+          {
+            "id": 7,
+            "title": "세션(Client) 관리 엔드포인트 구현 (python-backend-expert)",
+            "description": "GET /api/v1/auth/sessions, DELETE /api/v1/auth/sessions/{client_id}, POST /api/v1/auth/logout-all 엔드포인트 구현",
+            "dependencies": [
+              1,
+              5
+            ],
+            "details": "server/app/api/v1/auth.py에 세션 관리 엔드포인트 3개를 추가합니다. GET /sessions: 사용자의 모든 Client 조회 (device_name, device_type, last_active_at 포함). DELETE /sessions/{client_id}: 해당 client 삭제 및 Redis에서 refresh_token 삭제 (auth:refresh:{user_id}:{client_id}). POST /logout-all: 사용자의 모든 Client 삭제 및 Redis 토큰 전체 삭제. Client 레포지토리 메서드 추가 필요: get_clients_by_user_id, delete_client, delete_all_clients_by_user_id.",
+            "status": "pending",
+            "testStrategy": "Pytest + httpx: 여러 디바이스 세션 조회, 개별 세션 강제 종료, 전체 세션 종료 검증, Redis 토큰 삭제 확인"
+          },
+          {
+            "id": 8,
+            "title": "로그인 시 Client 생성/갱신 및 2FA 검증 로직 (python-backend-expert)",
+            "description": "POST /api/v1/auth/login에서 Client 자동 생성/갱신 및 신규 디바이스 감지 시 2FA 요구 로직 추가",
+            "dependencies": [
+              5,
+              6,
+              7
+            ],
+            "details": "server/app/api/v1/auth.py의 login 엔드포인트에서 기존 로직을 확장합니다. Client 생성: device_type, device_name, user_agent, ip_address, device_fingerprint를 저장합니다. 신규 디바이스 감지 시 response에 requires_2fa: true를 추가하고 임시 토큰(TTL 5분)을 발급합니다. 사용자가 2FA 코드를 제출하면 최종 access/refresh 토큰을 발급합니다. FCM 푸시 알림도 준비합니다 (실제 발송은 별도 타스크).",
+            "status": "pending",
+            "testStrategy": "Pytest: 기존 디바이스 로그인 → 즉시 토큰 발급, 신규 디바이스 로그인 → 2FA 요구 → 코드 제출 → 토큰 발급 플로우"
+          },
+          {
+            "id": 9,
+            "title": "Audit Logging 미들웨어 및 로그 기록 함수 (python-backend-expert)",
+            "description": "AuditLog MongoDB 컬렉션에 login/logout/api_key_change/password_change/2fa_toggle 이벤트를 기록하는 함수 및 미들웨어 구현",
+            "dependencies": [],
+            "details": "server/app/services/audit_service.py 파일 생성. 함수: log_auth_event(user_id: UUID, action: str, ip_address: str, user_agent: str, details: dict = None) → AuditLog. MongoDB Beanie ORM을 사용하여 비동기 저장합니다. 미들웨어는 server/app/core/middleware.py에서 모든 요청의 ip_address와 user_agent를 추출하여 Request 의존성에 주입합니다. 2FA 관련 로그에는 'enable' 또는 'disable' 값을 details에 저장합니다.",
+            "status": "pending",
+            "testStrategy": "MongoDB 저장 확인, action 타입별 로그 기록 검증, 정보 빠짐 없음 확인, 비동기 저장 성공"
+          },
+          {
+            "id": 10,
+            "title": "2FA 및 세션 관리 E2E 통합 테스트 (e2e-test-expert)",
+            "description": "2FA 설정/검증 → 신규 디바이스 로그인 → 세션 조회/강제 종료 → Audit Log 확인 전체 시나리오 E2E 테스트 작성",
+            "dependencies": [
+              6,
+              7,
+              8,
+              9
+            ],
+            "details": "server/tests/integration/test_2fa_session_management.py 파일 생성. 시나리오 1: 신규 사용자 등록 → 2FA 설정 → 검증 → 활성화. 시나리오 2: 기존 디바이스 로그인 (토큰 즉시 발급) → 새 IP/User-Agent 로그인 (2FA 요구) → 코드 입력 → 토큰 발급. 시나리오 3: 세션 목록 조회 → 개별 세션 강제 종료 → 재로그인. 시나리오 4: Audit Log 조회 및 모든 액션 기록 확인. Pytest fixtures 사용 (conftest.py 확장).",
+            "status": "pending",
+            "testStrategy": "전체 흐름 통과 검증, 각 엔드포인트 응답 확인, DB/Redis 상태 검증, Audit Log 완전성 확인, 에러 케이스 처리 검증"
+          }
+        ]
       },
       {
-        "id": "8",
+        "id": 8,
         "title": "거래소 추상화 계층 (Exchange Abstraction Layer) 설계 및 구현",
         "description": "모든 거래소를 공통 인터페이스(ABC)로 추상화, Provider Factory로 런타임 선택, Circuit Breaker 패턴 적용, 거래소별 Rate Limiting",
         "details": "Base Classes (providers/base.py):\n- ExchangeRestProvider (ABC):\n  * get_ticker(market) → Ticker\n  * get_orderbook(market) → OrderBook\n  * get_candles(market, interval, count) → list[Candle]\n  * place_order(order: Order) → OrderResult\n  * cancel_order(order_id) → bool\n  * get_balance() → list[Balance]\n  * get_trading_fee(market) → TradingFee (maker/taker 수수료율)\n  * verify_api_key() → ApiKeyInfo (권한 범위 확인: trade/withdraw/all)\n  \n- ExchangeStreamProvider (ABC):\n  * subscribe_ticker(markets, callback) → None\n  * subscribe_orderbook(markets, callback) → None\n  * unsubscribe() → None\n\n- ExchangeProvider(ExchangeRestProvider, ExchangeStreamProvider) — 통합\n\nFactory (providers/factory.py):\n- ExchangeProviderFactory.create(exchange_type: str, api_key: str, api_secret: str) → ExchangeProvider\n- 런타임에 적절한 Provider 클래스 인스턴스 반환\n\nCircuit Breaker Pattern:\n- 상태: Closed (정상) → Open (차단) → Half-Open (복구 시도)\n- 트리거: 연속 5회 실패 OR 30초 내 실패율 50% 초과\n- Open 상태: 즉시 실패 반환 + 사용자 알림 \"거래소 연결 불안정\"\n- Half-Open: 30초 후 1건 테스트 요청\n- 거래소별 독립 Circuit Breaker\n\nRate Limiting (Token Bucket):\n- Upbit: 초당 10회(주문), 분당 600회(조회)\n- CoinOne: 초당 10회\n- Coinbase: 분당 10,000회\n- Binance: 분당 1,200회 (Weight 기반)\n\nAPI 키 권한 검증:\n- verify_api_key() 호출 시 권한 범위 확인\n- 출금 권한 감지 → 경고 표시\n- 조회 전용 키 → 주문 비활성화 안내\n- 사용자 확인 후 등록 허용",
@@ -584,7 +1040,7 @@
         ]
       },
       {
-        "id": "9",
+        "id": 9,
         "title": "Upbit 거래소 프로바이더 구현",
         "description": "Upbit REST API 및 WebSocket 스트리밍 구현, JWT 인증, 실시간 시세/호가 수신",
         "details": "Upbit API 참고: https://docs.upbit.com/kr/reference/api-overview\n\nREST 메서드 구현 (providers/upbit.py):\n- get_ticker(market='KRW-BTC') → {symbol, price, bid, ask, volume, ...}\n- get_orderbook(market) → {bids: [], asks: []}\n- get_candles(market, interval='5m', count=200) → [{open, high, low, close, volume, timestamp}]\n- place_order(symbol, side, quantity, price=None) → 주문 생성\n  * order_method: market/limit 지원\n  * 거래소 응답: order_id, status(wait/done/cancel), ...)\n- cancel_order(order_id) → bool\n- get_balance() → [{coin, balance, locked}]\n- get_trading_fee(market) → {maker, taker}\n- verify_api_key() → {권한 범위 확인, 출금_권한_여부}\n\nWebSocket 스트리밍:\n- subscribe_ticker(markets=['KRW-BTC'], callback) → 실시간 체결가\n- subscribe_orderbook(markets, callback) → 호가 변화\n- 연결 상태 관리 (자동 재연결)\n\nJWT 인증:\n- api_key + api_secret으로 JWT 생성 (HS256)\n- 요청 헤더: Authorization: Bearer {jwt}\n- 서명에 요청 쿼리/바디 포함\n\n에러 처리:\n- Upbit 에러 코드 해석\n- Circuit Breaker 통합\n- 재시도 로직 (Exponential Backoff)",
@@ -594,10 +1050,137 @@
           "8"
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Upbit REST Provider 인터페이스 정의 (python-backend-expert)",
+            "description": "ExchangeRestProvider 추상 클래스를 상속하여 Upbit REST API 프로바이더의 기본 클래스 구조를 정의합니다. Upbit API 문서를 참고하여 메서드 시그니처를 설계하고 프로토콜을 확립합니다.",
+            "dependencies": [],
+            "details": "providers/upbit.py 파일 생성, UpbitRestProvider 클래스 정의, get_ticker, get_orderbook, get_candles, place_order, cancel_order, get_balance, get_trading_fee, verify_api_key 메서드 선언 및 입출력 타입 정의, Upbit API 엔드포인트 상수 정의",
+            "status": "pending",
+            "testStrategy": "구조 검증: 프로바이더 클래스 임포트 및 메서드 존재 확인"
+          },
+          {
+            "id": 2,
+            "title": "JWT 인증 시스템 구현 (exchange-api-expert)",
+            "description": "Upbit API의 JWT 기반 인증 메커니즘을 구현합니다. api_key와 api_secret으로부터 HS256 서명된 JWT 토큰을 생성하고, 요청 헤더에 올바르게 설정합니다.",
+            "dependencies": [
+              1
+            ],
+            "details": "PyJWT 라이브러리 활용, _generate_jwt_token() 메서드 구현, 요청 쿼리/바디 포함하여 서명, Authorization 헤더 포맷 설정 (Bearer {jwt}), 토큰 만료 시간(기본 10초) 설정, 에러 시 예외 처리",
+            "status": "pending",
+            "testStrategy": "JWT 토큰 생성 및 검증: pyotp/jwt 라이브러리로 서명 확인, 토큰 만료 테스트, 잘못된 secret으로 검증 실패 확인"
+          },
+          {
+            "id": 3,
+            "title": "시세 조회 메서드 구현 (exchange-api-expert)",
+            "description": "get_ticker() 메서드를 구현하여 Upbit의 실시간 시세(현재가, 매도/매수호가, 거래량 등)를 조회합니다. 표준화된 Ticker 스키마로 응답을 변환합니다.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Upbit GET /v1/ticker API 호출, 요청 파라미터: markets (KRW-BTC 형식), 응답 필드 매핑 (trade_price→price, bid_ask_spread→spread), timestamp 정규화 (밀리초→초 단위), 여러 마켓 동시 조회 지원, HTTP 에러 처리",
+            "status": "pending",
+            "testStrategy": "Upbit Sandbox/Mock API로 시세 데이터 조회 검증, 응답 필드 매핑 확인, 잘못된 마켓 코드 입력 시 에러 처리 검증"
+          },
+          {
+            "id": 4,
+            "title": "호가 조회 및 캔들 데이터 조회 (exchange-api-expert)",
+            "description": "get_orderbook()과 get_candles() 메서드를 구현하여 호가 데이터와 OHLCV 캔들 데이터를 조회합니다.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Upbit GET /v1/orderbook API: bids/asks 배열 반환, 정렬 순서 확인 (호가 높은 순); GET /v1/candles API: interval(1m/5m/15m/30m/1h/4h/1d 등), count(최대 200), 응답 필드: open, high, low, close, volume, candle_date_time_utc, 타임스탬프 정규화",
+            "status": "pending",
+            "testStrategy": "Orderbook 깊이 검증 (상위 N개 항목 확인), 캔들 데이터 OHLC 유효성 검사 (high>=max(open,close,low)), 캔들 시간순 정렬 확인"
+          },
+          {
+            "id": 5,
+            "title": "주문 생성 및 취소 메서드 구현 (python-backend-expert)",
+            "description": "place_order() 메서드로 시장가/지정가 주문을 생성하고, cancel_order()로 미체결 주문을 취소합니다. 주문 상태(wait/done/cancel)를 추적합니다.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Upbit POST /v1/orders API: side (buy/sell), ord_type (limit/price), volume, price(지정가인 경우), 응답: uuid(order_id), state, created_at, trades_count; DELETE /v1/orders/{uuid}: 취소 요청, 재시도 로직 구현 (연속 취소 시도 방지), OrderStatus enum 정의 (PENDING/EXECUTED/CANCELLED/FAILED)",
+            "status": "pending",
+            "testStrategy": "주문 생성 테스트: 시장가/지정가 주문 구분, 주문 응답 필드 검증; 취소 테스트: 미체결 주문 취소 성공, 이미 취소된 주문 재취소 시 에러 처리"
+          },
+          {
+            "id": 6,
+            "title": "잔고 및 수수료 조회 메서드 (python-backend-expert)",
+            "description": "get_balance()로 보유 자산(코인별 잔고/동결액) 정보를 조회하고, get_trading_fee()로 거래 수수료율(maker/taker)을 조회합니다.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Upbit GET /v1/accounts API: currency, balance, locked 필드, 통화 코드 정규화 (KRW/BTC 등); GET /v1/trading-fees?market={market} API: maker/taker 수수료율, 다중 마켓 요청 시 배열 반환 처리, 잔고 0인 항목 필터링 옵션",
+            "status": "pending",
+            "testStrategy": "계정 잔고 조회 및 필드 검증, 수수료율 조회 (0-1 범위 확인), 지원되지 않는 통화 입력 시 404 처리"
+          },
+          {
+            "id": 7,
+            "title": "API 키 권한 검증 메서드 (exchange-api-expert)",
+            "description": "verify_api_key() 메서드로 API 키의 권한 범위를 검증합니다. 조회 전용/거래/출금 권한을 구분하여 사용자에게 경고를 표시합니다.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Upbit GET /v1/api_keys API: 현재 API 키의 권한 정보 조회 (candle_all, trade, withdraw_address_coin 등), 권한 배열 반석, 출금 권한 감지 시 경고 플래그 설정, ApiKeyInfo 응답 스키마: permissions, has_withdrawal_permission, warning_message",
+            "status": "pending",
+            "testStrategy": "정상 API 키 검증 (권한 목록 확인), 제한된 API 키 검증 (조회 전용), 출금 권한 감지 검증, 유효하지 않은 API 키로 401 에러 확인"
+          },
+          {
+            "id": 8,
+            "title": "WebSocket 스트리밍 프로바이더 구현 (exchange-api-expert)",
+            "description": "ExchangeStreamProvider를 상속하여 Upbit WebSocket 연결을 관리하고, subscribe_ticker/subscribe_orderbook 메서드로 실시간 데이터 구독을 구현합니다.",
+            "dependencies": [
+              1
+            ],
+            "details": "Upbit WebSocket 엔드포인트: wss://api.upbit.com/websocket/v1; 연결 유지 로직 (ping/pong 헬스체크); subscribe_ticker: {type: ticker, codes: [KRW-BTC]}, subscribe_orderbook: {type: orderbook, codes: [KRW-BTC]}; 메시지 파싱 및 콜백 실행, 연결 해제 시 자동 재연결 (지수 백오프), 최대 15개 마켓 구독 제한 준수",
+            "status": "pending",
+            "testStrategy": "WebSocket 연결 성공 및 메시지 수신 확인, 티커/호가 메시지 파싱 검증, 연결 끊김 시 자동 재연결 확인, 구독 한계 초과 시 에러 처리"
+          },
+          {
+            "id": 9,
+            "title": "Rate Limiting 및 Circuit Breaker 통합 (python-backend-expert)",
+            "description": "Redis Token Bucket 기반 Rate Limiter를 Upbit REST 요청에 적용하고, Circuit Breaker 패턴으로 거래소 장애 시 요청을 차단합니다.",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
+            "details": "Rate Limiter: 초당 10회(주문), 분당 600회(조회) 제한, Redis INCR/EXPIRE 활용; Circuit Breaker: 상태(Closed/Open/Half-Open), 실패율 모니터링(5회 연속 실패 또는 30초 내 50% 초과), Open 상태에서 30초 후 Half-Open 전환, 테스트 요청 성공 시 Closed 복구, 거래소별 독립 Circuit Breaker 운영, 제한 초과 시 429 상태코드 반환",
+            "status": "pending",
+            "testStrategy": "Rate Limiter: 한도 초과 시 429 응답 확인, Token Bucket 재생성 시간 검증; Circuit Breaker: 연속 실패 시 상태 전이 확인, Half-Open에서 테스트 요청 성공 시 복구 검증, 상태 모니터링 로그 확인"
+          },
+          {
+            "id": 10,
+            "title": "에러 처리 및 재시도 로직 (python-backend-expert)",
+            "description": "Upbit API 에러 코드를 해석하고, 일시적 오류에 대해 지수 백오프 재시도 로직을 구현합니다. 모든 서브태스크의 에러 처리를 통합합니다.",
+            "dependencies": [
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9
+            ],
+            "details": "Upbit 에러 코드 매핑 (400: 잘못된 요청, 401: 인증 실패, 429: 속도 제한, 500: 서버 에러 등); 재시도 전략: 429/5xx는 재시도, 400/401은 즉시 실패; 백오프 계산: 초기 지연 1초, 최대 지연 60초, 곱셈 계수 2; 최대 재시도 횟수 3회; 로깅: 각 재시도 시도 및 최종 결과, UptimeException 정의",
+            "status": "pending",
+            "testStrategy": "각 HTTP 상태 코드별 에러 처리 검증, 재시도 로직: 500 에러 발생 시 자동 재시도 확인, 최대 재시도 횟수 초과 후 예외 발생, 지수 백오프 시간 검증, 에러 로그 기록 확인"
+          }
+        ]
       },
       {
-        "id": "10",
+        "id": 10,
         "title": "CoinOne 거래소 프로바이더 구현",
         "description": "CoinOne REST API 및 WebSocket 구현, HMAC-SHA512 인증, 실시간 시세 지원",
         "details": "CoinOne API 참고: https://docs.coinone.co.kr/reference/range-unit\n\nREST 메서드 구현 (providers/coinone.py):\n- ExchangeRestProvider 인터페이스 구현\n- get_ticker(market) → CoinOne 시세 포맷 변환\n- get_orderbook(market) → 호가창 데이터\n- get_candles(market, interval, count) → 캔들 데이터\n- place_order(...) → 주문 생성\n- cancel_order(order_id) → 취소\n- get_balance() → 잔고 조회\n- get_trading_fee(market) → 수수료율\n- verify_api_key() → API 권한 검증\n\nHMAC-SHA512 인증:\n- 요청 시 api_key + api_secret으로 서명\n- 요청 헤더: X-COINONE-PAYLOAD, X-COINONE-SIGNATURE\n\nWebSocket (선택적):\n- subscribe_ticker(markets, callback) → 실시간 시세\n- CoinOne WebSocket 연결 유지\n\nRate Limiting:\n- 초당 10회 한도 준수\n- Token Bucket 적용\n\nError Handling:\n- CoinOne 에러 코드 해석\n- Circuit Breaker 통합",
@@ -607,10 +1190,120 @@
           "8"
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "CoinOne REST Provider 기본 구조 및 인증 모듈 구현 (exchange-api-expert)",
+            "description": "CoinOne REST API 클라이언트 기본 구조 설계 및 HMAC-SHA512 인증 메커니즘 구현",
+            "dependencies": [],
+            "details": "providers/coinone.py 파일 생성 및 CoinOneRestProvider 클래스 구현: (1) HMAC-SHA512 서명 생성 로직 (api_key + api_secret으로 요청 서명), (2) 요청 헤더 설정 (X-COINONE-PAYLOAD, X-COINONE-SIGNATURE), (3) 기본 HTTP 클라이언트 초기화 (httpx 또는 requests), (4) API 기본 URL 및 엔드포인트 설정, (5) 에러 응답 처리기 기본 구조. CoinOne API 문서 참고: https://docs.coinone.co.kr/reference/range-unit",
+            "status": "pending",
+            "testStrategy": "단위 테스트로 HMAC-SHA512 서명 검증 (알려진 샘플 데이터로 테스트), 요청 헤더 형식 확인, 기본 클라이언트 초기화 검증"
+          },
+          {
+            "id": 2,
+            "title": "get_ticker 및 get_orderbook 메서드 구현 (exchange-api-expert)",
+            "description": "CoinOne 시세 및 호가창 데이터 조회 메서드 구현 및 데이터 포맷 변환",
+            "dependencies": [
+              1
+            ],
+            "details": "ExchangeRestProvider 인터페이스 구현: (1) get_ticker(market: str) → Ticker: CoinOne API /ticker 엔드포인트 호출, 응답 데이터를 표준 Ticker 포맷으로 변환 (exchange_code, symbol, price, high, low, volume, bid, ask), (2) get_orderbook(market: str) → OrderBook: /orderbook 엔드포인트 호출, 호가 데이터(bids, asks)를 표준 OrderBook 포맷으로 변환. 데이터 포맷 매핑: CoinOne 응답 형식 → 애플리케이션 스키마",
+            "status": "pending",
+            "testStrategy": "CoinOne Sandbox API 또는 모의 응답으로 각 메서드 테스트, 데이터 포맷 변환 검증 (원본 API 응답 vs 변환된 출력), 예외 처리 테스트 (존재하지 않는 마켓, API 오류)"
+          },
+          {
+            "id": 3,
+            "title": "get_candles 메서드 구현 및 캔들 데이터 캐싱 (exchange-api-expert)",
+            "description": "CoinOne 캔들 데이터 조회 및 Redis 캐싱 통합",
+            "dependencies": [
+              1
+            ],
+            "details": "get_candles(market: str, interval: str, count: int) → list[Candle] 메서드 구현: (1) /chart 엔드포인트 호출 (interval: 1m, 5m, 15m, 1h, 1d 등 지원), (2) CoinOne 응답을 표준 Candle 포맷으로 변환 (timestamp, open, high, low, close, volume), (3) Redis 캐싱 활용: 캔들 데이터 캐시 키는 'candles:{exchange}:{market}:{interval}:{count}', TTL 30초. 캐시 미스 시 API 호출, 캐시 히트 시 캐시된 데이터 반환",
+            "status": "pending",
+            "testStrategy": "다양한 interval (1m, 5m, 1h, 1d)에 대해 get_candles 테스트, Redis 캐시 저장/조회 검증, TTL 만료 후 재호출 검증, 캐시 KEY 형식 확인"
+          },
+          {
+            "id": 4,
+            "title": "verify_api_key 및 get_trading_fee 메서드 구현 (exchange-api-expert)",
+            "description": "API 키 권한 검증 및 수수료율 조회 기능 구현",
+            "dependencies": [
+              1
+            ],
+            "details": "두 메서드 구현: (1) verify_api_key() → ApiKeyInfo: /account/status 또는 유사 엔드포인트 호출, API 키의 권한 범위 확인 (trade, withdraw, all), 응답을 ApiKeyInfo 객체로 변환 (권한: permissions list), (2) get_trading_fee(market: str) → TradingFee: /account/trading_fees 또는 유사 엔드포인트 호출, 특정 마켓의 maker/taker 수수료율 조회. 응답을 TradingFee 객체로 변환 (market, maker_fee, taker_fee). 권한 부족 시 예외 처리 (PermissionError)",
+            "status": "pending",
+            "testStrategy": "유효한 API 키로 verify_api_key 호출, 응답의 권한 정보 확인, 특정 마켓의 수수료율 조회 및 값 검증 (0~1 범위), 잘못된 API 키로 호출 시 에러 처리"
+          },
+          {
+            "id": 5,
+            "title": "place_order 및 cancel_order 메서드 구현 (exchange-api-expert)",
+            "description": "주문 생성 및 취소 기능 구현",
+            "dependencies": [
+              1
+            ],
+            "details": "거래소 주문 인터페이스 구현: (1) place_order(order: Order) → OrderResult: /orders/create 또는 유사 엔드포인트 호출, 주문 생성 (market, side: buy/sell, price, quantity, order_type: limit/market), CoinOne 응답을 OrderResult로 변환 (order_id, status, created_at), (2) cancel_order(order_id: str) → bool: /orders/{order_id}/cancel 엔드포인트 호출, 주문 취소. 취소 성공 시 True, 실패/주문 없음 시 False 반환. 거래 시간 및 최소 주문 금액 검증 (CoinOne 정책)",
+            "status": "pending",
+            "testStrategy": "테스트넷/샌드박스에서 매수/매도 주문 생성 및 응답 검증, 주문 ID 반환 확인, 주문 취소 호출 및 상태 변경 확인, 존재하지 않는 주문 취소 시 에러 처리, 잘못된 수량/가격으로 주문 시 에러 처리"
+          },
+          {
+            "id": 6,
+            "title": "get_balance 메서드 구현 (exchange-api-expert)",
+            "description": "사용자 잔고 정보 조회 기능 구현",
+            "dependencies": [
+              1
+            ],
+            "details": "get_balance() → list[Balance] 메서드 구현: (1) /account/balance 또는 유사 엔드포인트 호출, 사용자의 모든 코인 잔고 조회, (2) CoinOne 응답 형식 (currency, available, locked 등)을 표준 Balance 스키마로 변환 (currency, available, locked, total), (3) 0 잔고 코인 필터링 (선택) 또는 모든 코인 반환. 응답 타입: Balance 객체 리스트, 각 객체는 currency, available, locked, total 포함",
+            "status": "pending",
+            "testStrategy": "실제 또는 테스트 API로 get_balance 호출, 응답 구조 검증 (필수 필드 포함), 반환된 잔고 데이터의 합계 검증 (total = available + locked), 빈 잔고 처리 (API가 빈 잔고를 반환하는 경우)"
+          },
+          {
+            "id": 7,
+            "title": "Rate Limiting (Token Bucket) 통합 (python-backend-expert)",
+            "description": "초당 10회 요청 한도 준수를 위한 Token Bucket 알고리즘 구현 및 통합",
+            "dependencies": [
+              1
+            ],
+            "details": "Rate Limiting 메커니즘 구현: (1) Token Bucket 알고리즘 구현: 10 tokens/second 제한, 각 API 요청 시 1 토큰 소비, (2) Redis 기반 토큰 관리: 키 'rate:coinone' (또는 user별 'rate:{user_id}:coinone')에 토큰 수 저장, 초기값 10, 요청 시 감소, 초당 주기적으로 토큰 재충전, (3) CoinOneRestProvider의 모든 API 호출 전에 토큰 체크, 토큰 부족 시 RetryAfter 예외 발생, (4) 클라이언트 측 재시도 로직 (exponential backoff)",
+            "status": "pending",
+            "testStrategy": "토큰 버킷 초기화 및 토큰 소비 검증, 10개 요청 후 11번째 요청이 제한되는지 확인, 시간 경과 후 토큰 재충전 검증, Redis 키 상태 모니터링, 동시 요청에서의 토큰 소비 검증"
+          },
+          {
+            "id": 8,
+            "title": "Circuit Breaker 패턴 통합 (python-backend-expert)",
+            "description": "CoinOne API 장애 시 빠른 실패 및 복구를 위한 Circuit Breaker 패턴 구현",
+            "dependencies": [
+              1,
+              7
+            ],
+            "details": "Circuit Breaker 상태 머신 구현: (1) 3가지 상태 정의: CLOSED (정상), OPEN (차단), HALF_OPEN (복구 중), (2) 상태 전이 로직: 실패 횟수 5회 이상 → OPEN, OPEN 상태 30초 유지 후 → HALF_OPEN, HALF_OPEN에서 성공 → CLOSED, HALF_OPEN에서 실패 → OPEN으로 복귀, (3) CoinOneRestProvider에 통합: 각 API 호출을 Circuit Breaker로 감싼다. OPEN 상태에서는 API 호출 없이 즉시 CircuitBreakerOpenError 예외 발생, (4) 실패 카운트 및 상태는 Redis에 저장 (키: 'circuit:coinone')",
+            "status": "pending",
+            "testStrategy": "정상 API 호출로 CLOSED 상태 확인, 의도적 실패로 5회 이상 시도 → OPEN 상태 전이 검증, OPEN 상태에서 CircuitBreakerOpenError 예외 발생 확인, 30초 대기 후 HALF_OPEN 상태 검증, HALF_OPEN에서 성공으로 CLOSED 복귀 확인"
+          },
+          {
+            "id": 9,
+            "title": "CoinOne 에러 처리 및 예외 매핑 (exchange-api-expert)",
+            "description": "CoinOne 특정 에러 코드 해석 및 애플리케이션 예외로 매핑",
+            "dependencies": [
+              1
+            ],
+            "details": "에러 처리 전략: (1) CoinOne API 에러 응답 형식 분석 (status code, error code, message), (2) 주요 에러 매핑: 401 (Unauthorized) → InvalidApiKeyError, 403 (Forbidden) → PermissionDeniedError, 429 (Too Many Requests) → RateLimitExceededError, 404 (Not Found) → MarketNotFoundError, 500+ (Server Error) → ExchangeServerError, (3) 각 메서드에서 발생 가능한 에러 문서화 (docstring), (4) 재시도 가능한 에러와 재시도 불가능한 에러 분류",
+            "status": "pending",
+            "testStrategy": "각 HTTP 상태 코드에 대한 에러 응답 시뮬레이션, 올바른 예외 타입 발생 확인, 에러 메시지 및 상세 정보 검증, 재시도 로직이 적절한 에러에만 적용되는지 확인"
+          },
+          {
+            "id": 10,
+            "title": "CoinOne WebSocket 실시간 시세 구독 기능 구현 (exchange-api-expert)",
+            "description": "CoinOne WebSocket 연결 유지 및 실시간 시세 스트리밍 기능 구현",
+            "dependencies": [
+              1
+            ],
+            "details": "WebSocket 기반 실시간 시세 구현: (1) CoinOneStreamProvider 클래스 구현 (ExchangeStreamProvider 상속), (2) subscribe_ticker(markets: list[str], callback) 메서드: WebSocket 연결 유지 (/ws 엔드포인트), 여러 마켓의 시세 데이터를 구독, 수신한 JSON 데이터를 파싱, (3) 수신한 시세 데이터를 callback 함수로 전달 (market, price, volume 등), (4) 자동 재연결 로직: 연결 끊김 시 지수 백오프로 재연결 시도 (최대 5회), (5) 메모리 누수 방지: 구독 해제 시 resource cleanup. WebSocket 메시지는 Redis Pub/Sub으로 발행 (채널: 'ticker:{exchange}:{market}')",
+            "status": "pending",
+            "testStrategy": "WebSocket 연결 성공 및 지속 검증, 구독 메시지 전송 및 수신 확인, 실시간 시세 데이터의 정확성 검증, 연결 끊김 시 자동 재연결 테스트, Redis Pub/Sub 메시지 발행 확인, callback 함수 호출 및 전달된 데이터 검증"
+          }
+        ]
       },
       {
-        "id": "11",
+        "id": 11,
         "title": "거래소 계정 관리 API 구현",
         "description": "사용자의 거래소 API 키 등록/수정/삭제, 암호화 저장, 권한 검증, API 키 테스트",
         "details": "엔드포인트:\n- POST /api/v1/exchanges (API 키 등록)\n  * 요청: exchange_type, api_key, api_secret, nickname\n  * AES-256-GCM으로 api_key/api_secret 암호화 후 저장\n  * verify_api_key() 호출 → 권한 범위 확인\n  * 출금 권한 감지 → 경고 반환\n  * user_exchange_accounts 테이블에 저장\n  * 응답: exchange_account_id, nickname, exchange_type, is_verified, warning_message\n\n- GET /api/v1/exchanges (등록된 거래소 계정 목록)\n  * API 키/시크릿 마스킹 표시 (예: ****abc123)\n  * 잔고 정보 조회 옵션\n\n- PUT /api/v1/exchanges/{id} (API 키 수정)\n  * 새로운 api_key/api_secret로 갱신\n  * 권한 재검증\n\n- DELETE /api/v1/exchanges/{id} (API 키 삭제)\n  * 해당 거래소 계정 삭제\n  * 관련 watchlist_coins, ai_trading_configs 삭제 또는 비활성화\n\n- POST /api/v1/exchanges/{id}/verify (API 키 테스트)\n  * 해당 거래소 balance 조회 시도\n  * 성공 여부 반환\n\n데이터 모델:\n- user_exchange_accounts: user_id(FK), exchange_type, api_key_encrypted, api_secret_encrypted, nickname, is_verified, warning_level(none/warning/critical)\n\n암호화:\n- AES-256-GCM (cryptography 라이브러리)\n- 암호화 키: 환경별 수 EXCHANGE_API_KEY_SECRET\n- 각 키마다 고유 nonce 생성 (AEAD 보안)",
@@ -622,10 +1315,131 @@
           "10"
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "암호화 유틸리티 모듈 구현 (python-backend-expert)",
+            "description": "AES-256-GCM 암호화/복호화 유틸리티 함수 개발 - encrypt_api_key, decrypt_api_key, generate_nonce 함수 구현",
+            "dependencies": [],
+            "details": "app/utils/encryption.py 파일에 다음 구현: (1) from cryptography.hazmat.primitives.ciphers.aead import AESGCM, (2) encrypt_api_key(key: str, secret: str) -> tuple[bytes, bytes, bytes] 함수로 암호화된 key, secret, nonce 반환, (3) decrypt_api_key(encrypted_key: bytes, encrypted_secret: bytes, nonce: bytes) -> tuple[str, str] 함수 구현, (4) 환경변수 EXCHANGE_API_KEY_SECRET 사용, (5) 각 암호화마다 unique nonce 생성 (AEAD 보안)",
+            "status": "pending",
+            "testStrategy": "encrypt/decrypt 라운드트립 테스트, 동일 평문에 대해 매번 다른 nonce 생성 확인, 잘못된 nonce로 복호화 실패 검증"
+          },
+          {
+            "id": 2,
+            "title": "거래소 API 검증 서비스 구현 (python-backend-expert)",
+            "description": "verify_api_key() 함수 개발 - 거래소별 API 키 권한 범위 확인 및 출금 권한 감지",
+            "dependencies": [
+              1
+            ],
+            "details": "app/services/exchange_verification.py 파일 생성: (1) verify_api_key(exchange_type: str, api_key: str, api_secret: str) -> dict 함수, (2) 거래소 프로바이더별 권한 검증 로직 (Upbit, CoinOne, Coinbase, Binance), (3) permissions 배열 반환 (예: ['read', 'trade']), (4) has_withdrawal_permission 필드 추가 (출금 권한 감지), (5) is_valid 불린 필드, (6) error_message 필드 (권한 부족시 메시지)",
+            "status": "pending",
+            "testStrategy": "각 거래소별 권한 검증 테스트, 출금 권한 감지 시나리오 테스트, 잘못된 API 키 거부 테스트"
+          },
+          {
+            "id": 3,
+            "title": "거래소 계정 스키마 및 모델 확장 (code-architect)",
+            "description": "UserExchangeAccount 모델에 필드 추가 - nickname, is_verified, warning_level",
+            "dependencies": [],
+            "details": "app/models/exchange.py 파일 수정: (1) nickname: str 필드 추가 (거래소 계정 별칭), (2) is_verified: bool 필드 추가 (API 키 검증 여부, default=False), (3) warning_level: str 필드 추가 ('none', 'warning', 'critical' 중 선택, default='none'), (4) CHECK constraint 추가 warning_level IN ('none', 'warning', 'critical'), (5) verified_at: datetime 필드 추가 (검증 시각)",
+            "status": "pending",
+            "testStrategy": "모델 필드 생성 확인, validation constraints 검증, 데이터베이스 스키마 정합성 확인"
+          },
+          {
+            "id": 4,
+            "title": "거래소 계정 DB 마이그레이션 생성 (code-architect)",
+            "description": "UserExchangeAccount 테이블에 새로운 컬럼 추가하는 Alembic 마이그레이션 파일 작성",
+            "dependencies": [
+              3
+            ],
+            "details": "server/alembic/versions/003_add_exchange_account_fields.py 마이그레이션 생성: (1) nickname VARCHAR(100) 컬럼 추가, (2) is_verified BOOLEAN DEFAULT false 추가, (3) warning_level VARCHAR(20) DEFAULT 'none' 추가, (4) CHECK constraint (warning_level IN) 추가, (5) verified_at TIMESTAMP 추가, (6) upgrade/downgrade 함수 작성, (7) 마이그레이션 revision chain 설정",
+            "status": "pending",
+            "testStrategy": "마이그레이션 실행 성공 검증, upgrade/downgrade 양방향 테스트, 기존 데이터 유지 확인"
+          },
+          {
+            "id": 5,
+            "title": "거래소 계정 API 스키마 정의 (code-architect)",
+            "description": "Pydantic 요청/응답 스키마 작성 - RegisterExchangeRequest, UpdateExchangeRequest, ExchangeAccountResponse",
+            "dependencies": [
+              3
+            ],
+            "details": "app/schemas/exchange.py 파일 생성: (1) RegisterExchangeRequest: exchange_type, api_key, api_secret, nickname 필드, (2) UpdateExchangeRequest: api_key(optional), api_secret(optional), nickname(optional) 필드, (3) ExchangeAccountResponse: id, exchange_type, nickname, is_verified, warning_level, warning_message, permissions, masked_api_key, masked_api_secret, created_at, updated_at, (4) mask 함수로 ****abc123 형식 마스킹 구현",
+            "status": "pending",
+            "testStrategy": "요청 스키마 validation 테스트, 마스킹 형식 검증 (앞의 4글자만 * 처리), 응답 직렬화 테스트"
+          },
+          {
+            "id": 6,
+            "title": "거래소 계정 Repository 구현 (python-backend-expert)",
+            "description": "CRUD 작업 및 쿼리 메서드 - create, read, update, delete, get_by_user, get_active_accounts",
+            "dependencies": [
+              3,
+              5
+            ],
+            "details": "app/repositories/exchange_repository.py 파일 생성: (1) class ExchangeRepository, (2) async create_account(user_id, exchange_type, encrypted_key, encrypted_secret, nonce, nickname, is_verified, warning_level) -> UserExchangeAccount, (3) async get_account_by_id(id) -> UserExchangeAccount | None, (4) async get_user_accounts(user_id) -> list[UserExchangeAccount], (5) async update_account(id, **updates) -> UserExchangeAccount, (6) async delete_account(id) -> bool, (7) async get_active_accounts(user_id) -> list[UserExchangeAccount] (is_active=True 필터), (8) unique constraint 체크 로직",
+            "status": "pending",
+            "testStrategy": "각 CRUD 메서드 기본 동작 테스트, unique constraint 위반 시 예외 처리 검증, N+1 쿼리 문제 없음 확인"
+          },
+          {
+            "id": 7,
+            "title": "거래소 API 키 등록 엔드포인트 구현 (python-backend-expert)",
+            "description": "POST /api/v1/exchanges 엔드포인트 - API 키 등록, 암호화 저장, 권한 검증",
+            "dependencies": [
+              1,
+              2,
+              5,
+              6
+            ],
+            "details": "app/api/v1/exchanges.py 파일 생성 (또는 추가): (1) @router.post(\"/exchanges\") 엔드포인트, (2) RegisterExchangeRequest 파라미터 수용, (3) 인증된 사용자 확인 (CurrentUser dependency), (4) encrypt_api_key() 호출하여 encrypted_key, encrypted_secret, nonce 생성, (5) verify_api_key() 호출하여 권한 확인, (6) warning_level 설정 (withdrawal 권한 있으면 'warning'), (7) repository.create_account() 호출 저장, (8) ExchangeAccountResponse 반환 (api_key/api_secret 마스킹), (9) 예외처리: 중복 거래소 계정, 유효하지 않은 API 키",
+            "status": "pending",
+            "testStrategy": "정상 등록 흐름 테스트, 중복 거래소 계정 거부, 유효하지 않은 API 키 거부, 출금 권한 감지 및 warning 반환, 암호화 저장 확인"
+          },
+          {
+            "id": 8,
+            "title": "거래소 계정 조회 엔드포인트 구현 (python-backend-expert)",
+            "description": "GET /api/v1/exchanges 엔드포인트 - 등록된 거래소 계정 목록 조회, API 키 마스킹 표시",
+            "dependencies": [
+              5,
+              6
+            ],
+            "details": "app/api/v1/exchanges.py 파일: (1) @router.get(\"/exchanges\") 엔드포인트, (2) CurrentUser dependency로 인증 확인, (3) repository.get_user_accounts(user_id) 호출, (4) 각 계정마다 ExchangeAccountResponse로 변환, (5) api_key/api_secret 마스킹 (마지막 6글자만 표시), (6) 선택적 쿼리파라미터 include_balance=true 시 balance 정보 추가 조회 (나중 구현), (7) 결과 배열 반환",
+            "status": "pending",
+            "testStrategy": "다중 거래소 계정 조회 테스트, 마스킹 형식 검증, 인증되지 않은 사용자 거부, 조회 권한 검증 (자신의 계정만)"
+          },
+          {
+            "id": 9,
+            "title": "거래소 API 키 수정/삭제 엔드포인트 구현 (python-backend-expert)",
+            "description": "PUT /api/v1/exchanges/{id}, DELETE /api/v1/exchanges/{id} - API 키 갱신 및 계정 삭제",
+            "dependencies": [
+              1,
+              2,
+              5,
+              6,
+              7
+            ],
+            "details": "app/api/v1/exchanges.py 파일: (1) @router.put(\"/exchanges/{account_id}\") 엔드포인트, (2) UpdateExchangeRequest 파라미터, (3) 소유권 검증 (계정이 현재 사용자의 것인지), (4) api_key/api_secret 새로운 값 제공 시 encrypt, verify_api_key() 호출, (5) repository.update_account() 호출, (6) @router.delete(\"/exchanges/{account_id}\") 엔드포인트, (7) 소유권 검증, (8) 관련 watchlist_coins 삭제 또는 exchange_account_id를 NULL로 설정, (9) 관련 ai_trading_configs 비활성화 (is_enabled=false), (10) repository.delete_account() 호출",
+            "status": "pending",
+            "testStrategy": "API 키 수정 후 권한 재검증 확인, 타 사용자 계정 수정 거부, 삭제 시 관련 데이터 정리 검증, 소유권 검증 실패 처리"
+          },
+          {
+            "id": 10,
+            "title": "API 키 검증 엔드포인트 및 E2E 테스트 구현 (e2e-test-expert)",
+            "description": "POST /api/v1/exchanges/{id}/verify 엔드포인트 및 전체 흐름 E2E 테스트",
+            "dependencies": [
+              2,
+              5,
+              6,
+              7,
+              8,
+              9
+            ],
+            "details": "app/api/v1/exchanges.py 파일: (1) @router.post(\"/exchanges/{account_id}/verify\") 엔드포인트, (2) 해당 거래소 계정 암호화 키 복호화, (3) verify_api_key() 호출 재검증, (4) 성공 시 is_verified=true, verified_at=now() 업데이트, (5) 응답: {success: bool, message: str, permissions: list[str]}. E2E 테스트: tests/integration/test_exchange_accounts.py (1) 정상 등록 → 검증 → 조회 (마스킹 확인) → 수정 → 재검증 → 삭제 전체 흐름, (2) 출금 권한 감지 및 warning 표시 검증, (3) 암호화/복호화 검증 (저장된 키 암호화 상태 확인), (4) 잘못된 API 키 거부, (5) 타 사용자 계정 접근 거부",
+            "status": "pending",
+            "testStrategy": "E2E 테스트 모든 엔드포인트 커버리지 100%, API 응답 형식 검증, 에러 케이스 완벽 커버, 암호화 저장 상태 DB 직접 확인, 성능: 각 요청 < 200ms"
+          }
+        ]
       },
       {
-        "id": "12",
+        "id": 12,
         "title": "WebSocket 실시간 시세 허브 구현",
         "description": "단일 WebSocket 연결 + 구독 메시지 방식, 거래소별 시세 스트리밍, Pub/Sub 통합",
         "details": "WebSocket 설계:\n- 엔드포인트: ws://server/ws/v1?token={access_token}\n- 단일 연결 유지, 여러 채널 구독\n- 메시지 형식: JSON {action, channel, exchange, market}\n\n구독 요청:\n{ \"action\": \"subscribe\", \"channel\": \"ticker\", \"exchange\": \"upbit\", \"market\": \"KRW-BTC\" }\n{ \"action\": \"subscribe\", \"channel\": \"orderbook\", \"exchange\": \"upbit\", \"market\": \"KRW-BTC\" }\n{ \"action\": \"subscribe\", \"channel\": \"trades\", \"exchange\": \"upbit\", \"market\": \"KRW-BTC\" }\n{ \"action\": \"subscribe\", \"channel\": \"my-orders\", ... } (인증된 사용자만)\n\n구독 해제:\n{ \"action\": \"unsubscribe\", \"channel\": \"ticker\", ... }\n\nWS Hub (ws/hub.py):\n- ConnectionManager: 활성 연결 관리 (user_id → ws)\n- 채널별 구독 관리 (ticker:upbit:KRW-BTC → {user_ids})\n- Redis Pub/Sub 연동\n  * Exchange Provider WS → Redis pub:ticker:upbit:KRW-BTC\n  * WS Hub 구독 → 연결된 클라이언트에 브로드캐스트\n\n연결 상태 UI:\n- 클라이언트에 연결 상태 메시지 발송\n  * \"connected\" (녹색)\n  * \"connecting\" (황색 + 스피너)\n  * \"disconnected\" (적색 + \"재연결 중\")\n\n에러 처리:\n- 토큰 만료 시 연결 종료\n- 구독 한계 초과 → 에러 메시지\n- 거래소 연결 끊김 → 클라이언트에 알림\n\nPerformance:\n- 거래소 API → Redis Pub/Sub (100ms)\n- Redis → WS Hub → Client (최소 지연)\n- 동시 연결 1,000개 지원",
@@ -637,10 +1451,130 @@
           "10"
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "WebSocket 연결 관리자 구현 (python-backend-expert)",
+            "description": "ConnectionManager 클래스 구현으로 활성 WebSocket 연결 관리 및 user_id → ws 매핑 구조 설계",
+            "dependencies": [],
+            "details": "server/app/ws/hub.py에 ConnectionManager 클래스 생성. 주요 기능: (1) connect(user_id, websocket) - 사용자별 연결 저장, (2) disconnect(user_id) - 연결 종료 시 정리, (3) get_user_connection(user_id) - user_id로 ws 조회, (4) broadcast_to_user(user_id, message) - 특정 사용자에게 메시지 전송. 동시성 처리를 위해 asyncio.Lock 사용.",
+            "status": "pending",
+            "testStrategy": "pytest로 연결/해제, 메시지 전송 테스트. Mock WebSocket으로 broadcast 동작 검증"
+          },
+          {
+            "id": 2,
+            "title": "채널 구독 관리 시스템 구현 (python-backend-expert)",
+            "description": "Redis 기반 채널 구독 관리로 ticker:exchange:market 형식의 채널별 구독 사용자 추적",
+            "dependencies": [
+              1
+            ],
+            "details": "server/app/ws/hub.py의 SubscriptionManager 클래스. Redis에 채널:exchange:market → {user_id_set} 구조로 저장. 주요 메서드: (1) subscribe(user_id, channel, exchange, market) - 채널 구독 추가, (2) unsubscribe(user_id, channel, exchange, market) - 구독 해제, (3) get_subscribers(channel, exchange, market) - 특정 채널 구독자 조회, (4) get_user_subscriptions(user_id) - 사용자의 모든 구독 조회. 구독 한계 관리 (최대 100개 제한).",
+            "status": "pending",
+            "testStrategy": "Redis 테스트로 구독/해제 확인, 한계 초과 시 에러 검증, 구독자 목록 정확성 확인"
+          },
+          {
+            "id": 3,
+            "title": "WebSocket 엔드포인트 및 인증 처리 (python-backend-expert)",
+            "description": "FastAPI WebSocket 엔드포인트 ws://server/ws/v1?token={access_token} 구현 및 JWT 토큰 검증",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "server/app/api/v1/ws.py 생성. @app.websocket('/ws/v1') 데코레이터 사용. 쿼리 파라미터에서 token 추출하여 JWT 검증 (app/core/deps.py의 verify_token 재사용). 토큰 만료 시 연결 거부 (코드 1008). 성공 시 user_id 추출 후 ConnectionManager에 등록.",
+            "status": "pending",
+            "testStrategy": "유효한/만료된 토큰으로 연결 테스트, 토큰 없이 접근 시 거부 확인, 연결 성공 후 user_id 저장 검증"
+          },
+          {
+            "id": 4,
+            "title": "메시지 스키마 및 검증 로직 (code-architect)",
+            "description": "WebSocket 메시지 형식 정의 (JSON {action, channel, exchange, market}) 및 Pydantic 모델 구현",
+            "dependencies": [],
+            "details": "server/app/schemas/ws.py 생성. 스키마: (1) SubscribeMessage - action='subscribe', channel (ticker/orderbook/trades/my-orders), exchange, market, (2) UnsubscribeMessage - 동일 구조, (3) ConnectionStatus - type ('connected'/'connecting'/'disconnected'), timestamp. 각 메시지 유효성 검증. enum으로 channel 타입 제한 (ChannelType enum).",
+            "status": "pending",
+            "testStrategy": "유효한/invalid 메시지 파싱 테스트, enum 유효성 확인, 필수 필드 누락 시 에러 검증"
+          },
+          {
+            "id": 5,
+            "title": "구독 메시지 핸들러 구현 (python-backend-expert)",
+            "description": "WebSocket 수신 메시지 처리로 subscribe/unsubscribe 요청 처리 및 구독 상태 응답",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "server/app/ws/handlers.py 생성. 핸들러 함수: (1) handle_subscribe(user_id, message) - SubscriptionManager에 구독 추가, 성공 응답 전송, 한계 초과 시 에러 메시지 반환, (2) handle_unsubscribe(user_id, message) - 구독 해제, (3) handle_unknown_action(user_id) - 알 수 없는 action 처리. my-orders 채널은 인증된 사용자만 허용 (user_id 확인).",
+            "status": "pending",
+            "testStrategy": "subscribe/unsubscribe 메시지 처리 테스트, 한계 초과 에러 메시지 확인, my-orders 인증 검증"
+          },
+          {
+            "id": 6,
+            "title": "Redis Pub/Sub 통합 (python-backend-expert)",
+            "description": "Redis Pub/Sub으로 Exchange Provider WS → Redis → WS Hub → Client 데이터 흐름 구현",
+            "dependencies": [
+              2,
+              5
+            ],
+            "details": "server/app/ws/pubsub.py 생성. PubSubManager 클래스: (1) subscribe_to_redis_channel(channel_key, callback) - Redis 채널 구독 (pub:ticker:exchange:market 형식), (2) publish_to_redis(channel_key, message) - 메시지 발행 (Exchange Provider에서 호출), (3) 구독 수신 콜백에서 현재 구독 사용자 조회 후 broadcast_to_subscribers(channel, message). asyncio 기반 Redis Pub/Sub 사용.",
+            "status": "pending",
+            "testStrategy": "Redis Pub/Sub 메시지 발행/수신 테스트, 콜백 실행 검증, 여러 채널 동시 구독 확인"
+          },
+          {
+            "id": 7,
+            "title": "연결 상태 메시지 시스템 (python-backend-expert)",
+            "description": "클라이언트에 연결 상태 알림 발송 (connected/connecting/disconnected) UI 표시용",
+            "dependencies": [
+              1,
+              4
+            ],
+            "details": "server/app/ws/status.py 생성. StatusManager 클래스: (1) send_status(user_id, status_type='connected') - 상태 메시지 생성 및 전송, (2) send_connecting_status(user_id) - connecting 상태 + 스피너 표시, (3) send_disconnected_status(user_id) - disconnected 상태 + 재연결 중 메시지. 메시지 형식: {type: 'status', status: 'connected', timestamp}. WebSocket 연결/해제 시 자동 호출.",
+            "status": "pending",
+            "testStrategy": "연결 성공 시 connected 상태 메시지 검증, 재연결 중 connecting 상태 확인, 연결 종료 시 disconnected 상태 전송 테스트"
+          },
+          {
+            "id": 8,
+            "title": "에러 처리 및 재연결 로직 (python-backend-expert)",
+            "description": "토큰 만료, 구독 한계 초과, 거래소 연결 끊김 등의 에러 처리 및 클라이언트 알림",
+            "dependencies": [
+              3,
+              5,
+              7
+            ],
+            "details": "server/app/ws/errors.py 생성. ErrorHandler 클래스: (1) handle_token_expired(user_id) - 연결 종료 (코드 1008 + 에러 메시지), (2) handle_subscription_limit_exceeded(user_id) - 에러 메시지 전송 (구독 해제 제안), (3) handle_exchange_disconnected(exchange, market) - 해당 채널 구독자에게 알림 (exchange connection down), (4) handle_rate_limit(user_id) - rate limit 도달 시 에러 메시지. 에러 메시지 형식: {type: 'error', code: 'TOKEN_EXPIRED'/'SUBSCRIPTION_LIMIT'/'EXCHANGE_DOWN'/'RATE_LIMIT', message, timestamp}.",
+            "status": "pending",
+            "testStrategy": "토큰 만료 시 연결 종료 확인, 구독 한계 에러 메시지 수신 테스트, 거래소 오류 알림 검증, rate limit 에러 처리"
+          },
+          {
+            "id": 9,
+            "title": "성능 최적화 및 부하 테스트 (e2e-test-expert)",
+            "description": "거래소 API → Redis → WS Hub → Client 지연 최소화, 1,000 동시 연결 지원 검증",
+            "dependencies": [
+              6,
+              8
+            ],
+            "details": "server/tests/e2e/test_websocket_performance.py 생성. 테스트: (1) 단일 메시지 지연 측정 (Exchange WS → Redis Pub/Sub → Client, 목표 <100ms), (2) 동시 연결 테스트 (1,000개 연결 + 메시지 브로드캐스트), (3) 메모리 사용량 모니터링 (psutil 사용), (4) CPU 사용률 확인. locust 또는 asyncio 기반 부하 테스트 클라이언트 구현. 성능 메트릭 로깅.",
+            "status": "pending",
+            "testStrategy": "End-to-End 성능 테스트: 1,000개 동시 연결로 메시지 브로드캐스트, 지연 시간 측정 (목표 <100ms), 메모리/CPU 사용률 확인, 안정성 검증 (24시간 부하 테스트)"
+          },
+          {
+            "id": 10,
+            "title": "WebSocket 통합 테스트 및 문서화 (code-review-expert)",
+            "description": "전체 WebSocket 흐름 통합 테스트 (인증 → 구독 → 메시지 수신 → 해제) 및 API 문서화",
+            "dependencies": [
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9
+            ],
+            "details": "server/tests/integration/test_websocket_hub.py 생성. 테스트 시나리오: (1) 유효한 토큰으로 연결 → 'connected' 메시지 수신, (2) ticker 구독 → 채널 구독 확인, (3) Redis Pub/Sub으로 메시지 발행 → 클라이언트에서 수신, (4) 여러 사용자 동시 구독 → 각각 메시지 수신, (5) 구독 해제 → 메시지 미수신, (6) 토큰 만료 시뮬레이션 → 연결 종료. API 문서: OpenAPI/Swagger에 WebSocket 엔드포인트 설명 추가, 메시지 형식 예시 포함, 에러 코드 문서화.",
+            "status": "pending",
+            "testStrategy": "pytest + websockets 라이브러리로 전체 흐름 검증, 여러 사용자 시나리오 테스트, 에러 상황 대응 검증, API 문서 정확성 확인"
+          }
+        ]
       },
       {
-        "id": "13",
+        "id": 13,
         "title": "코인 마스터 및 관심 코인 관리 API 구현",
         "description": "거래소별 코인 목록 조회, 검색, 관심 코인 CRUD, 정렬, 실시간 시세 통합",
         "details": "엔드포인트:\n- GET /api/v1/coins?q={keyword}&exchange={exchange}\n  * 코인 마스터에서 검색 (symbol, name_ko, name_en)\n  * 페이지네이션\n  * 응답: coins 리스트 + 실시간 시세 (ticker 데이터)\n\n- GET /api/v1/coins/{id}\n  * 코인 상세 정보 + 현재 가격/변동률\n\n- GET /api/v1/watchlist\n  * 사용자의 관심 코인 목록\n  * exchange_account_id별 필터링 가능\n  * 정렬 순서 반영\n\n- POST /api/v1/watchlist\n  * 관심 코인 추가 (coin_id, exchange_account_id)\n  * 중복 방지\n  * 응답: watchlist_coin_id\n\n- DELETE /api/v1/watchlist/{id}\n  * 관심 코인 제거\n\n- PUT /api/v1/watchlist/reorder\n  * 정렬 순서 변경 (드래그 앤 드롭)\n  * 요청: [{id, sort_order}]\n  * 트랜잭션 내 일괄 업데이트\n\n데이터 모델:\n- coins: id, symbol, name_ko, name_en, exchange_type, market_code\n- watchlist_coins: user_id(FK), coin_id(FK), exchange_account_id(FK), sort_order\n\n초기 데이터 로드:\n- Upbit, CoinOne의 모든 거래 가능 코인을 coins 테이블에 초기 로드\n- seed 스크립트 작성\n\nWS 통합:\n- 관심 코인 목록 조회 시 현재 시세 포함\n- 클라이언트가 WS로 구독하여 실시간 업데이트",
@@ -651,10 +1585,143 @@
           "12"
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "코인 검색 API 엔드포인트 구현 (python-backend-expert)",
+            "description": "GET /api/v1/coins?q={keyword}&exchange={exchange} 엔드포인트 구현: symbol, name_ko, name_en 필드에서 정확/부분 매칭 검색, 페이지네이션 (limit/offset), 응답에 현재 시세 데이터 포함",
+            "dependencies": [
+              11,
+              12
+            ],
+            "details": "server/app/api/v1/coins.py 파일 생성, FastAPI 라우터 구현. Coin 모델의 symbol과 name_ko/name_en 필드에 대한 검색 로직 작성. PostgreSQL의 TRGM 인덱스를 활용한 퍼지 매칭. 페이지네이션은 limit(기본 20, 최대 100)과 offset 파라미터로 구현. 응답 스키마는 코인 정보 + 실시간 시세(ticker) 포함. 거래소별 필터링(exchange 파라미터) 로직 추가.",
+            "status": "pending",
+            "testStrategy": "pytest를 이용해 정확 매칭(BTC 검색), 부분 매칭(비트 검색), 한글/영문 혼합 검색, 페이지네이션(limit/offset), 거래소 필터링, 빈 결과 등의 케이스 테스트"
+          },
+          {
+            "id": 2,
+            "title": "코인 상세 정보 조회 API 구현 (python-backend-expert)",
+            "description": "GET /api/v1/coins/{id} 엔드포인트 구현: 코인의 상세 정보(symbol, name_ko, name_en, exchange_type, market_code)와 현재 가격/변동률 조회",
+            "dependencies": [
+              1
+            ],
+            "details": "server/app/api/v1/coins.py에 상세 조회 엔드포인트 추가. Coin 모델에서 UUID 기반 조회, 존재하지 않는 코인의 경우 404 반환. 응답에는 기본 코인 정보 + 현재 시세 데이터(가격, 변동률, 거래량) 포함. Redis 캐싱을 통해 10분 단위로 시세 데이터 캐시.",
+            "status": "pending",
+            "testStrategy": "유효한 coin_id로 조회 시 정상 응답, 존재하지 않는 coin_id로 404 에러, 시세 데이터의 최신성 확인(캐시 만료 후 갱신)"
+          },
+          {
+            "id": 3,
+            "title": "관심 코인 목록 조회 API 구현 (python-backend-expert)",
+            "description": "GET /api/v1/watchlist 엔드포인트 구현: 사용자의 관심 코인 목록 조회, exchange_account_id별 필터링 가능, 정렬 순서(sort_order) 반영",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "server/app/api/v1/watchlist.py 라우터 생성. WatchlistCoin 모델에서 user_id별 데이터 조회. sort_order 필드 기준으로 정렬. exchange_account_id 파라미터로 선택적 필터링. 인덱스 활용: ix_watchlist_coins_user_id_sort_order (user_id, sort_order), covering index (user_id, coin_id, sort_order). 응답에 각 관심 코인의 현재 시세 정보 포함.",
+            "status": "pending",
+            "testStrategy": "사용자의 관심 코인 목록 정렬 순서 확인, exchange_account_id 필터링 동작, 관심 코인 없을 경우 빈 배열 반환, 시세 데이터 최신성 확인"
+          },
+          {
+            "id": 4,
+            "title": "관심 코인 추가 API 구현 (python-backend-expert)",
+            "description": "POST /api/v1/watchlist 엔드포인트 구현: 관심 코인 추가 (coin_id, exchange_account_id), 중복 방지, 응답에 watchlist_coin_id 포함",
+            "dependencies": [
+              3
+            ],
+            "details": "server/app/api/v1/watchlist.py에 POST 엔드포인트 추가. 요청 스키마: {coin_id: UUID, exchange_account_id?: UUID}. Unique 제약(uq_watchlist_user_coin_account: user_id, coin_id, exchange_account_id)을 활용해 중복 추가 방지. 중복 시 409 Conflict 에러 또는 멱등성 보장(기존 ID 반환). sort_order는 자동으로 max(sort_order) + 1로 설정. 트랜잭션으로 감싸서 일관성 보장.",
+            "status": "pending",
+            "testStrategy": "정상 추가 시 watchlist_coin_id 반환, 동일 코인 중복 추가 시 에러/멱등성 처리, exchange_account_id 없이 추가 가능 여부 확인, sort_order 자동 증가 확인"
+          },
+          {
+            "id": 5,
+            "title": "관심 코인 제거 API 구현 (python-backend-expert)",
+            "description": "DELETE /api/v1/watchlist/{id} 엔드포인트 구현: 관심 코인 제거, 존재하지 않는 항목은 404 반환",
+            "dependencies": [
+              4
+            ],
+            "details": "server/app/api/v1/watchlist.py에 DELETE 엔드포인트 추가. WatchlistCoin.id 기반 삭제. 삭제 권한 검사(현재 사용자의 관심 코인인지 확인). 존재하지 않는 ID면 404 반환. 삭제 후 204 No Content 또는 200 OK 응답.",
+            "status": "pending",
+            "testStrategy": "정상 제거 시 204/200 응답, 존재하지 않는 ID는 404 에러, 다른 사용자의 관심 코인은 403 에러, 제거 후 조회 시 목록에서 제거됨 확인"
+          },
+          {
+            "id": 6,
+            "title": "관심 코인 정렬 순서 변경 API 구현 (python-backend-expert)",
+            "description": "PUT /api/v1/watchlist/reorder 엔드포인트 구현: 드래그 앤 드롭으로 인한 정렬 순서 변경, 요청 형식 [{id, sort_order}], 트랜잭션 내 일괄 업데이트",
+            "dependencies": [
+              5
+            ],
+            "details": "server/app/api/v1/watchlist.py에 PUT reorder 엔드포인트 추가. 요청 스키마: {items: [{id: UUID, sort_order: int}]}. 트랜잭션으로 감싸서 모든 항목을 원자적으로 업데이트. 각 항목이 현재 사용자의 관심 코인인지 검사. sort_order 값의 유효성 검사(음수 방지, 범위 체크). 벌크 업데이트 쿼리로 효율성 확보.",
+            "status": "pending",
+            "testStrategy": "정렬 순서 변경 후 GET /watchlist에서 변경된 순서 확인, 일부 항목만 재정렬 시 동작, 잘못된 sort_order 값(음수 등) 거부, 트랜잭션 실패 시 롤백"
+          },
+          {
+            "id": 7,
+            "title": "코인 초기 데이터 로드 스크립트 및 마이그레이션 구현 (code-architect)",
+            "description": "Upbit, CoinOne의 모든 거래 가능 코인을 coins 테이블에 초기 로드하기 위한 seed 스크립트 및 마이그레이션 구성",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "server/app/seeds/coins.py에 Upbit와 CoinOne API에서 실시간 코인 목록을 조회하는 로직 추가 또는 기존 INITIAL_COINS 데이터 확대. Alembic 마이그레이션 스크립트 생성(server/alembic/versions/00X_load_initial_coins.py)으로 자동 실행 가능하게 구성. ON CONFLICT DO NOTHING으로 멱등성 보장. 거래소별 market_code 매핑 정확성 확인. Docker Compose 환경에서 마이그레이션 자동 실행되도록 entrypoint 설정.",
+            "status": "pending",
+            "testStrategy": "마이그레이션 실행 후 coins 테이블에 Upbit 15개 + CoinOne 10개(중복 제외) 이상의 코인 데이터 존재, 중복 실행 시 에러 없음, symbol/market_code 데이터 정확성 검증"
+          },
+          {
+            "id": 8,
+            "title": "WebSocket 실시간 시세 통합 및 구독 관리 (python-backend-expert)",
+            "description": "관심 코인 목록 조회 시 현재 시세 포함, 클라이언트가 WebSocket으로 구독하여 실시간 업데이트 받기",
+            "dependencies": [
+              3,
+              4,
+              5,
+              6
+            ],
+            "details": "server/app/ws/ 디렉토리에 WebSocket 핸들러 구현. /api/v1/ws 엔드포인트에서 WebSocket 연결 수신. 클라이언트 연결 시 사용자의 관심 코인 목록 자동 구독 설정. Redis pub/sub를 통한 실시간 시세 데이터 브로드캐스트. 메시지 형식: {type: 'ticker', coin_id: UUID, price: float, change_rate: float, ...}. 클라이언트 연결 해제 시 자동 구독 해제. 구독 중인 코인의 실시간 업데이트만 전송하여 네트워크 효율성 확보.",
+            "status": "pending",
+            "testStrategy": "WebSocket 연결 성공, 사용자의 관심 코인에 대한 실시간 시세 수신, 새로운 관심 코인 추가 시 자동 구독, 제거 시 자동 구독 해제, 구독하지 않은 코인의 시세는 수신 안 함"
+          },
+          {
+            "id": 9,
+            "title": "API 통합 테스트 및 엔드-투-엔드 테스트 구현 (e2e-test-expert)",
+            "description": "전체 코인 관리 API에 대한 통합 테스트: 검색, 조회, 관심 코인 CRUD, 정렬, 실시간 시세 포함 여부 검증",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            "details": "server/tests/integration/test_coins_and_watchlist.py 생성. pytest fixture로 테스트 DB(test_db), Redis(test_redis), HTTP 클라이언트(test_client) 설정. 테스트 케이스: (1) 코인 검색 정확/부분 매칭, (2) 코인 상세 조회, (3) 관심 코인 추가/제거, (4) 관심 코인 목록 정렬 순서, (5) 중복 추가 방지, (6) 거래소별 필터링, (7) 실시간 시세 데이터 포함 확인, (8) WebSocket 연결 및 메시지 수신, (9) 권한 검사(다른 사용자의 관심 코인은 접근 불가). httpx 또는 pytest AsyncClient 사용.",
+            "status": "pending",
+            "testStrategy": "모든 엔드포인트의 정상/에러 케이스 테스트, 응답 스키마 검증, HTTP 상태 코드 확인, 데이터베이스 상태 검증, 테스트 커버리지 80% 이상, WebSocket 메시지 형식 및 타이밍 검증"
+          },
+          {
+            "id": 10,
+            "title": "API 엔드포인트 검토 및 문서화 (code-review-expert)",
+            "description": "구현된 코인 및 관심 코인 API의 코드 품질 검토, 에러 처리 일관성 확인, 성능 최적화 검증, OpenAPI 문서 자동 생성",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9
+            ],
+            "details": "server/app/api/v1/coins.py와 watchlist.py 코드 리뷰: (1) 에러 처리 일관성(HTTPException 사용, 적절한 상태 코드), (2) 입력 검증(Pydantic 스키마), (3) 쿼리 최적화(N+1 쿼리 방지, 인덱스 활용), (4) 권한 검사(user_id 검증), (5) 보안(SQL 인젝션 방지, 속도 제한 고려). OpenAPI/Swagger 문서는 FastAPI가 자동 생성하지만, response_model, description, examples 추가하여 명확성 강화. 라인팅(ruff), 타입 체크(mypy) 실행.",
+            "status": "pending",
+            "testStrategy": "코드 리뷰 체크리스트 완료(에러 처리, 입력 검증, 쿼리 최적화, 권한 검사), linting 오류 0개, type checking 통과, OpenAPI 문서(/docs) 접근 가능 및 모든 엔드포인트 표시, 성능 테스트(응답 시간 < 200ms)"
+          }
+        ]
       },
       {
-        "id": "14",
+        "id": 14,
         "title": "주문 실행 및 거래 API 구현",
         "description": "시장가/지정가 주문, 주문 취소, 미체결 일괄 취소, 거래소별 실시간 동기화",
         "details": "엔드포인트:\n- POST /api/v1/orders (주문 생성)\n  * 요청: exchange_account_id, symbol, side(buy/sell), order_method(market/limit), quantity, price(limit만)\n  * 입력 검증: 잔고 확인, 최소 주문량, 가격 범위\n  * ExchangeProvider.place_order() 호출\n  * 응답: order_id, status, filled_quantity, fee\n  * trade_orders 테이블에 저장 (status: pending)\n  * 거래소 응답 필링 또는 WS로 상태 감지\n\n- GET /api/v1/orders?status={status}&exchange_account_id={id}\n  * 사용자의 주문 내역 (filled/cancelled/partial/pending)\n  * 기간 필터\n  * 정렬 (최신순)\n\n- GET /api/v1/orders/{id}\n  * 단일 주문 상세\n\n- DELETE /api/v1/orders/{id} (주문 취소)\n  * 거래소에서 주문 취소\n  * trade_orders.status = cancelled\n\n- POST /api/v1/orders/batch-cancel\n  * 미체결 주문 일괄 취소\n  * 요청: exchange_account_id, [order_ids] (또는 상태 필터)\n\n주문 상태 머신:\n```\nPENDING → FILLED (전량 체결)\n       → PARTIAL → 60초 대기 → FILLED or PARTIAL_CANCELLED\n       → OPEN → 120초 대기 → FILLED or CANCELLED\n       → FAILED (API 실패)\n```\n\n예외 처리:\n- 전량 체결: 정상 완료\n- 부분 체결: 60초 대기 → 잔량 시장가 전환 또는 취소\n- 잔고 부족: 1회 스킵, 다음 주기 재시도 (AI만)\n- 네트워크 오류: 30초 간격 최대 2회 재시도\n- Circuit Breaker Open: 해당 거래소 일시 중지\n\nFee 계산:\n- trading_fee(market)에서 maker/taker 수수료율 조회\n- 수수료 = quantity × price × rate\n- 응답에 포함\n\nUI 표시:\n- 수수료 명시 (원화 단위)\n- 실제 수령 수량 계산",
@@ -664,10 +1731,131 @@
           "11"
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "주문 생성 API 스키마 및 검증 구현 (python-backend-expert)",
+            "description": "POST /api/v1/orders 엔드포인트의 요청/응답 Pydantic 스키마 정의 및 입력 검증 로직 구현",
+            "dependencies": [],
+            "details": "CreateOrderRequest 스키마 정의 (exchange_account_id, symbol, side, order_method, quantity, price), OrderResponse 스키마 작성, Pydantic validators를 사용한 입력 검증 (최소 주문량, 가격 범위, 잔고 확인 로직), 거래소별 제약조건 검증",
+            "status": "pending",
+            "testStrategy": "Pydantic 스키마 검증 단위 테스트, 유효한/무효한 입력에 대한 검증 테스트, 거래소별 제약조건 테스트"
+          },
+          {
+            "id": 2,
+            "title": "거래소 API 추상화 계층 (ExchangeProvider) 설계 (exchange-api-expert)",
+            "description": "Upbit, CoinOne, Coinbase 등 거래소별 place_order, cancel_order, get_order 메서드의 통일된 인터페이스 설계",
+            "dependencies": [
+              1
+            ],
+            "details": "BaseExchangeProvider 추상 클래스 정의, 각 거래소별 구현체 (UpbitProvider, CoinOneProvider, CoinbaseProvider) 구조 설계, place_order() 호출 시 거래소별 응답 매핑 (exchange_order_id, 수수료율), 거래소별 에러 코드 처리 전략 (30초 간격 최대 2회 재시도)",
+            "status": "pending",
+            "testStrategy": "Mock Exchange를 사용한 단위 테스트, 거래소별 응답 매핑 검증, 에러 코드 처리 테스트"
+          },
+          {
+            "id": 3,
+            "title": "주문 상태 머신 및 상태 전이 로직 구현 (python-backend-expert)",
+            "description": "PENDING → FILLED/PARTIAL/OPEN/FAILED 상태 전이 및 각 상태별 처리 로직 구현",
+            "dependencies": [
+              2
+            ],
+            "details": "TradeOrderStatusMachine 클래스 정의, 각 상태 전이 규칙 구현 (PENDING→FILLED: 전량 체결, PENDING→PARTIAL: 부분 체결 후 60초 대기, PENDING→OPEN: 120초 대기), 부분 체결 후 잔량 처리 (시장가 전환 또는 취소), 상태 전이 시 타임스탬프 기록",
+            "status": "pending",
+            "testStrategy": "상태 머신 전이 로직 단위 테스트, 60초/120초 대기 후 상태 전이 검증, 부분 체결 시나리오 테스트"
+          },
+          {
+            "id": 4,
+            "title": "POST /api/v1/orders 엔드포인트 구현 (python-backend-expert)",
+            "description": "주문 생성 엔드포인트: 입력 검증 → ExchangeProvider.place_order() 호출 → DB 저장 → 거래소 응답 폴링 또는 WS 구독",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "FastAPI 라우트 정의, 요청 검증 (exchange_account_id 존재 확인, 잔고 확인), ExchangeProvider.place_order() 호출, trade_orders 테이블에 status='pending' 상태로 저장, exchange_order_id 기록, 거래소 폴링 또는 WebSocket 구독 트리거, 에러 발생 시 상태='failed' 저장",
+            "status": "pending",
+            "testStrategy": "Mock Exchange로 주문 생성 및 응답 확인, 잔고 부족 에러 처리, 유효하지 않은 symbol 처리, 응답 스키마 검증"
+          },
+          {
+            "id": 5,
+            "title": "GET /api/v1/orders 및 /api/v1/orders/{id} 조회 엔드포인트 (python-backend-expert)",
+            "description": "주문 목록 조회 및 단일 주문 조회 엔드포인트 구현",
+            "dependencies": [
+              4
+            ],
+            "details": "GET /api/v1/orders: 쿼리 파라미터 (status, exchange_account_id, 기간 필터), 정렬 (최신순), 페이지네이션. GET /api/v1/orders/{id}: 단일 주문 상세 조회. 데이터베이스 쿼리 최적화 (composite index 활용: ix_trade_orders_user_status_created)",
+            "status": "pending",
+            "testStrategy": "다양한 status 필터링 테스트, 기간 필터 검증, 정렬 순서 확인, 단일 주문 조회 검증, 권한 검증 (사용자가 자신의 주문만 조회 가능)"
+          },
+          {
+            "id": 6,
+            "title": "DELETE /api/v1/orders/{id} 및 /api/v1/orders/batch-cancel 취소 엔드포인트 (python-backend-expert)",
+            "description": "주문 취소 엔드포인트: 단일 취소 및 미체결 주문 일괄 취소",
+            "dependencies": [
+              4,
+              5
+            ],
+            "details": "DELETE /api/v1/orders/{id}: 거래소에서 주문 취소 호출, trade_orders.status='cancelled' 업데이트. POST /api/v1/orders/batch-cancel: 요청에서 exchange_account_id와 [order_ids] 또는 상태 필터 받음, 조건에 맞는 미체결 주문 일괄 취소, 각 주문별 취소 결과 반환",
+            "status": "pending",
+            "testStrategy": "이미 체결된 주문 취소 시도 에러 처리, 미체결 주문 취소 검증, 일괄 취소 부분 실패 처리, 취소 확인 응답 스키마 검증"
+          },
+          {
+            "id": 7,
+            "title": "수수료 계산 및 응답 포함 로직 (python-backend-expert)",
+            "description": "거래소별 trading_fee 테이블에서 maker/taker 수수료율 조회 및 계산",
+            "dependencies": [
+              2,
+              4
+            ],
+            "details": "trading_fee 테이블 조회 (exchange_type, coin_id 기준), maker/taker 수수료율 결정 (주문 방식에 따라), 수수료 계산 (quantity × price × rate), 응답에 fee 포함, UI에 원화 단위로 표시되도록 포맷팅. 캐싱 전략 (Redis): 수수료율은 자주 변경되지 않으므로 1시간 TTL로 캐싱",
+            "status": "pending",
+            "testStrategy": "maker/taker 수수료 계산 검증, 다양한 거래소별 수수료율 테스트, 캐싱 동작 검증, 계산 오류 시 정확성 확인"
+          },
+          {
+            "id": 8,
+            "title": "거래소 실시간 동기화 및 폴링 메커니즘 (python-backend-expert)",
+            "description": "WebSocket 구독 또는 HTTP 폴링을 통한 주문 상태 실시간 동기화",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "거래소별 WebSocket 연결 (있을 경우) 또는 HTTP 폴링 (30초 간격, 최대 2회 재시도), exchange_order_id를 기준으로 주문 상태 조회, 응답 데이터 매핑 (filled_quantity, status), trade_orders 테이블 업데이트, 상태 머신 전이 로직 실행, Circuit Breaker 패턴 적용 (거래소 API 오류 시 해당 거래소 일시 중지)",
+            "status": "pending",
+            "testStrategy": "WebSocket 모의 데이터로 상태 동기화 검증, 폴링 메커니즘 테스트, 부분 체결 후 상태 전이 검증, Circuit Breaker 작동 확인"
+          },
+          {
+            "id": 9,
+            "title": "예외 처리 및 에러 응답 전략 (code-architect, python-backend-expert)",
+            "description": "거래소별 에러 코드 처리, 네트워크 오류 재시도, 잔고 부족 처리 등",
+            "dependencies": [
+              2,
+              4,
+              6
+            ],
+            "details": "전량 체결: 정상 완료 (status='filled'). 부분 체결: 60초 대기 후 잔량 시장가 전환 또는 취소. 잔고 부족: AI 주문만 1회 스킵, 다음 주기 재시도. 네트워크 오류: 30초 간격 최대 2회 재시도. Circuit Breaker Open: 해당 거래소 일시 중지 및 알림. 각 에러별 명확한 에러 코드 및 메시지 정의 (OrderErrorCode Enum)",
+            "status": "pending",
+            "testStrategy": "Mock을 사용한 각 에러 시나리오 테스트, 네트워크 타임아웃 시뮬레이션, 재시도 로직 검증, Circuit Breaker 작동 확인, 에러 응답 스키마 검증"
+          },
+          {
+            "id": 10,
+            "title": "통합 테스트 및 E2E 테스트 작성 (e2e-test-expert)",
+            "description": "전체 주문 흐름 E2E 테스트: 주문 생성 → 상태 추적 → 취소 → 일괄 취소 → 수수료 계산 검증",
+            "dependencies": [
+              4,
+              5,
+              6,
+              7,
+              8,
+              9
+            ],
+            "details": "pytest 환경에서 Mock Exchange 사용, 테스트 데이터베이스 설정 (trade_orders 테이블 초기화), 주문 생성 및 상태 변화 시나리오 (pending→filled, pending→partial→filled, pending→cancelled), 부분 체결 후 잔량 처리 검증, 잔고 부족 에러 처리 확인, 일괄 취소 검증, 수수료 계산 정확성 확인, 거래소별 에러 코드 처리 테스트, conftest.py에서 fixture 정의 (test_db, mock_exchange)",
+            "status": "pending",
+            "testStrategy": "Mock Exchange로 다양한 주문 시나리오 테스트, 상태 전이 전체 흐름 검증, 에러 처리 시나리오별 테스트, API 응답 스키마 검증, 데이터 정합성 검증 (DB와 응답 데이터 일치)"
+          }
+        ]
       },
       {
-        "id": "15",
+        "id": 15,
         "title": "기술적 지표 계산 엔진 구현",
         "description": "11가지 기술적 지표 구현: EMA, VWAP, RSI, MACD, Bollinger Bands, ADX, ATR, Stochastic, OBV, Williams %R, CCI",
         "details": "trading/indicators/ 패키지 (FastAPI/DB import 금지 — 순수 함수):\n\n지표 목록 및 파라미터:\n1. **EMA** (Exponential Moving Average): periods=[20, 50, 200]\n   * 공식: EMA(t) = P(t) × k + EMA(t-1) × (1 - k), k = 2/(n+1)\n2. **VWAP** (Volume Weighted Average Price): period=14\n   * 당일 KST 00:00 기준 리셋, 밴드 k=1.5\n3. **RSI** (Relative Strength Index): period=14, overbought=70, oversold=30\n   * RS = Avg Gain / Avg Loss\n4. **MACD**: fast=12, slow=26, signal=9\n   * MACD = EMA12 - EMA26, Signal = EMA9(MACD)\n5. **Bollinger Bands**: period=20, std_dev=2.0\n   * Upper = SMA + 2σ, Lower = SMA - 2σ\n6. **ADX** (Average Directional Index): period=14\n   * +DI, -DI, DX, ADX\n7. **ATR** (Average True Range): period=14\n   * True Range = max(High-Low, |High-Close|, |Low-Close|)\n8. **Stochastic**: period=14, signal=3\n   * %K = (Close - LowestLow) / (HighestHigh - LowestLow) × 100\n9. **OBV** (On Balance Volume): ema_period=20\n   * 양봉 +Volume, 음봉 -Volume 누적\n10. **Williams %R**: period=14, overbought=-20, oversold=-80\n    * -100 × (HighestHigh - Close) / (HighestHigh - LowestLow)\n11. **CCI** (Commodity Channel Index): period=20\n    * (TP - SMA(TP)) / (0.015 × Mean Deviation)\n\nAPI:\n- indicators/__init__.py: calculate_all_indicators(candles: list[Candle]) → dict[str, any]\n  * 입력: [{open, high, low, close, volume, timestamp}]\n  * 출력: {ema_20, ema_50, ema_200, vwap, rsi, macd, signal, histogram, bb_upper, bb_lower, adx, di_plus, di_minus, atr, stochastic_k, stochastic_d, obv, williams_r, cci, ...}\n  * 캔들 수 충분히 필요 (최소 200개 권장)\n\n구현 전략:\n- 각 지표 계산 함수 분리 (trend.py, oscillator.py, volatility.py)\n- Pandas 활용 (성능)\n- 결측값 처리 (NaN → 0 또는 전일값)\n- 이상치 필터링 (극단값 무시)\n\nCaching:\n- Redis에 지표 스냅샷 저장 (TTL 60~600초, 타임프레임별 차등)\n- 같은 candle set 재계산 방지",
@@ -807,7 +1995,7 @@
         ]
       },
       {
-        "id": "16",
+        "id": 16,
         "title": "AI 장세 분석 엔진 구현",
         "description": "기술적 지표 기반 장세 분류 (Trend/Range/Transition), GPT 보조 검증, confidence score 산출",
         "details": "trading/regime/ 패키지:\n\nMarketRegimeDetector 클래스:\n- 입력: candles, indicators, news_context (선택)\n- 출력: {regime: 'Trend'|'Range'|'Transition', confidence: 0.7, details: {...}}\n\n1차 분류 (규칙 기반):\n- **Trend**: ADX > 25 AND (EMA 정/역배열 OR MACD 히스토그램 연속 증가/감소 3봉)\n- **Range**: ADX < 20 AND BB Bandwidth < 임계값 AND RSI 40~60\n- **Transition**: RSI 다이버전스 OR MACD 크로스오버 임박 OR ADX 20~25 급변\n\nConfidence Score 계산 (가중치 기반):\n- ADX 강도 (30%): (ADX - 20) / 20 정규화 (0~1)\n- EMA 배열 (20%): 정배열/역배열 + 정도\n- MACD 크로스 (15%): 크로스 거리/강도\n- RSI 다이버전스 (20%): 다이버전스 신뢰도\n- BB Bandwidth (15%): 수축도\n\n각 장세별 스코어 → softmax 정규화 → 최고점수 장세 선택\n\nGPT 보조 검증 (선택적):\n- confidence < 70% 또는 Transition 시\n- 지표 요약 + 뉴스 5건 + 규칙 결과 → GPT\n- GPT 응답: regime, reasoning, final_confidence\n- 결과 반영: GPT 동의 시 confidence +10% (최대 100), 불일치 시 -15% (50 미만 HOLD)\n\nOutput 저장:\n- MongoDB ai_decisions: user_id, coin_symbol, market_regime, regime_confidence(dict), indicators_snapshot, gpt_model, gpt_raw_response, analysis_duration_ms\n- Redis 캐시: regime:{exchange}:{market} (TTL 300s)",
@@ -892,7 +2080,7 @@
         ]
       },
       {
-        "id": "17",
+        "id": 17,
         "title": "AI 매매 전략 선택 및 신호 생성 엔진 구현",
         "description": "5가지 매매 전략 구현, 장세→전략 매핑, 진입/청산 조건 평가, 매매 신호 생성",
         "details": "trading/strategy/ 패키지:\n\n5가지 전략 구현:\n1. **TrendMA 눌림목** (trend_ma.py)\n   - 조건: EMA20 > EMA50 > EMA200 + ADX > 25 + 가격 EMA20 근처 + 반등 양봉 + 거래량 증가 + RSI 40~65\n   - 청산: 익절 ATR×2.0 / 손절 EMA50 이탈 또는 ATR×1.5\n\n2. **VWAP 눌림목** (vwap_bounce.py)\n   - 조건: 가격 > VWAP + ADX > 20 + VWAP 터치 + 반전 캔들 + RSI 40~65 + OBV 상승\n   - 청산: 익절 VWAP 상단밴드 또는 ATR×2.0 / 손절 VWAP-ATR×0.5\n\n3. **VWAP 밴드 반전** (vwap_band_reversal.py)\n   - 조건: ADX < 20 + BB Bandwidth 수축 + VWAP 하단밴드 터치 + 반전 캔들 + RSI < 40 + %B < 0.1\n   - 청산: 익절 VWAP / 손절 밴드 이탈 + ATR×0.5\n\n4. **RSI+볼밴+반전캔들 3중 조건** (rsi_bb_reversal.py)\n   - 조건 3가지 모두 동시: RSI < 30 + Stochastic %K < 20 / BB Lower 터치 + %B < 0.05 / 반전 캔들\n   - 청산: 익절 BB Middle / 손절 BB 이탈 + ATR\n\n5. **RSI 다이버전스 + MACD** (rsi_divergence.py)\n   - 조건: RSI Bullish Divergence (50캔들, 5캔들 간격) + MACD Golden Cross + OBV 상승 전환\n   - 청산: 익절 ATR×2.5 / 손절 다이버전스 발생 저점\n\nStrategySelector:\n- 입력: regime (Trend/Range/Transition), indicators, candles\n- 규칙:\n  * Trend: ADX > 25일 때 TrendMA 또는 VWAP 눌림목 (EMA vs VWAP 조건 판단)\n  * Range: ADX < 20일 때 RSI+볼밴 또는 VWAP 밴드\n  * Transition: RSI 다이버전스 + MACD\n- 출력: 선택된 전략 클래스 + 파라미터\n\nSignal Generation:\n- 각 전략의 진입 조건 평가 → BUY/SELL/HOLD\n- 신호 강도: Strong/Medium/Weak (지표 조합 스코어)\n- 멀티 타임프레임 검증:\n  * 1h + 4h 같은 방향 → 허용 (가중치 1.0)\n  * 한쪽만 일치 → 허용 (0.75)\n  * 둘 다 반대 → 차단 (Counter-Trend 금지)\n  * 둘 다 neutral → 허용 (0.5, 포지션 축소)\n\nOutput:\n- {strategy_name, action, action_confidence, indicators_snapshot, signal_strength}",
@@ -1004,7 +2192,7 @@
         ]
       },
       {
-        "id": "18",
+        "id": 18,
         "title": "주문 실행 및 리스크 관리 엔진 구현",
         "description": "포지션 사이징 (Fixed Fractional, Half-Kelly), 동적 손절/익절(ATR 기반), 드로다운 관리, 주문 상태 추적",
         "details": "trading/execution/ 패키지:\n\nRiskManager 클래스:\n- 기본 리스크 파라미터:\n  * 단일 손실: 2% (최소 0.5%, 최대 5%)\n  * 일일 손실: 5% (최소 1%, 최대 10%)\n  * MDD: 15% (최소 5%, 최대 30%)\n  * 최대 동시 포지션: 3개\n  * 단일 투자 비율: 10% (최소 2%, 최대 20%)\n  * 연속 손실: 3회\n\nPosSizing:\n1. **Fixed Fractional** (기본):\n   ```\n   투자금 = (총자산 × 리스크비율) / 손절비율\n   예: (1000만 × 2%) / 3% = 666만\n   최대 10% 캡 적용\n   ```\n\n2. **Half-Kelly** (보조):\n   ```\n   Kelly% = W - (1-W)/R (W: 승률, R: 수익/손실비율)\n   Half-Kelly = Kelly × 0.5\n   Fixed와 Kelly 중 더 보수적 값\n   ```\n\n   신호 강도에 따른 조정:\n   - Strong: ×1.0\n   - Medium: ×0.75\n   - Weak: ×0.5\n\nDynamic SL/TP (ATR 기반):\n- 손절: ATR × strategy_multiplier (1.0~1.5)\n- 익절: ATR × strategy_multiplier (1.5~3.75)\n- Trailing Stop: 익절 50% 도달 시 → ATR×1.0로 추적\n\nDrawdown Management:\n- 일일 손실 > 5% → 당일 AI 매매 중지\n- 총 낙폭 > 15% → 일시 정지\n- 연속 손실 3회 → 4시간 쿨다운\n\nExecutionEngine:\n- 입력: trading_signal, account_balance, open_positions\n- 리스크 검증:\n  * 충분 자산 확인\n  * 포지션 한도 확인\n  * 드로다운 한도 확인\n- 포지션 사이징 계산\n- ExchangeProvider.place_order() 호출\n- 주문 상태 추적 (pending → filled/partial/failed)\n- 예외 처리:\n  * 부분 체결: 60초 대기 → 잔량 처리\n  * 실패: 30초 간격 최대 2회 재시도\n  * Circuit Breaker: 이미 적용됨 (providers)\n\nLogging:\n- MongoDB trade_logs에 모든 주문 기록\n- execution_timestamp, entry_price, signal_confidence, risk_params 포함",
@@ -1014,10 +2202,136 @@
           "17"
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "RiskManager 클래스 구현 (python-backend-expert)",
+            "description": "리스크 파라미터 관리 및 검증 로직 구현. 단일 손실, 일일 손실, MDD, 포지션 한도, 연속 손실 등의 기본 리스크 파라미터를 저장하고 관리하는 클래스 구현",
+            "dependencies": [],
+            "details": "trading/execution/risk_manager.py에서 RiskManager 클래스 구현: __init__에서 리스크 파라미터 설정(단일 손실 2%, 일일 손실 5%, MDD 15%, 최대 포지션 3개, 단일 투자비율 10%, 연속 손실 3회), 파라미터 범위 검증(Decimal 사용), 현재 드로다운 상태 추적 메서드(get_current_drawdown, get_daily_loss), 포지션 카운팅 메서드(get_open_positions_count), 연속 손실 추적 메서드 구현",
+            "status": "pending",
+            "testStrategy": "리스크 파라미터 초기화 검증, 범위 검증(0.5%~5% 등), 드로다운 상태 추적 정확성, 포지션 카운팅 정확성 테스트"
+          },
+          {
+            "id": 2,
+            "title": "Fixed Fractional 포지션 사이징 구현 (python-backend-expert)",
+            "description": "Fixed Fractional 방식으로 투자 규모 계산. 공식: 투자금 = (총자산 × 리스크비율) / 손절비율, 최대 10% 캡 적용",
+            "dependencies": [
+              1
+            ],
+            "details": "trading/execution/position_sizing.py에서 FixedFractionalSizer 클래스 구현: calculate_position_size(total_balance, risk_ratio, stop_loss_ratio) 메서드로 Decimal 기반 계산, 결과값에 최대 10% 캡 적용, 신호 강도 조정 미포함(Half-Kelly에서 처리), 예: (1000만 × 0.02) / 0.03 = 666만 계산 검증",
+            "status": "pending",
+            "testStrategy": "다양한 자산/리스크비율 조합에서 계산 정확성, 10% 캡 적용 검증, Decimal 정밀도 확인"
+          },
+          {
+            "id": 3,
+            "title": "Half-Kelly 포지션 사이징 구현 (python-backend-expert)",
+            "description": "Half-Kelly 방식으로 보수적 포지션 사이징 계산. Kelly% = W - (1-W)/R 적용, Half-Kelly = Kelly × 0.5, Fixed와 Kelly 중 더 보수적 값 선택",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "trading/execution/position_sizing.py에서 HalfKellySizer 클래스 구현: calculate_position_size(total_balance, win_rate, profit_loss_ratio, signal_strength) 메서드 구현, Kelly 계산 로직(W - (1-W)/R), Half-Kelly 계산(×0.5), FixedFractionalSizer와 비교하여 더 작은 값 선택, 신호 강도별 조정(Strong: ×1.0, Medium: ×0.75, Weak: ×0.5), None 값 처리 로직",
+            "status": "pending",
+            "testStrategy": "다양한 승률/수익비율 조합 검증, Half-Kelly 공식 정확성, Fixed와 비교 로직, 신호 강도별 조정 계산 확인"
+          },
+          {
+            "id": 4,
+            "title": "ATR 기반 동적 손절/익절 계산 구현 (python-backend-expert)",
+            "description": "ATR(Average True Range) 기반으로 손절선과 익절선을 동적으로 계산. 손절: ATR × strategy_multiplier(1.0~1.5), 익절: ATR × strategy_multiplier(1.5~3.75), Trailing Stop 로직 포함",
+            "dependencies": [
+              1
+            ],
+            "details": "trading/execution/stop_levels.py에서 StopLevelCalculator 클래스 구현: calculate_stops(entry_price, atr, multiplier_range) 메서드로 손절/익절 가격 계산(Decimal 기반), loss_multiplier와 profit_multiplier 파라미터, Trailing Stop 구현(익절 50% 도달 시 ATR×1.0으로 추적), update_trailing_stop(current_price, atr) 메서드, 현재 가격 기반 Trailing Stop 활성화 로직",
+            "status": "pending",
+            "testStrategy": "ATR 기반 손절/익절 계산 정확성, 배수 범위별 계산, Trailing Stop 활성화 조건 검증, 가격 업데이트 시 Trailing Stop 업데이트 확인"
+          },
+          {
+            "id": 5,
+            "title": "드로다운 관리 및 자동 중지 로직 구현 (python-backend-expert)",
+            "description": "일일 손실, 누적 드로다운, 연속 손실 추적 및 자동 중지 로직. 일일 손실 > 5% 시 당일 AI 매매 중지, 총 낙폭 > 15% 시 일시정지, 연속 손실 3회 시 4시간 쿨다운",
+            "dependencies": [
+              1
+            ],
+            "details": "trading/execution/drawdown_manager.py에서 DrawdownManager 클래스 구현: track_loss(loss_amount, total_balance) 메서드로 일일/누적 손실 추적, is_daily_limit_exceeded() 메서드, is_mdd_limit_exceeded() 메서드, track_consecutive_loss(loss_count) 메서드로 연속 손실 추적, get_cooldown_end_time() 메서드로 쿨다운 시간 계산(4시간), reset_daily_loss(timestamp) 메서드로 매일 자정 리셋, Redis 기반 상태 저장",
+            "status": "pending",
+            "testStrategy": "일일 손실 5% 초과 시 중지 플래그 설정 검증, MDD 15% 초과 시 일시정지 플래그, 연속 손실 3회 시 4시간 쿨다운 계산, 매일 자정 리셋 로직 검증"
+          },
+          {
+            "id": 6,
+            "title": "ExecutionEngine 기본 구조 및 검증 로직 구현 (python-backend-expert)",
+            "description": "주문 실행을 위한 핵심 엔진. 입력(trading_signal, account_balance, open_positions), 리스크 검증(자산, 포지션 한도, 드로다운), 주문 생성 전 사전 검증",
+            "dependencies": [
+              1,
+              2,
+              3,
+              5
+            ],
+            "details": "trading/execution/execution_engine.py에서 ExecutionEngine 클래스 구현: execute_trade(trading_signal, account_balance, open_positions, exchange_account) 메서드, validate_sufficient_balance(balance_needed, account_balance) 메서드, validate_position_limit(open_count, max_positions) 메서드, validate_drawdown_limits(drawdown_manager, limits) 메서드, 입력값 검증(None 체크, 타입 검증), 리스크 검증 실패 시 TradeExecutionException 발생",
+            "status": "pending",
+            "testStrategy": "충분 자산 검증 실패 케이스, 포지션 한도 초과 케이스, 드로다운 한도 초과 케이스, 모든 검증 통과 케이스 테스트"
+          },
+          {
+            "id": 7,
+            "title": "포지션 사이징 적용 및 주문 생성 구현 (python-backend-expert)",
+            "description": "검증 완료 후 포지션 사이징 계산 및 ExchangeProvider.place_order() 호출. 동적 손절/익절 계산을 포함한 주문 생성",
+            "dependencies": [
+              2,
+              3,
+              4,
+              6
+            ],
+            "details": "ExecutionEngine.execute_trade() 메서드에서 포지션 사이징 메서드 선택(signal.signal_strength 기반 Half-Kelly 선택), calculate_position_size() 호출, StopLevelCalculator로 손절/익절 계산, TradeOrder 모델에 데이터 저장 직전 주문 생성, exchange_provider.place_order(order_data) 호출, 반환된 exchange_order_id 저장, 주문 상태를 'pending'으로 설정",
+            "status": "pending",
+            "testStrategy": "다양한 신호 강도 조건에서 포지션 사이징 검증, 손절/익절 계산 적용 확인, ExchangeProvider 모의 객체로 place_order 호출 검증, 반환된 order_id 저장 확인"
+          },
+          {
+            "id": 8,
+            "title": "주문 상태 추적 및 상태 머신 구현 (python-backend-expert)",
+            "description": "주문 상태 관리: pending → filled/partial/failed. 부분 체결 처리(60초 대기), 실패 재시도(30초 간격 최대 2회), 최종 상태 저장",
+            "dependencies": [
+              6,
+              7
+            ],
+            "details": "trading/execution/order_tracker.py에서 OrderTracker 클래스 구현: track_order(order_id, exchange_provider) 메서드, check_order_status(exchange_order_id) 메서드로 거래소 상태 조회, state machine(pending→filled/partial/failed) 구현, 부분 체결 시 60초 대기 후 재시도 로직, 실패 시 30초 간격 최대 2회 재시도, TradeOrder.status 업데이트(filled/partial/cancelled), executed_quantity, executed_at 업데이트, 최종 상태 저장 시 MongoDB trade_logs 기록",
+            "status": "pending",
+            "testStrategy": "pending→filled 상태 전환, 부분 체결 처리 및 60초 대기, 실패 후 재시도 로직(30초 간격, 최대 2회), 최종 상태 저장 검증"
+          },
+          {
+            "id": 9,
+            "title": "MongoDB trade_logs 로깅 및 예외 처리 구현 (python-backend-expert)",
+            "description": "모든 주문 실행 관련 정보를 MongoDB trade_logs에 기록. execution_timestamp, entry_price, signal_confidence, risk_params, PnL 관련 필드 포함",
+            "dependencies": [
+              7,
+              8
+            ],
+            "details": "trading/execution/logging.py에서 TradeLogger 클래스 구현: log_trade_execution(trade_order, signal, risk_params, atr_snapshot) 메서드로 TradeLog 문서 생성 및 저장, TradeLog 스키마 활용(user_id, trade_order_id, coin_symbol, exchange_type, order_type, price, quantity, is_ai_order, market_regime, strategy_name, entry_price, signal_confidence), execution_timestamp 기록, risk_params 스냅샷 저장, 예외 처리(거래소 API 오류, 네트워크 오류, 부분 체결 등)를 TradeLog.reasoning_summary에 기록, status='open'으로 저장",
+            "status": "pending",
+            "testStrategy": "TradeLog 생성 및 필드 저장 검증, execution_timestamp 기록, risk_params 스냅샷 정확성, 예외 상황 로깅 확인, MongoDB 저장 검증"
+          },
+          {
+            "id": 10,
+            "title": "통합 테스트 및 E2E 테스트 작성 (e2e-test-expert)",
+            "description": "포지션 사이징 계산(Fixed Fractional vs Half-Kelly), ATR 기반 손절/익절, 드로다운 한도, 주문 상태 머신, 부분 체결/재시도, 예외 처리 등 전체 흐름 테스트",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9
+            ],
+            "details": "tests/trading/test_execution.py 작성: test_fixed_fractional_position_sizing (다양한 시나리오), test_half_kelly_vs_fixed (비교 검증), test_atr_based_stops (손절/익절 정확성), test_drawdown_daily_limit_exceeded (일일 손실 5% 초과 시 중지), test_drawdown_mdd_exceeded (MDD 15% 초과 시 일시정지), test_consecutive_loss_cooldown (3회 연속 손실 후 4시간 쿨다운), test_order_state_machine (pending→filled), test_partial_fill_handling (60초 대기), test_retry_logic (30초 간격 최대 2회), test_trade_log_creation (MongoDB 기록), test_execution_with_insufficient_balance (실패 케이스), conftest.py에서 mock_exchange_provider, mock_risk_manager, test_db 픽스처 구성",
+            "status": "pending",
+            "testStrategy": "모든 계산 정확성 검증, 상태 머신 전환 검증, 예외 처리 흐름 검증, 부분 체결 및 재시도 로직, MongoDB 로깅 검증, 통합 흐름 E2E 테스트(신호 생성→검증→포지션 사이징→주문 생성→상태 추적→로깅)"
+          }
+        ]
       },
       {
-        "id": "19",
+        "id": 19,
         "title": "Celery 비동기 작업 및 스케줄 구성",
         "description": "Celery Beat 설정, AI 매매 주기(5분), 뉴스 스크랩(1시간), 일일 PnL 리포트, 토큰 정리",
         "details": "tasks/celery_app.py:\n- Celery 앱 초기화 (Redis broker)\n- 큐 정의:\n  * ai: AI 매매 전용\n  * scraper: 뉴스 스크랩\n  * default: 기타 (리포트, 정리)\n- Beat 스케줄:\n  * 0~59분 매 5분마다: run_all_active_configs (ai 큐)\n  * 매 1시간: scrape_news (scraper 큐)\n  * 매일 00:00 UTC: generate_daily_pnl_reports (default)\n  * 매일 03:00 UTC: cleanup_expired_tokens (default)\n\n태스크 구현:\n\ntasks/ai_trading.py:\n- run_all_active_configs()\n  * 모든 활성 사용자의 ai_trading_configs 조회\n  * 각 config마다 run_single_config() 호출 (병렬, max_retries=2)\n  * timeout: soft 240초, hard 300초\n  * 결과 집계 (성공/실패 로그)\n\n- run_single_config(user_id, coin_symbol, config_id)\n  * Stage 1~5 파이프라인 실행 (trading/ 패키지 호출)\n  * timeout: soft 90초, hard 120초\n  * 예외 처리: GPT 폴백, DLQ (Dead Letter Queue), Sentry 알림\n  * Redis ai:signal:{user_id} pub/sub으로 결과 발행\n  * MongoDB trade_logs, ai_decisions 저장\n  * FCM 푸시 알림 발송 (매매 신호)\n\n- run_backtest(user_id, coin_symbol, ...)\n  * 백테스팅 실행 (M9)\n  * 진행 상태 업데이트 (Redis)\n\ntasks/news_scraper.py:\n- scrape_news()\n  * 뉴스 소스에서 최근 뉴스 수집\n  * GPT로 감성 분석 (optional)\n  * MongoDB news_data 저장\n  * 각 코인별 최신 5건만 유지\n\ntasks/reports.py:\n- generate_daily_pnl_reports()\n  * 모든 사용자에 대해 어제 손익 계산\n  * PG trade_orders + Mongo trade_logs 조회\n  * daily_pnl_reports upsert (멱등성)\n  * ai_pnl vs manual_pnl 분리\n  * 전략별, 장세별 성과 계산\n\ntasks/cleanup.py:\n- cleanup_expired_tokens()\n  * Redis auth:refresh:* 만료된 키 삭제\n  * MongoDB TTL 인덱스 자동 정리 (MongoDB 내장)\n\nWorker 설정:\n- 동시성: --concurrency=4 (CPU 코어 기반)\n- 타임아웃: 위 참조\n- 에러 처리: Sentry, DLQ\n- 모니터링: Prometheus 메트릭 (태스크 실행 횟수, 성공/실패율)\n\nFlow 제어:\n- 마스터 스위치: users.ai_trading_enabled (FALSE → 모든 매매 중지)\n- 사용자별 disable_at: ai_trading_configs 비활성 날짜",
@@ -1106,7 +2420,7 @@
         ]
       },
       {
-        "id": "20",
+        "id": 20,
         "title": "포트폴리오/자산 조회 API 구현",
         "description": "거래소별 보유 자산 실시간 조회, 총자산/수익률 계산, 자산 비중 조회",
         "details": "엔드포인트:\n- GET /api/v1/portfolio (전체 자산 요약)\n  * 응답: {\n      total_balance (원화 환산),\n      total_pnl (수익금),\n      total_pnl_ratio (수익률 %),\n      total_trades,\n      ai_pnl, ai_pnl_ratio, ai_trade_count (AI만),\n      manual_pnl, manual_pnl_ratio, manual_trade_count (수동만),\n      by_exchange: [{exchange_id, balance, pnl, pnl_ratio}],\n      top_coins: [{symbol, quantity, avg_price, current_price, pnl}] (상위 5)\n    }\n\n- GET /api/v1/portfolio/{exchange_id} (거래소별 상세)\n  * 응답: {\n      exchange_type, exchange_name,\n      total_balance (거래소 원화 환산),\n      coins: [\n        {symbol, quantity, avg_entry_price, current_price, pnl_amount, pnl_ratio, % of total}\n      ]\n    }\n\n데이터 수집:\n1. ExchangeProvider.get_balance() → 현재 보유 수량\n2. 실시간 시세 (WS 또는 REST) → 현재 가격\n3. trade_orders (PG) → 평균 매입가 계산\n4. 원화 환산: 각 코인 현재가 × KRW 환율 (또는 KRW 기축 코인은 직접)\n\n평균 매입가 계산:\n- 모든 매수 주문: Σ(quantity × price) / Σ(quantity)\n- 또는 FIFO (First In First Out) 방식\n\nPnL 계산:\n- pnl = (current_price - avg_price) × quantity\n- pnl_ratio = ((current_price - avg_price) / avg_price) × 100%\n- 청산된 포지션: 청산 수익 (trade_logs에서)\n\nCaching:\n- 포트폴리오 요약은 5분마다 갱신 (Redis 캐시)\n- 거래소 잔고는 1분마다 갱신\n- WS 구독 시 실시간 업데이트\n\nUI 표시:\n- 도넛 차트: 자산 비중 (원화 기준)\n- 손익률 색상: 빨강(손실) / 초록(수익) / 회색(중립)",
@@ -1116,10 +2430,122 @@
           "14"
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "포트폴리오 데이터 스키마 정의 (python-backend-expert)",
+            "description": "포트폴리오 조회 API의 요청/응답 스키마 정의 및 Pydantic 모델 생성",
+            "dependencies": [],
+            "details": "server/app/schemas/portfolio.py 파일 생성. GET /api/v1/portfolio 응답 스키마 (PortfolioSummaryResponse), GET /api/v1/portfolio/{exchange_id} 응답 스키마 (PortfolioDetailResponse) 정의. 중첩된 Pydantic 모델: ExchangeSummary, CoinPosition, TopCoin 등. Decimal 타입 사용 (수익률, 평균 매입가 등).",
+            "status": "pending",
+            "testStrategy": "Pydantic 모델 생성 테스트: valid/invalid 입력 검증, 필드 타입 확인, JSON 직렬화 테스트"
+          },
+          {
+            "id": 2,
+            "title": "거래소 잔고 데이터 수집 인터페이스 (python-backend-expert)",
+            "description": "ExchangeProvider 추상 클래스/인터페이스 정의 및 거래소별 구현체 스켈레톤 작성",
+            "dependencies": [
+              1
+            ],
+            "details": "server/app/providers/exchange_provider.py 기본 인터페이스 정의: get_balance(exchange_account_id) → {coin_symbol: quantity}. 각 거래소별 구현 클래스: UpbitProvider, CoinOneProvider, CoinbaseProvider, BinanceProvider. Mock provider도 생성 (테스트용). API 키 복호화 및 클라이언트 초기화 로직 포함.",
+            "status": "pending",
+            "testStrategy": "Mock ExchangeProvider로 get_balance() 호출 검증, 복호화된 API 키 사용 테스트, 거래소별 응답 형식 파싱"
+          },
+          {
+            "id": 3,
+            "title": "평균 매입가 계산 서비스 (python-backend-expert)",
+            "description": "trade_orders 테이블에서 코인별 평균 매입가 계산 로직 구현",
+            "dependencies": [
+              1
+            ],
+            "details": "server/app/services/portfolio_service.py 내 calculate_avg_entry_price() 함수. 거래소별/사용자별 매수 주문(order_type='buy', status='filled') 조회 → FIFO 또는 가중평균 계산. Σ(quantity × price) / Σ(quantity). 청산 포지션은 별도 처리 (trade_logs에서 entry_price). Decimal 정밀도 유지.",
+            "status": "pending",
+            "testStrategy": "여러 매수 주문으로 평균가 계산 정확성 검증, 부분 체결 주문 처리, 청산 포지션 처리"
+          },
+          {
+            "id": 4,
+            "title": "수익/손실(PnL) 계산 엔진 (python-backend-expert)",
+            "description": "현재가 기반 미실현 손익과 거래 로그 기반 실현 손익 계산",
+            "dependencies": [
+              3
+            ],
+            "details": "calculate_pnl() 함수. 미실현 PnL: (current_price - avg_entry_price) × quantity. PnL 비율: ((current_price - avg_entry_price) / avg_entry_price) × 100. 실현 PnL: trade_logs에서 closed 거래의 pnl_amount 합산. AI/수동 주문 구분 계산. 음수 손실은 붉은색 표시용 flag 포함.",
+            "status": "pending",
+            "testStrategy": "PnL 계산 정확성 (수익/손실 케이스), 비율 계산 검증, AI/수동 분리 계산, 부분 청산 거래 처리"
+          },
+          {
+            "id": 5,
+            "title": "원화 환율 변환 및 가격 정규화 (python-backend-expert)",
+            "description": "암호화폐 현재가를 KRW 기준으로 환산 및 거래소별 가격 통일",
+            "dependencies": [
+              2
+            ],
+            "details": "normalize_to_krw() 함수. KRW 기축 거래소(Upbit, Coinone)는 직접 KRW. USDT 기축(Binance, Coinbase)은 USDT-KRW 환율 적용. 환율은 Redis 캐시 활용 (10분 TTL). 각 거래소별 현재가는 실시간 WebSocket 또는 REST API에서 수집.",
+            "status": "pending",
+            "testStrategy": "KRW 기축/USDT 기축 거래소 환율 적용 검증, 환율 캐시 동작, 가격 정규화 정확성"
+          },
+          {
+            "id": 6,
+            "title": "포트폴리오 조회 비즈니스 로직 (python-backend-expert)",
+            "description": "전체 자산 요약 및 거래소별 상세 조회 로직 구현",
+            "dependencies": [
+              3,
+              4,
+              5
+            ],
+            "details": "server/app/services/portfolio_service.py 내 get_portfolio_summary(), get_portfolio_detail() 메서드. 사용자의 모든 거래소 계정 조회 → 각 거래소별 잔고 + 평균가 + PnL 계산 → 합산. 상위 5개 코인별로 추가 정렬. AI/수동 분리 통계 계산. 거래소 오류 시 부분 응답 처리.",
+            "status": "pending",
+            "testStrategy": "전체 포트폴리오 요약 생성 검증, 거래소별 상세 조회, 상위 5개 코인 정렬, AI/수동 통계 분리, 거래소 오류 처리"
+          },
+          {
+            "id": 7,
+            "title": "Redis 캐싱 전략 구현 (python-backend-expert)",
+            "description": "포트폴리오 데이터 캐싱 및 실시간 업데이트 로직",
+            "dependencies": [
+              6
+            ],
+            "details": "server/app/core/cache.py 내 PortfolioCache 클래스. 전체 포트폴리오 요약: 5분 TTL (Redis 키: portfolio:{user_id}). 거래소별 잔고: 1분 TTL (portfolio:{user_id}:exchange:{exchange_id}). 캐시 갱신: 주문 체결 시, 정기적 백그라운드 태스크(5분마다). WebSocket 구독 시 실시간 업데이트. 캐시 무효화 트리거: trade_order 상태 변경, exchange 잔고 변경.",
+            "status": "pending",
+            "testStrategy": "캐시 TTL 검증, 캐시 히트율, 수동 무효화 동작, 백그라운드 갱신, 동시성 처리"
+          },
+          {
+            "id": 8,
+            "title": "포트폴리오 API 엔드포인트 구현 (python-backend-expert)",
+            "description": "GET /api/v1/portfolio 및 GET /api/v1/portfolio/{exchange_id} 엔드포인트 작성",
+            "dependencies": [
+              6,
+              7
+            ],
+            "details": "server/app/api/v1/portfolio.py 라우터 파일 생성. @router.get('/') 전체 자산 요약 응답 (캐시 활용). @router.get('/{exchange_id}') 거래소별 상세 응답. 인증 확인 (현재 사용자), 정상 응답 시 200, 데이터 없음 시 200 + 빈 배열, 에러 시 적절한 HTTP 상태. 요청/응답 로깅.",
+            "status": "pending",
+            "testStrategy": "API 엔드포인트 HTTP 상태 코드 검증, 응답 스키마 확인, 캐시 여부 확인, 인증 실패 처리, 존재하지 않는 거래소 ID"
+          },
+          {
+            "id": 9,
+            "title": "포트폴리오 API 통합 테스트 (e2e-test-expert)",
+            "description": "전체 포트폴리오 조회 플로우 E2E 테스트 작성",
+            "dependencies": [
+              8
+            ],
+            "details": "tests/integration/test_portfolio_api.py 파일 생성. Mock ExchangeProvider로 테스트 시나리오: (1) 여러 매수 주문 → 평균가 계산 검증, (2) 현재가 적용 → PnL 계산 검증, (3) 거래소별 잔고 → 총자산 합산 검증, (4) 상위 5개 코인 정렬, (5) AI/수동 통계 분리. 캐시 동작 검증. httpx 클라이언트로 실제 엔드포인트 호출.",
+            "status": "pending",
+            "testStrategy": "Mock 데이터로 전체 플로우 검증, 계산 정확성, 캐시 동작, API 응답 형식"
+          },
+          {
+            "id": 10,
+            "title": "도넛 차트 데이터 포맷 및 문서화 (code-architect)",
+            "description": "자산 비중 도넛 차트용 응답 데이터 구조 및 API 문서화",
+            "dependencies": [
+              8
+            ],
+            "details": "PortfolioSummaryResponse에 doughnut_chart_data 필드 추가. 형식: [{label: 'BTC', value: 0.35, color: '#F7931A'}, ...]. 상위 5개 코인 + 기타(others). 모든 엔드포인트 OpenAPI 스키마 작성. server/app/api/v1/__init__.py에 portfolio 라우터 include. 응답 예시 및 에러 케이스 문서화.",
+            "status": "pending",
+            "testStrategy": "도넛 차트 데이터 형식 검증, 비중 합계 100% 확인, OpenAPI 스키마 유효성"
+          }
+        ]
       },
       {
-        "id": "21",
+        "id": 21,
         "title": "가격 알림 시스템 구현 (M9)",
         "description": "특정 가격 도달 시 알림, 조건 설정(상승/하강), 미읽 알림 관리",
         "details": "엔드포인트:\n- POST /api/v1/price-alerts (알림 생성)\n  * 요청: coin_id, exchange_account_id, condition(above/below), target_price, is_active\n  * 응답: price_alert_id\n  * price_alerts 테이블에 저장\n\n- GET /api/v1/price-alerts?active={true/false}\n  * 사용자의 가격 알림 목록\n\n- PUT /api/v1/price-alerts/{id} (알림 수정)\n  * target_price, condition 변경\n\n- DELETE /api/v1/price-alerts/{id} (알림 삭제)\n\n백그라운드 감지:\n- 실시간 시세 수신 시 활성 알림 조건 판단\n- 조건 만족 시:\n  * is_triggered = True (alert 업데이트)\n  * FCM 푸시 알림 발송\n  * MongoDB notifications 컬렉션에 기록\n  * 미읽 카운트 Redis 업데이트\n  * 자동 비활성화 (is_active = False)\n\n알림 기록:\n- MongoDB notifications:\n  * user_id, type(price_alert), title, body, data({coin_symbol, price, target})\n  * is_read, created_at, TTL: 90일\n\nUI:\n- 활성 알림 목록 (현재 가격 + 목표 가격 표시)\n- 도달한 알림 → Notification Center에 표시\n- 미읽 뱃지 카운트",
@@ -1129,10 +2555,137 @@
           "13"
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "가격 알림 API 라우터 및 스키마 정의 (python-backend-expert)",
+            "description": "가격 알림 시스템의 REST API 엔드포인트 구현을 위한 라우터 모듈과 요청/응답 스키마 정의",
+            "dependencies": [],
+            "details": "server/app/api/v1/price_alerts.py 라우터 파일 생성 및 다음 엔드포인트 정의:\n- POST /api/v1/price-alerts (생성)\n- GET /api/v1/price-alerts (조회)\n- PUT /api/v1/price-alerts/{id} (수정)\n- DELETE /api/v1/price-alerts/{id} (삭제)\n\nserver/app/schemas/price_alerts.py에 다음 스키마 정의:\n- PriceAlertCreate: coin_id, exchange_account_id, condition, target_price, is_active\n- PriceAlertUpdate: target_price, condition\n- PriceAlertResponse: id, coin_id, condition, target_price, is_active, is_triggered, triggered_at, created_at\n- PriceAlertListResponse: 알림 목록 및 미읽 카운트",
+            "status": "pending",
+            "testStrategy": "pytest를 이용한 API 엔드포인트 단위 테스트 작성: 정상 요청, 유효성 검사 실패, 미인증 요청 등을 검증"
+          },
+          {
+            "id": 2,
+            "title": "가격 알림 저장소 및 데이터 액세스 계층 구현 (python-backend-expert)",
+            "description": "PriceAlert 모델과 PostgreSQL을 이용한 데이터 지속성 관리 및 쿼리 최적화",
+            "dependencies": [
+              1
+            ],
+            "details": "server/app/repositories/price_alert_repository.py 생성:\n- create(user_id, coin_id, exchange_account_id, condition, target_price) → PriceAlert\n- get_by_id(id) → PriceAlert\n- list_by_user(user_id, active_only=False) → List[PriceAlert]\n- update_target_price(id, target_price)\n- update_condition(id, condition)\n- mark_triggered(id) → is_triggered=True, triggered_at=now()\n- deactivate(id) → is_active=False\n- delete(id)\n- get_active_untriggered_alerts() → 백그라운드 감지용 활성 미발동 알림 조회\n\n부분 인덱스 활용: ix_price_alerts_active_untriggered 인덱스를 통한 성능 최적화",
+            "status": "pending",
+            "testStrategy": "단위 테스트: 각 CRUD 메서드 동작 검증, 쿼리 성능 테스트 (벤치마크), 트랜잭션 롤백 처리"
+          },
+          {
+            "id": 3,
+            "title": "가격 알림 비즈니스 로직 서비스 계층 구현 (python-backend-expert)",
+            "description": "가격 알림 생성, 수정, 삭제, 조회 및 유효성 검사를 포함한 서비스 계층",
+            "dependencies": [
+              2
+            ],
+            "details": "server/app/services/price_alert_service.py 생성:\n- create_alert(user_id, coin_id, exchange_account_id, condition, target_price): 중복 검사, 가격 유효성 검증\n- update_alert(user_id, alert_id, target_price, condition): 소유권 검증, 활성 상태만 수정 가능\n- delete_alert(user_id, alert_id): 소유권 검증\n- get_user_alerts(user_id, active_only=False): 활성 필터 적용\n- check_and_trigger_alerts(current_price, coin_id): 실시간 시세 수신 시 조건 판단\n\n비즈니스 규칙:\n- condition: 'above' 또는 'below' 검증\n- target_price: 양수, 8자리 소수점 검증\n- 같은 코인/조건에 대한 중복 알림 방지\n- 도달한 알림은 자동 비활성화 (is_active=False)",
+            "status": "pending",
+            "testStrategy": "단위 테스트: 유효성 검사, 중복 검사, 조건 판단 로직 (above/below), 서비스 예외 처리"
+          },
+          {
+            "id": 4,
+            "title": "미읽 알림 카운트 Redis 캐싱 구현 (python-backend-expert)",
+            "description": "Redis를 이용한 미읽 가격 알림 카운트 실시간 관리 및 캐싱",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "server/app/core/cache.py 또는 별도 cache_service.py에 다음 함수 구현:\n- get_unread_price_alert_count(user_id) → int: Redis에서 조회\n- increment_unread_count(user_id): 알림 발동 시 카운트 증가\n- decrement_unread_count(user_id): 알림 읽기 시 카운트 감소\n- reset_unread_count(user_id): 모두 읽음 처리\n\nRedis 키 패턴: price_alert:unread:{user_id}\nTTL: 30일 (만료된 알림과 동기화)",
+            "status": "pending",
+            "testStrategy": "Redis 연동 통합 테스트: 카운트 증감 정확성, TTL 검증, 동시 접근 안전성"
+          },
+          {
+            "id": 5,
+            "title": "MongoDB Notification 문서 저장소 구현 (python-backend-expert)",
+            "description": "알림 발동 이력을 MongoDB에 저장하고 조회하는 계층 구현",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "server/app/documents/notifications.py의 Notification 문서 확장 (이미 정의됨):\n- 기존: user_id, type, title, body, data, is_read, created_at\n- type='price_alert'일 경우 data에 다음 필드: {coin_symbol, current_price, target_price}\n\nserver/app/repositories/notification_repository.py 생성:\n- create_price_alert_notification(user_id, coin_symbol, current_price, target_price) → Notification\n- mark_as_read(notification_id)\n- list_user_notifications(user_id, skip=0, limit=50) → List[Notification]\n- count_unread(user_id) → int\n\n90일 TTL 인덱스 자동 삭제 (이미 설정됨)",
+            "status": "pending",
+            "testStrategy": "MongoDB CRUD 테스트, TTL 인덱스 동작 검증, 비동기 저장소 성능 테스트"
+          },
+          {
+            "id": 6,
+            "title": "실시간 시세 감시 백그라운드 작업 구현 (python-backend-expert)",
+            "description": "WebSocket 실시간 시세 수신 시 활성 알림 조건을 판단하고 발동하는 백그라운드 작업",
+            "dependencies": [
+              3,
+              4,
+              5
+            ],
+            "details": "server/app/tasks/price_alert_monitor.py 생성:\n- background task: monitor_price_alerts()\n- WebSocket으로부터 실시간 시세 수신 (coin_id, current_price)\n- get_active_untriggered_alerts(coin_id)로 해당 코인 활성 알림 조회\n- 각 알림에 대해 condition 판단:\n  * condition='above': current_price >= target_price\n  * condition='below': current_price <= target_price\n- 조건 만족 시:\n  * price_alert_repository.mark_triggered(alert_id)\n  * MongoDB notification 생성\n  * Redis 미읽 카운트 증가\n  * FCM 푸시 알림 발송 준비\n  * is_active=False로 자동 비활성화\n\n예외 처리: 데이터베이스 오류 시 로깅하되 시세 처리 중단 방지",
+            "status": "pending",
+            "testStrategy": "단위 테스트 (모의 시세 데이터), 통합 테스트 (WebSocket + DB + Redis), 조건 판단 검증 (above/below 경계값)"
+          },
+          {
+            "id": 7,
+            "title": "FCM 푸시 알림 발송 통합 (python-backend-expert)",
+            "description": "가격 알림 발동 시 Firebase Cloud Messaging을 통한 클라이언트 푸시 알림 발송",
+            "dependencies": [
+              6
+            ],
+            "details": "server/app/services/fcm_service.py 확장 (필요시 생성):\n- send_price_alert_notification(user_id, coin_symbol, current_price, target_price):\n  * user의 모든 활성 Client 기기의 FCM 토큰 조회\n  * 멀티캐스트 메시지 생성:\n    - title: f\"⚠️ {coin_symbol} {current_price} 도달\"\n    - body: f\"목표 가격 {target_price}에 도달했습니다.\"\n    - data: {price_alert_id, coin_symbol, current_price, target_price, triggered_at}\n  * FCM API로 멀티캐스트 발송 (최대 500개 토큰)\n  * 실패한 토큰 로깅 및 무효한 토큰 정리\n\n에러 처리: FCM 발송 실패 시 로깅하되, DB 트랜잭션은 성공으로 처리",
+            "status": "pending",
+            "testStrategy": "FCM 에뮬레이터 또는 모의 발송 테스트, 멀티캐스트 페이징 테스트, 토큰 무효화 처리"
+          },
+          {
+            "id": 8,
+            "title": "가격 알림 조회 API에 미읽 카운트 반영 (python-backend-expert)",
+            "description": "가격 알림 목록 조회 시 미읽 알림 카운트를 응답에 포함하고, 알림 읽음 처리 엔드포인트 추가",
+            "dependencies": [
+              4,
+              5
+            ],
+            "details": "server/app/api/v1/price_alerts.py 확장:\n- GET /api/v1/price-alerts 응답에 unread_count 필드 추가\n- PATCH /api/v1/price-alerts/{id}/mark-read: 개별 알림 읽음 처리\n  * notification_repository.mark_as_read(alert_id)\n  * Redis 미읽 카운트 감소\n- PATCH /api/v1/price-alerts/mark-all-read: 모든 알림 일괄 읽음\n  * 모든 미읽 notification 업데이트\n  * Redis 미읽 카운트 초기화\n\nPriceAlertListResponse 확장:\n- alerts: List[PriceAlert]\n- unread_count: int\n- total_count: int",
+            "status": "pending",
+            "testStrategy": "API 엔드포인트 통합 테스트, 미읽 카운트 정확성 검증, 읽음/미읽 상태 전환"
+          },
+          {
+            "id": 9,
+            "title": "가격 알림 E2E 테스트 작성 (e2e-test-expert)",
+            "description": "가격 알림 생성부터 발동까지의 전체 흐름 end-to-end 테스트",
+            "dependencies": [
+              1,
+              2,
+              3,
+              6,
+              7,
+              8
+            ],
+            "details": "server/tests/e2e/test_price_alerts.py 생성:\n\n테스트 케이스:\n1. 가격 알림 생성 및 조회\n   - POST /api/v1/price-alerts 요청 → 성공 (price_alert_id 반환)\n   - GET /api/v1/price-alerts → 생성된 알림 포함\n   \n2. 조건 판단 검증 (above/below)\n   - \"above\" 조건: 현재가 >= 목표가 시 발동\n   - \"below\" 조건: 현재가 <= 목표가 시 발동\n   \n3. 실시간 시세 수신 시 자동 발동\n   - WebSocket 시세 수신 모의\n   - is_triggered=true, is_active=false 확인\n   - MongoDB notification 생성 확인\n   - Redis 미읽 카운트 증가 확인\n   \n4. FCM 푸시 발송 확인\n   - FCM 모의 발송 검증\n   - 메시지 내용 정확성\n   \n5. 미읽 카운트 정확성\n   - unread_count 조회\n   - mark-read 처리 후 감소 확인\n   \n6. 알림 수정 및 삭제\n   - PUT /api/v1/price-alerts/{id}: target_price, condition 수정\n   - DELETE /api/v1/price-alerts/{id}: 삭제 후 미존재 확인",
+            "status": "pending",
+            "testStrategy": "pytest + httpx로 API 통합 테스트, 모의 WebSocket 데이터, 모의 FCM, DB 상태 검증, Redis 상태 검증"
+          },
+          {
+            "id": 10,
+            "title": "가격 알림 코드 리뷰 및 최적화 (code-review-expert)",
+            "description": "구현된 가격 알림 시스템 전체 코드 리뷰 및 성능 최적화",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9
+            ],
+            "details": "리뷰 항목:\n\n1. 보안 검토\n   - 입력 유효성 검사 (SQL injection, XSS 방지)\n   - 사용자 소유권 검증 (다른 사용자 알림 조회/수정 방지)\n   - FCM 토큰 보안\n   \n2. 성능 최적화\n   - 데이터베이스 쿼리 인덱스 활용 (부분 인덱스 활용 확인)\n   - N+1 쿼리 문제 점검\n   - Redis 캐시 hit ratio 검증\n   - 대량 알림 처리 성능 (1000개 이상)\n   \n3. 코드 품질\n   - Ruff 린팅 통과\n   - 타입 어노테이션 완성도\n   - 에러 처리 및 예외 전략\n   - 로깅 적절성\n   \n4. 테스트 커버리지\n   - 라인 커버리지 80% 이상\n   - 중요 경로 테스트\n   - 에지 케이스 테스트\n   \n5. 문서화\n   - API 문서 (Swagger/OpenAPI)\n   - 함수 docstring\n   - 복잡한 로직 주석",
+            "status": "pending",
+            "testStrategy": "정적 분석 (ruff, mypy), 성능 테스트 (pytest-benchmark), 보안 검토, 코드 리뷰 체크리스트 작성 및 검증"
+          }
+        ]
       },
       {
-        "id": "22",
+        "id": 22,
         "title": "푸시 알림 시스템 (FCM) 구현",
         "description": "Firebase Cloud Messaging 통합, 주문 체결/AI 매매/가격 알림, 기기별 FCM 토큰 관리",
         "details": "FCM 통합:\n- Firebase 프로젝트 설정\n- Server SDK (firebase-admin) 설치\n- 서비스 계정 JSON 키 환경변수 로드\n\n푸시 알림 종류:\n1. 주문 체결 (order_execution)\n   - \"BTC 매수 체결 완료 | 0.1 BTC @ 50,000,000원\"\n   - 데이터: {order_id, symbol, side, quantity, price}\n\n2. AI 매매 신호 (ai_trading_signal)\n   - \"AI 매수 신호 | BTC 강한 상승 추세 감지\"\n   - 데이터: {coin_symbol, action, confidence, market_regime}\n\n3. 가격 알림 (price_alert)\n   - \"BTC 목표 가격 도달 | 현재: 51M\"\n   - 데이터: {coin_symbol, target_price, current_price}\n\n4. 시스템 알림 (system_alert)\n   - \"거래소 연결 불안정\", \"일일 손실 한도 도달\" 등\n\nFCM 토큰 관리:\n- clients 테이블: fcm_token, device_type\n- POST /api/v1/clients (토큰 등록)\n  * 요청: device_type, fcm_token\n  * 새로운 client 생성 또는 기존 토큰 갱신\n- 로그인 시 자동 갱신\n- 앱 삭제/언인스톨 시 수동 정리 (DELETE /api/v1/clients/{id})\n\n알림 발송:\n- notification.send_multicast(client_ids, message)\n- silent push (silent=True) 옵션 지원 (UI 표시 없음, 백그라운드 처리)\n\nNotification 저장:\n- 모든 알림을 MongoDB notifications에 기록\n- user_id, type, title, body, is_read, created_at\n- TTL 90일 (자동 삭제)\n\nRateLimiting:\n- 사용자병 분당 최대 10건 (spam 방지)\n- 같은 알림 반복 방지 (dedup key)",
@@ -1142,10 +2695,132 @@
           "4"
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Firebase 설정 및 FCM SDK 통합 (python-backend-expert)",
+            "description": "Firebase 프로젝트 설정, firebase-admin SDK 설치, 서비스 계정 JSON 키 환경변수 로드 및 초기화",
+            "dependencies": [],
+            "details": "1. requirements.txt에 firebase-admin 라이브러리 추가\n2. config.py에 FIREBASE_CREDENTIALS_JSON 환경변수 추가\n3. FCM 서비스 인스턴스 초기화 모듈 작성 (app/services/fcm.py)\n4. Firebase 자격증명 파일 로딩 및 에러 처리\n5. Firebase 앱 초기화 및 메시징 클라이언트 인스턴스 생성",
+            "status": "pending",
+            "testStrategy": "Firebase Emulator Suite를 사용하여 FCM 초기화 검증, 자격증명 로딩 테스트"
+          },
+          {
+            "id": 2,
+            "title": "FCM 토큰 관리 API 엔드포인트 구현 (python-backend-expert)",
+            "description": "Client 테이블 활용, FCM 토큰 등록/갱신/삭제 엔드포인트 구현 및 비즈니스 로직",
+            "dependencies": [
+              1
+            ],
+            "details": "1. POST /api/v1/clients - 새 클라이언트 생성 또는 기존 토큰 갱신\n   - 요청: {device_type, fcm_token, user_id}\n   - 중복 토큰 검증 및 기존 토큰 업데이트\n2. GET /api/v1/clients - 사용자의 등록된 클라이언트 목록 조회\n3. DELETE /api/v1/clients/{id} - 클라이언트 제거 (앱 삭제/언인스톨 시)\n4. ClientService에 토큰 관리 메서드 구현\n5. 중복 토큰 처리 및 무효한 토큰 정리 로직",
+            "status": "pending",
+            "testStrategy": "각 엔드포인트에 대한 CRUD 테스트, 중복 토큰 처리 검증, 토큰 갱신 로직 확인"
+          },
+          {
+            "id": 3,
+            "title": "주문 체결 알림 메시지 구성 및 발송 (python-backend-expert)",
+            "description": "order_execution 알림 유형 구현, 주문 체결 시 FCM 메시지 생성 및 발송",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "1. OrderExecutionNotification 스키마 정의\n   - 필드: {order_id, symbol, side, quantity, price}\n2. 주문 체결 알림 메시지 포맷: 'BTC 매수 체결 완료 | 0.1 BTC @ 50,000,000원'\n3. NotificationService.send_order_execution() 메서드 구현\n4. 주문 처리 서비스에서 체결 후 알림 발송 호출\n5. Firebase Multicast 메시지 생성 및 발송",
+            "status": "pending",
+            "testStrategy": "주문 체결 시나리오 시뮬레이션, FCM 메시지 포맷 검증, Emulator에서 메시지 발송 확인"
+          },
+          {
+            "id": 4,
+            "title": "AI 매매 신호 알림 구현 (python-backend-expert)",
+            "description": "ai_trading_signal 알림 유형 구현, AI 거래 신호 발생 시 알림 발송",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "1. AITradingSignalNotification 스키마 정의\n   - 필드: {coin_symbol, action, confidence, market_regime}\n2. 알림 메시지 포맷: 'AI 매수 신호 | BTC 강한 상승 추세 감지'\n3. NotificationService.send_ai_signal() 메서드 구현\n4. AI 트레이딩 모듈에서 신호 발생 시 알림 호출\n5. 신뢰도(confidence) 기반 필터링 옵션",
+            "status": "pending",
+            "testStrategy": "AI 신호 생성 시나리오, 신뢰도 필터링 검증, 다양한 market_regime에 따른 메시지 생성 테스트"
+          },
+          {
+            "id": 5,
+            "title": "가격 알림 구현 (python-backend-expert)",
+            "description": "price_alert 알림 유형 구현, 목표 가격 도달 시 실시간 알림 발송",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "1. PriceAlertNotification 스키마 정의\n   - 필드: {coin_symbol, target_price, current_price}\n2. 알림 메시지 포맷: 'BTC 목표 가격 도달 | 현재: 51M'\n3. NotificationService.send_price_alert() 메서드 구현\n4. 실시간 시세 WebSocket에서 목표 가격 도달 감지 시 알림 트리거\n5. 중복 알림 방지 로직 (dedup key 사용)",
+            "status": "pending",
+            "testStrategy": "가격 도달 감지 로직, 중복 알림 방지 검증, 현재/목표 가격 메시지 포맷 확인"
+          },
+          {
+            "id": 6,
+            "title": "시스템 알림 구현 (python-backend-expert)",
+            "description": "system_alert 알림 유형 구현, 시스템 상태(거래소 연결, 손실 한도 등) 알림",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "1. SystemAlertNotification 스키마 정의\n   - 메시지 예: '거래소 연결 불안정', '일일 손실 한도 도달'\n2. NotificationService.send_system_alert() 메서드 구현\n3. 거래소 연결 상태 모니터링에서 호출\n4. 손실 한도 체크 로직에서 호출\n5. 알림 우선순위 설정 기능",
+            "status": "pending",
+            "testStrategy": "다양한 시스템 상태 시뮬레이션, 알림 우선순위 검증, 메시지 전달 확인"
+          },
+          {
+            "id": 7,
+            "title": "알림 저장 및 미읽 카운트 관리 (python-backend-expert)",
+            "description": "모든 알림을 MongoDB notifications에 저장, TTL 90일 설정, 미읽 알림 카운트 Redis 캐시",
+            "dependencies": [
+              3,
+              4,
+              5,
+              6
+            ],
+            "details": "1. Notification 도큐먼트에 모든 알림 저장 (이미 구조 정의됨)\n   - user_id, type, title, body, is_read, created_at\n2. MongoDB TTL 인덱스 검증 (expireAfterSeconds=7776000)\n3. NotificationService에 save_notification() 메서드 구현\n4. Redis에서 unread_count:{user_id} 캐시 관리\n5. 알림 읽음 상태 업데이트 시 캐시 동기화",
+            "status": "pending",
+            "testStrategy": "MongoDB에 알림 저장 검증, TTL 만료 테스트(또는 인덱스 확인), Redis 미읽 카운트 동기화 검증"
+          },
+          {
+            "id": 8,
+            "title": "Rate Limiting 구현 (code-architect)",
+            "description": "사용자별 분당 최대 10건 알림 제한, 같은 알림 반복 방지 (dedup key)",
+            "dependencies": [
+              7
+            ],
+            "details": "1. Redis rate:{user_id} 키 패턴으로 토큰 버킷 알고리즘 구현\n2. 분당 최대 10건 제한 (TTL: 60초)\n3. Notification 스키마에 dedup_key 필드 추가\n4. 중복 알림 체크 로직: dedup_key 기반 최근 1시간 내 중복 검사\n5. Rate Limit 초과 시 에러 처리 및 로깅",
+            "status": "pending",
+            "testStrategy": "Rate limit 토큰 소비 검증, 초과 요청 거부 확인, dedup_key 중복 체크 로직 검증"
+          },
+          {
+            "id": 9,
+            "title": "silent push 옵션 및 백그라운드 처리 (python-backend-expert)",
+            "description": "FCM silent=True 옵션 구현, UI 표시 없이 백그라운드 데이터 처리",
+            "dependencies": [
+              3,
+              4,
+              5,
+              6
+            ],
+            "details": "1. FCM 메시지 구조에 silent 플래그 추가\n2. silent=True일 때: data-only 메시지 전송 (notification 필드 제거)\n3. silent=False일 때: notification + data 메시지 전송\n4. NotificationService의 모든 send_* 메서드에 silent 파라미터 추가\n5. 클라이언트 앱에서 백그라운드 처리 로직과의 통합",
+            "status": "pending",
+            "testStrategy": "silent=True/False 메시지 구조 검증, Firebase Emulator에서 메시지 타입 확인"
+          },
+          {
+            "id": 10,
+            "title": "FCM 알림 시스템 E2E 테스트 및 코드 리뷰 (e2e-test-expert, code-review-expert)",
+            "description": "FCM 토큰 등록부터 알림 발송까지 전체 통합 테스트, 코드 리뷰 및 오류 처리 검증",
+            "dependencies": [
+              2,
+              7,
+              8,
+              9
+            ],
+            "details": "1. E2E 테스트: 토큰 등록 → 알림 발송 → MongoDB 저장 → 미읽 카운트 검증\n2. 각 알림 유형별 통합 테스트 (order, AI signal, price, system)\n3. 토큰 만료/유효하지 않은 경우 처리 테스트\n4. Rate Limiting 초과 시나리오 테스트\n5. 코드 리뷰: 보안(환경변수 관리), 에러 처리, 로깅\n6. Firebase Emulator 사용하여 실제 FCM 동작 검증",
+            "status": "pending",
+            "testStrategy": "pytest + pytest-asyncio로 전체 흐름 통합 테스트, Firebase Emulator에서 메시지 전송 확인, 에러 시나리오별 처리 검증"
+          }
+        ]
       },
       {
-        "id": "23",
+        "id": 23,
         "title": "클라이언트 (Flutter) 프로젝트 기본 구조 및 상태 관리 설정",
         "description": "Flutter 프로젝트 초기화, Riverpod 상태 관리, Dio HTTP 클라이언트, 라우팅 설정",
         "details": "pubspec.yaml 핵심 의존성:\n- riverpod 2.x (상태 관리)\n- dio (HTTP 클라이언트, 인터셉터)\n- web_socket_channel (WebSocket)\n- shared_preferences / hive (로컬 저장)\n- flutter_localizations + intl (다국어)\n- fl_chart (도넛 차트 등)\n- webview_flutter (TradingView 차트)\n- firebase_messaging (FCM 푸시)\n- local_auth (생체 인증, M9)\n\nProject Structure:\n- lib/\n  * main.dart (앱 진입점, Riverpod 프로바이더 설정)\n  * app/\n    - router.dart (GoRouter 라우팅)\n    - theme.dart (Material 3 테마, Light/Dark)\n  * features/\n    - auth/ (로그인, 회원가입, 소셜 로그인)\n    - home/ (코인 목록, 실시간 시세)\n    - trading/ (차트, 호가, 주문)\n    - exchange/ (거래소 설정)\n    - ai_trading/ (AI 매매 대시보드)\n    - portfolio/ (자산)\n    - history/ (거래 내역)\n    - notifications/ (알림, M9)\n    - settings/ (설정)\n  * core/\n    - api/ (Dio 클라이언트, 인터셉터)\n    - websocket/ (WS 클라이언트)\n    - utils/ (유틸리티)\n  * l10n/ (다국어 ARB 파일)\n\nRiverpod 상태 관리:\n- providers/\n  * auth_provider.dart (JWT 토큰, 현재 사용자)\n  * exchange_provider.dart (선택된 거래소 계정)\n  * coin_provider.dart (관심 코인 목록)\n  * portfolio_provider.dart (자산 정보)\n  * websocket_provider.dart (WS 연결)\n\nDio 클라이언트:\n- BaseURL 설정 (환경별: localhost, staging, prod)\n- Authorization 헤더 자동 추가 (Riverpod auth token)\n- 요청/응답 로깅\n- Token 갱신 인터셉터 (401 시)\n- Error 처리 (NetworkException 등)\n\nRouting (GoRouter):\n- 경로 정의: /, /login, /signup, /home, /trading/:coin_id, /portfolio, ...\n- Guard: 인증 필수 경로 자동 리다이렉트\n- Deep linking 지원\n\nTheme:\n- Material 3 색상 체계\n- Light/Dark 모드 토글\n- 한국식/글로벌 가격 색상 설정\n\nLocalization:\n- 다국어 ARB 파일 (ko, en, ja, zh, es)\n- AppLocalizations 클래스 자동 생성\n- 설정에서 언어 전환",
@@ -1155,10 +2830,119 @@
           "1"
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Riverpod 프로바이더 아키텍처 설계 (code-architect)",
+            "description": "Riverpod 기반 글로벌 상태 관리 구조 설계 및 프로바이더 레이아웃 정의",
+            "dependencies": [],
+            "details": "lib/core/providers/ 디렉토리 구조 생성 및 다음 프로바이더 정의: auth_provider.dart (JWT 토큰, 사용자 정보), exchange_provider.dart (선택된 거래소), coin_provider.dart (관심 코인), portfolio_provider.dart (자산), websocket_provider.dart (WS 연결 상태). 프로바이더 간 의존성 관계도 작성하고 Riverpod Generator 패턴 적용.",
+            "status": "pending",
+            "testStrategy": "프로바이더 초기화 테스트, 상태 변경 리스너 검증, 의존성 우선순위 확인"
+          },
+          {
+            "id": 2,
+            "title": "Dio HTTP 클라이언트 및 인터셉터 구현 (code-architect)",
+            "description": "BaseURL 설정, 인증 헤더, 요청/응답 로깅, 토큰 갱신 인터셉터 구현",
+            "dependencies": [
+              1
+            ],
+            "details": "lib/core/api/dio_client.dart 구현: 환경별 BaseURL 설정 (localhost:8000, staging, prod), Authorization 헤더 자동 추가 (Riverpod auth_provider에서 JWT 토큰 획득), 요청/응답 로깅 인터셉터, 401 응답 시 토큰 갱신 인터셉터 (POST /api/v1/auth/refresh), NetworkException 등 커스텀 에러 처리. Dio 인스턴스를 Riverpod 프로바이더로 제공.",
+            "status": "pending",
+            "testStrategy": "Dio 인터셉터 호출 순서 검증, 토큰 갱신 요청 확인, 401 에러 재시도 로직 테스트, 요청/응답 로그 출력 확인"
+          },
+          {
+            "id": 3,
+            "title": "GoRouter 라우팅 구조 정의 (flutter-frontend-expert)",
+            "description": "경로 정의, 인증 가드, Deep Linking 설정 및 라우트 트리 구성",
+            "dependencies": [
+              1
+            ],
+            "details": "lib/app/router.dart 재구성: /, /splash, /login, /signup, /home, /trading/:coin_id, /portfolio, /history, /settings, /exchange-settings 등 경로 정의. AuthGuard 구현으로 인증 필수 경로는 미인증 시 /login으로 리다이렉트. Deep Linking 설정 (android/web/ios 플랫폼별). GoRouter를 Riverpod 프로바이더로 제공하여 auth_provider 변경 시 자동 네비게이션 업데이트.",
+            "status": "pending",
+            "testStrategy": "라우트 경로 접근 검증, 미인증 사용자 /login 리다이렉트 확인, Deep Link 동작 테스트"
+          },
+          {
+            "id": 4,
+            "title": "Material 3 테마 및 다크모드 확장 (flutter-frontend-expert)",
+            "description": "Material 3 색상 체계 확장, 거래소별 색상 토큰, 다크모드 토글 구현",
+            "dependencies": [],
+            "details": "lib/app/theme.dart 확장: TradingColors ThemeExtension 구현 (상승/매수 #D24F45 적색, 하락/매도 #1261C4 청색), Light/Dark 모드 색상 정의 (다크 배경 #0D0D1A 적용). 한국식/글로벌 가격 색상 설정 옵션 추가. theme_provider.dart 생성으로 다크모드 토글 상태 Riverpod 관리. MaterialApp에 동적 테마 적용.",
+            "status": "pending",
+            "testStrategy": "Light/Dark 모드 전환 테스트, TradingColors 토큰 렌더링 확인, 색상 값 정확성 검증"
+          },
+          {
+            "id": 5,
+            "title": "WebSocket 클라이언트 구현 (code-architect)",
+            "description": "WebSocket 연결, 실시간 시세 수신, 자동 재연결 로직 구현",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "lib/core/websocket/ws_client.dart 구현: web_socket_channel 사용, ws://localhost:8000/ws (또는 wss:// 프로덕션) 연결. JWT 토큰을 쿼리 파라미터로 전달. 실시간 코인 시세, 호가 데이터 수신. 연결 해제 시 자동 재연결 (Exponential Backoff). websocket_provider.dart로 Riverpod 관리. 연결 상태 (connected, disconnected, error) 상태 관리.",
+            "status": "pending",
+            "testStrategy": "WebSocket 연결/해제 테스트, 실시간 메시지 수신 검증, 재연결 로직 시뮬레이션, 토큰 만료 시 재연결 확인"
+          },
+          {
+            "id": 6,
+            "title": "로컬 저장소 및 캐싱 계층 구성 (code-architect)",
+            "description": "SharedPreferences/Hive 기반 로컬 데이터 저장 및 캐싱 전략 수립",
+            "dependencies": [
+              1
+            ],
+            "details": "lib/core/storage/ 디렉토리: SharedPreferences로 사용자 설정 저장 (언어, 테마, 선택된 거래소), Hive로 민감 데이터 저장 (JWT 토큰 - encrypted_box). 로컬_storage_provider.dart, secure_storage_provider.dart 생성. 토큰 저장 시 flutter_secure_storage 사용 (iOS Keychain, Android Keystore). 캐시 만료 정책 구현 (timestamp 기반).",
+            "status": "pending",
+            "testStrategy": "SharedPreferences 읽기/쓰기 테스트, Hive encrypted box 암호화 확인, 토큰 보안 저장 검증, 캐시 만료 기능 테스트"
+          },
+          {
+            "id": 7,
+            "title": "다국어 (i18n) 설정 및 ARB 파일 생성 (flutter-frontend-expert)",
+            "description": "다국어 지원 구조 구성 (ko, en, ja, zh, es) 및 AppLocalizations 자동 생성",
+            "dependencies": [],
+            "details": "l10n/ 디렉토리에 app_ko.arb, app_en.arb, app_ja.arb, app_zh.arb, app_es.arb 파일 생성 (이미 app_en.arb 존재). l10n.yaml 설정 확인 (delegate, output-localization-file 경로). pubspec.yaml의 flutter.generate: true 확인. 각 ARB 파일에 공통 키 정의: 'appTitle', 'login', 'signup', 'home', 'portfolio' 등 모든 UI 문자열. 빌드 시 AppLocalizations 클래스 자동 생성 확인.",
+            "status": "pending",
+            "testStrategy": "ARB 파일 구문 검증, 모든 언어에서 키 일치 확인, 빌드 후 AppLocalizations 생성 확인, 언어 전환 동작 테스트"
+          },
+          {
+            "id": 8,
+            "title": "main.dart 및 앱 진입점 최종 구성 (flutter-frontend-expert)",
+            "description": "ProviderScope, GoRouter 통합, 테마 동적 적용, 로컬라이제이션 설정",
+            "dependencies": [
+              3,
+              4,
+              7
+            ],
+            "details": "lib/main.dart 재작성: ProviderScope로 Riverpod 통합, MaterialApp.router로 GoRouter 연결, theme와 darkTheme를 theme_provider에서 동적으로 결정, themeMode를 Material 3 ColorScheme으로 관리. localizationsDelegates (flutter_localizations + AppLocalizations), supportedLocales 설정. splash/auth 상태에 따른 초기 라우트 설정. 환경별 디버그 배너 설정.",
+            "status": "pending",
+            "testStrategy": "앱 실행 및 초기 라우트 확인, 테마 전환 동작, 다국어 로드 검증, 라우팅 정상 작동 확인"
+          },
+          {
+            "id": 9,
+            "title": "features 디렉토리 구조 및 모듈 스캐폴딩 (code-architect)",
+            "description": "각 기능별 디렉토리 구조 생성 및 기본 provider/model 파일 준비",
+            "dependencies": [
+              1
+            ],
+            "details": "lib/features/ 생성: auth/, home/, trading/, exchange/, ai_trading/, portfolio/, history/, notifications/, settings/ 각 디렉토리. 각 기능별로 models/, providers/, screens/, widgets/ 서브디렉토리 구조. 예: features/auth/ → models/user.dart, providers/auth_provider.dart, screens/login_screen.dart, screens/signup_screen.dart. 기본 Freezed 모델 클래스 정의 (User, Coin, Portfolio 등). 각 화면별 ConsumerWidget 또는 ConsumerStatefulWidget 기본 틀 작성.",
+            "status": "pending",
+            "testStrategy": "디렉토리 구조 생성 확인, Freezed 모델 코드 생성 검증, 프로바이더 초기화 테스트"
+          },
+          {
+            "id": 10,
+            "title": "Flutter 테스트 환경 구성 및 통합 테스트 설정 (code-review-expert)",
+            "description": "Android Emulator/iOS Simulator 설정, integration_test 환경 구성, CI/CD 파이프라인 기본 설정",
+            "dependencies": [
+              8,
+              9
+            ],
+            "details": "integration_test/ 디렉토리 생성 및 기본 테스트 파일 작성: app_test.dart (앱 실행, 스플래시 → 로그인 화면 네비게이션). test/ 디렉토리에 unit 테스트 기본 틀 (providers, models, 유틸리티). pubspec.yaml에 flutter_test 설정 확인. GitHub Actions 또는 로컬 테스트 스크립트 (run_tests.sh) 작성: flutter test, integration_test 실행. test_coverage 리포팅 설정.",
+            "status": "pending",
+            "testStrategy": "integration_test 실행 및 앱 네비게이션 검증, unit 테스트 커버리지 확인, 모든 라우트 접근 테스트, 에러 핸들링 시나리오 검증"
+          }
+        ]
       },
       {
-        "id": "24",
+        "id": 24,
         "title": "Flutter 클라이언트 UI 화면 구현 (M1~M8)",
         "description": "스플래시, 로그인/회원가입, 홈(코인 목록), 트레이딩(차트/호가/주문), 거래소 설정, AI 매매 대시보드, 포트폴리오, 거래 내역, 프로필, 설정 화면",
         "details": "각 화면별 구현 가이드:\n\n1. **스플래시 화면** (splash_screen.dart)\n   - 앱 로고 표시\n   - 토큰 갱신 시도 (Riverpod auth_provider)\n   - 기존 세션 복구\n   - 로그인 또는 홈으로 네비게이션\n\n2. **로그인/회원가입 화면** (auth/)\n   - 이메일 입력 + 비밀번호 입력\n   - 회원가입 → 이메일 인증 코드\n   - 소셜 로그인 버튼 (Google, Apple)\n   - 비밀번호 찾기 링크\n   - 로딩 상태 표시\n   - 에러 메시지 표시\n\n3. **메인/홈 화면** (home/)\n   - Bottom Navigation Bar (5탭)\n   - 거래소 탭 선택기\n   - 관심 코인 목록 (리스트 또는 그리드)\n   - 각 코인: 심볼, 가격, 변동률(%, 색상), 차트 미니\n   - 우측 스와이프 → 관심코인 추가\n   - 코인 검색 (상단 검색바)\n   - 새로고침 (Pull-to-Refresh)\n   - 실시간 시세 업데이트 (WS)\n\n4. **트레이딩 화면** (trading/)\n   - TradingView Lightweight Charts WebView\n   - 호가창 (Bid/Ask)\n   - 매매 탭 (시장가/지정가 선택)\n   - 수량, 가격, 예상 수수료, 실제 수령 수량 입력\n   - 매수/매도 버튼\n   - 활성 주문 표시\n\n5. **거래소 설정 화면** (exchange/)\n   - 등록된 거래소 계정 목록\n   - API 키 등록 (모달)\n   - 권한 검증 결과 표시 (경고 포함)\n   - 수정/삭제 버튼\n   - 테스트 버튼 (API 키 검증)\n\n6. **AI 매매 대시보드** (ai_trading/)\n   - 마스터 스위치 (ON/OFF)\n   - 현재 장세 표시 (Trend/Range/Transition + confidence %)\n   - 선택된 전략 표시\n   - 카운트다운 타이머 (다음 분석까지)\n   - 손익 요약 (AI vs 수동)\n   - 최근 매매 신호 (BUY/SELL/HOLD)\n\n7. **포트폴리오 화면** (portfolio/)\n   - 총 자산 (원화, 큰 폰트)\n   - 손익금 + 손익률 (색상)\n   - 거래소별 잔고\n   - 코인별 보유량, 평균매입가, 현재가, 손익\n   - 자산 비중 도넛 차트\n   - 수평 스크롤 (도넛 차트 터치)\n\n8. **매매 내역 화면** (history/)\n   - 주문/체결 내역 리스트\n   - 기간 필터 (1일/1주/1개월/전체)\n   - 상태 필터 (체결/미체결/취소)\n   - 요약 통계 (총 거래 수, 승률, 손익)\n   - 각 거래: 심볼, 매수/매도, 가격, 수량, 수수료, 손익\n\n9. **프로필 수정 화면** (settings/profile)\n   - 닉네임 수정\n   - 아바타 업로드 (이미지 피커)\n   - 계정 삭제 버튼 (확인 다이얼로그)\n\n10. **설정 화면** (settings/)\n    - 언어 선택 (ko/en/ja/zh/es)\n    - 테마 선택 (Light/Dark)\n    - 가격 색상 설정 (한국식/글로벌)\n    - 알림 설정 (주문/AI/가격 알림 토글)\n    - 이용약관/개인정보 처리방침 (WebView)\n    - 로그아웃 버튼\n\n11. **알림 화면** (notifications/, M9)\n    - 알림 목록 (최신순)\n    - 미읽 뱃지\n    - 읽음/삭제 기능\n    - 종류별 필터 (주문/AI/가격)\n\nUI 공통 요소:\n- Loading Spinner (Dio 요청 중)\n- 에러 스냅바 (네트워크 에러)\n- Empty State (데이터 없음)\n- 확인 다이얼로그 (삭제 등)\n- Bottom Sheet (옵션 선택)\n- Responsive Layout (모바일/태블릿)",
@@ -1290,7 +3074,7 @@
         ]
       },
       {
-        "id": "25",
+        "id": 25,
         "title": "통합 테스트 및 배포 파이프라인 구성",
         "description": "E2E 테스트 (pytest + httpx), 성능 최적화, CI/CD 파이프라인 완성, 모니터링 대시보드, 프로덕션 배포",
         "details": "E2E 테스트 (tests/):\n- 인증 흐름: 회원가입 → 로그인 → 토큰 갱신 → 로그아웃\n- 거래소 연동: API 키 등록 → 검증 → 시세 조회 → 주문 생성 → 취소\n- AI 매매: 장세 분석 → 전략 선택 → 신호 생성 → 주문 실행\n- 포트폴리오: 자산 조회 → 손익 계산\n- WebSocket: 연결 → 구독 → 메시지 수신 → 구독 해제\n\npytest 설정:\n- conftest.py: 픽스처 (test_db, test_redis, test_http_client)\n- 테스트 데이터베이스 자동 생성/정리 (Alembic migrate)\n- Mock Exchange 프로바이더\n\n성능 테스트:\n- 로컬테스트 또는 pytest-benchmark\n- API 응답 시간 (< 200ms)\n- WebSocket 처리량\n- 데이터베이스 쿼리 성능\n\nCI/CD Pipeline (GitHub Actions):\n1. Lint (ruff):\n   - Python 코드 스타일\n   - import 정렬\n\n2. Type Check (mypy):\n   - 타입 검증\n\n3. Test:\n   - pytest 전체 실행\n   - 커버리지 80%+ 검증\n   - 결과 리포트 생성\n\n4. Build:\n   - Docker 이미지 빌드 (python:3.12-slim)\n   - 레지스트리 푸시 (Docker Hub, ECR)\n\n5. Deploy:\n   - 스테이징 환경: 자동 배포\n   - 프로덕션: 수동 승인 후 배포 (Rolling Update)\n\nMonitoring:\n- Prometheus: 메트릭 수집 (요청 횟수, 응답 시간, 에러율, DB 연결)\n- Grafana: 대시보드 (실시간 메트릭)\n- Sentry: 에러 트래킹 (서버 + 클라이언트)\n- Loki: 로그 중앙화 (JSON 구조화 로그)\n\nProduction Deployment:\n- 환경: Docker Compose (또는 K8s)\n- 무중단 배포: Rolling Update\n- 롤백: 1-click 롤백\n- Backup: PostgreSQL WAL 아카이빙, MongoDB oplog\n- Health Check: GET /health (의존성 상태)\n\nSecurity Hardening:\n- HTTPS/WSS 적용\n- API 속도 제한 (Rate Limiting)\n- CORS 화이트리스트\n- SQL Injection 방지 (SQLAlchemy ORM)\n- XSS 방지 (JSON 응답)\n- CSRF 토큰 (선택적)\n\nLogging & Audit:\n- structlog JSON 로깅\n- 민감한 행동 audit_logs 기록\n- 모든 API 요청 로그 (correlation_id)\n\nVersion Management:\n- GET /api/v1/app-version: 최소 지원 버전, 강제 업데이트 여부\n- API v1 Deprecation 시 3개월 유예",
@@ -1301,7 +3085,102 @@
           "24"
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "인증 흐름 E2E 테스트 구현 (e2e-test-expert)",
+            "description": "회원가입 → 로그인 → 토큰 갱신 → 로그아웃의 전체 인증 흐름 E2E 테스트 작성",
+            "dependencies": [],
+            "details": "tests/e2e/test_auth_flow.py에서 httpx 클라이언트를 사용한 E2E 테스트 구현. 사용자 생성, JWT 토큰 검증, refresh token 갱신, 로그아웃 시 토큰 무효화 테스트. conftest.py의 test_http_client 픽스처와 테스트 DB 활용. 회원가입 API → 로그인 API → 토큰 갱신 엔드포인트 → 로그아웃 시 토큰 상태 확인.",
+            "status": "pending",
+            "testStrategy": "pytest를 사용하여 모든 인증 플로우 단계 테스트 및 통과율 100% 검증, HTTP 상태 코드 및 응답 바디 검증, 토큰 만료 시간 확인"
+          },
+          {
+            "id": 2,
+            "title": "거래소 연동 E2E 테스트 구현 (e2e-test-expert)",
+            "description": "API 키 등록 → 검증 → 시세 조회 → 주문 생성 → 취소의 거래소 연동 전체 흐름 E2E 테스트",
+            "dependencies": [],
+            "details": "tests/e2e/test_exchange_flow.py에서 Mock Exchange 프로바이더를 활용한 E2E 테스트. API 키 저장 및 암호화, 거래소 API 검증, 시세 조회, 주문 생성 및 취소 플로우 테스트. httpx를 통한 전체 엔드포인트 호출 검증. 거래소별 수수료율 조회, 잔고 확인, 주문 상태 추적.",
+            "status": "pending",
+            "testStrategy": "Mock Exchange API 응답으로 각 단계 검증, 성공/실패 케이스 테스트, 데이터 변환 및 포맷 검증, 트랜잭션 롤백 확인"
+          },
+          {
+            "id": 3,
+            "title": "AI 매매 흐름 E2E 테스트 구현 (e2e-test-expert)",
+            "description": "장세 분석 → 전략 선택 → 신호 생성 → 주문 실행의 AI 매매 엔드-투-엔드 테스트",
+            "dependencies": [],
+            "details": "tests/e2e/test_ai_trading_flow.py에서 OpenAI API Mock을 사용한 AI 매매 로직 테스트. 기술적 지표 계산, 장세 분석 결과, 거래 전략 선택 및 신호 생성, 최종 주문 실행까지의 전체 흐름. Redis 캐시된 indicators/regime 데이터 활용. AI 의사결정 로깅 및 거래 로그 기록 검증.",
+            "status": "pending",
+            "testStrategy": "Mock OpenAI 응답으로 AI 로직 검증, 신호 생성 및 주문 실행 흐름 확인, 포트폴리오 변화 추적, 리스크 관리 규칙 준수 확인"
+          },
+          {
+            "id": 4,
+            "title": "포트폴리오 및 손익 계산 E2E 테스트 (e2e-test-expert)",
+            "description": "자산 조회 → 손익 계산의 포트폴리오 관리 E2E 테스트 구현",
+            "dependencies": [],
+            "details": "tests/e2e/test_portfolio_flow.py에서 포트폴리오 조회, 자산별 잔고, 손익 계산 엔드포인트 E2E 테스트. 여러 거래소의 자산을 통합하여 포트폴리오 계산, 일일 손익 리포트 생성, 기간별 성과 조회. MongoDB의 daily_pnl_reports 컬렉션 검증. 캐시된 시세 데이터 활용.",
+            "status": "pending",
+            "testStrategy": "거래 시뮬레이션 후 손익 계산 정확성 검증, 일일/월간 리포트 생성 확인, 캐시 미스 시 DB 조회 검증, 성능 기준 준수 (<200ms)"
+          },
+          {
+            "id": 5,
+            "title": "WebSocket 실시간 통신 E2E 테스트 (e2e-test-expert)",
+            "description": "WebSocket 연결 → 구독 → 메시지 수신 → 구독 해제의 실시간 통신 전체 E2E 테스트",
+            "dependencies": [],
+            "details": "tests/e2e/test_websocket_flow.py에서 websocket 클라이언트를 사용한 실시간 시세 수신 테스트. 거래소별 시세 구독, Pub/Sub 메시지 전송, 다중 구독자 동시 처리, 구독 해제 및 연결 종료. Redis Pub/Sub 채널(ticker:{exchange}:{market}) 메시지 검증.",
+            "status": "pending",
+            "testStrategy": "WebSocket 연결 상태 관리 테스트, 메시지 수신 순서 및 무결성 검증, 대역폭/처리량 성능 테스트 (WS < 100ms), 연결 끊김 시 재연결 로직 검증"
+          },
+          {
+            "id": 6,
+            "title": "성능 테스트 및 벤치마크 구성 (python-backend-expert)",
+            "description": "pytest-benchmark를 활용한 성능 테스트 및 응답 시간 측정 (API < 200ms, WS < 100ms)",
+            "dependencies": [],
+            "details": "tests/performance/test_benchmarks.py에서 핵심 API 엔드포인트 성능 테스트. 시세 조회, 주문 생성, 포트폴리오 계산, 인증 등의 응답 시간 측정. pytest-benchmark 또는 locust 활용. DB 쿼리 성능(인덱스 활용도), Redis 캐시 hit ratio, 데이터베이스 연결 풀 성능 검증.",
+            "status": "pending",
+            "testStrategy": "각 엔드포인트별 평균/최대 응답 시간 측정, CI/CD에서 성능 회귀 감지 (기준선 대비 10% 초과 시 실패), WebSocket 처리량 검증, 로드 테스트(동시 100 사용자 가정)"
+          },
+          {
+            "id": 7,
+            "title": "CI/CD 파이프라인 완성 및 배포 자동화 (project-architect)",
+            "description": "GitHub Actions에서 Lint → Type Check → Test → Build → Deploy 전체 파이프라인 구성 및 통합",
+            "dependencies": [],
+            "details": ".github/workflows/ci.yml 확장: 1) ruff lint, 2) mypy type check, 3) pytest (80% 커버리지), 4) Docker 이미지 빌드 및 레지스트리 푸시(Docker Hub/ECR), 5) 스테이징 환경 자동 배포, 6) 프로덕션 환경 수동 승인 후 배포. 각 단계별 artifact 저장 (coverage report, Docker image digest, deployment logs).",
+            "status": "pending",
+            "testStrategy": "CI/CD 파이프라인 모든 단계 실행 검증, pull request에서 자동 실행, 커버리지 80% 이상 확인, Docker 이미지 빌드 성공, 스테이징 배포 smoke 테스트 통과"
+          },
+          {
+            "id": 8,
+            "title": "모니터링 대시보드 구성 (Prometheus + Grafana) (project-architect)",
+            "description": "Prometheus 메트릭 수집 및 Grafana 대시보드 생성으로 실시간 모니터링 인프라 구축",
+            "dependencies": [],
+            "details": "server/app/core/metrics.py 확장: 요청 횟수, 응답 시간, 에러율, DB 연결 풀 상태 등 주요 메트릭 수집. Prometheus 설정 파일(prometheus.yml) 및 Docker Compose 통합. Grafana 대시보드 설정: 실시간 요청/응답 시간/에러율 그래프, 데이터베이스 성능(쿼리 시간, 연결 수), Redis 메모리/처리량, API별 성능 지표.",
+            "status": "pending",
+            "testStrategy": "/metrics 엔드포인트에서 Prometheus 포맷 메트릭 수집 확인, Grafana 대시보드 접근 및 메트릭 표시 검증, 에러 발생 시 메트릭 증가 확인"
+          },
+          {
+            "id": 9,
+            "title": "프로덕션 배포 및 무중단 배포 설정 (project-architect)",
+            "description": "Docker/Kubernetes 환경에서 Rolling Update, 헬스 체크, 롤백 메커니즘 구현으로 안정적인 프로덕션 배포 확보",
+            "dependencies": [
+              7
+            ],
+            "details": "docker-compose.yml 또는 Kubernetes manifest 작성: 1) Rolling Update 설정 (max_unavailable=0, max_surge=1), 2) GET /health 헬스 체크 엔드포인트 구현 (PostgreSQL/MongoDB/Redis 의존성 상태 확인), 3) 1-click 롤백 스크립트(이전 버전 Docker 이미지 재배포), 4) 환경별(.env.staging, .env.prod) 설정 분리, 5) PostgreSQL WAL 아카이빙, MongoDB oplog 설정.",
+            "status": "pending",
+            "testStrategy": "스테이징 환경에서 Rolling Update 검증, 배포 중 API 가용성 확인 (다운타임 0), 헬스 체크 실패 시 배포 중단 확인, 롤백 후 이전 버전 정상 작동 검증"
+          },
+          {
+            "id": 10,
+            "title": "보안 강화 및 감사 로깅 구현 (code-review-expert)",
+            "description": "HTTPS/WSS, Rate Limiting, CORS, SQL Injection 방지, 구조화 로깅 및 감사 로그 기록",
+            "dependencies": [
+              7
+            ],
+            "details": "보안 조치 구현: 1) HTTPS/WSS 설정 (SSL 인증서), 2) Rate Limiting 미들웨어(user_id/IP별 토큰 버킷 알고리즘), 3) CORS 화이트리스트 설정, 4) SQLAlchemy ORM으로 SQL Injection 방지, 5) JSON 응답으로 XSS 방지, 6) structlog JSON 로깅 및 correlation_id 추적, 7) 민감한 행동(거래 생성, API 키 변경) audit_logs MongoDB 컬렉션 기록, 8) /api/v1/app-version 엔드포인트로 최소 지원 버전/강제 업데이트 관리.",
+            "status": "pending",
+            "testStrategy": "Rate Limit 초과 요청 시 429 상태 코드 확인, CORS 미승인 요스트 요청 차단 검증, 감사 로그 기록 확인, 민감한 API 호출 시 audit_logs 컬렉션 저장 검증, 성능 영향 최소화 확인 (<10ms 오버헤드)"
+          }
+        ]
       }
     ],
     "metadata": {
@@ -1311,7 +3190,9 @@
       "completedCount": 2,
       "tags": [
         "v1"
-      ]
+      ],
+      "created": "2026-03-05T12:57:22.183Z",
+      "description": "Tasks for v1 context"
     }
   }
 }
