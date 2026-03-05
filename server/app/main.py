@@ -1,14 +1,26 @@
 import logging
 from contextlib import asynccontextmanager
 
+import sentry_sdk
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sentry_sdk.integrations.fastapi import FastApiIntegration
 
 from app.core.config import settings
 from app.core.database import init_db
+from app.core.metrics import instrumentator
 from app.core.mongodb import init_mongodb
 from app.core.redis import init_redis, close_redis
+
+if settings.SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        traces_sample_rate=0.1,
+        profiles_sample_rate=0.1,
+        integrations=[FastApiIntegration()],
+        environment=settings.ENV,
+    )
 
 
 def configure_logging() -> None:
@@ -60,3 +72,5 @@ app.add_middleware(
 
 from app.api.v1 import router as v1_router  # noqa: E402
 app.include_router(v1_router, prefix="/api/v1")
+
+instrumentator.instrument(app).expose(app, endpoint="/metrics")
