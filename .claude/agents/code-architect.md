@@ -18,7 +18,8 @@ permissionMode: bypassPermissions
 - **WebSocket 이벤트 규격**: 채널 구독/해제, 메시지 포맷, 하트비트
 - **모듈 의존성 규칙**: 레이어 간 의존 방향, 순환 참조 방지, 인터페이스 계약
 
-> **상세 사양**: 기술 스택, DB 스키마, 마일스톤 등은 `docs/prd.md` 참조.
+> **참조 문서**: `docs/refs/project-prd.md` (마스터), `docs/refs/architecture.md` (아키텍처+구조), `docs/refs/api-spec.md` (API/WS)
+> **원본**: `docs/prd.md`.
 
 ---
 
@@ -28,12 +29,15 @@ permissionMode: bypassPermissions
 |------|------|
 | `server/app/api/v1/` | REST 엔드포인트 (버전별) |
 | `server/app/core/` | 설정, 보안, 의존성 |
-| `server/app/models/` | Beanie 도큐먼트 모델 |
+| `server/app/models/` | SQLAlchemy 모델 (PostgreSQL) |
+| `server/app/documents/` | Beanie 도큐먼트 (MongoDB) |
 | `server/app/schemas/` | Pydantic 요청/응답 스키마 |
+| `server/app/repositories/` | DB 접근 계층 (base_pg.py / base_mongo.py) |
 | `server/app/services/` | 비즈니스 로직 |
 | `server/app/providers/` | 거래소 어댑터 (ABC 기반) |
 | `server/app/ws/` | WebSocket 허브, 핸들러 |
-| `server/trading/` | AI 트레이딩 모듈 |
+| `server/app/trading/` | AI 트레이딩 엔진 (독립 패키지) |
+| `server/tasks/` | Celery 태스크 (ai_trading, news, reports) |
 | `client/lib/core/` | 테마, 상수, 유틸 |
 | `client/lib/features/` | feature-first 구조 |
 | `client/lib/shared/` | 공용 위젯, 모델 |
@@ -98,13 +102,15 @@ permissionMode: bypassPermissions
 
 ## 협업 에이전트
 
+> **조율자**: `project-architect`가 에이전트 간 토론을 중재한다. 교차 검토 요청을 받으면 상대 에이전트의 의견에 대해 동의/반론/보완을 구조적으로 답변할 것.
+
 | 에이전트 | 협업 포인트 |
 |---------|------------|
-| project-architect | 아키텍처 결정 반영, 디렉토리 구조 확정 |
-| db-architect | DB 모델 ↔ 프로젝트 구조 정합성, 도큐먼트 모델 위치 |
-| python-backend-expert | Python 컨벤션 준수, API 스펙 기반 엔드포인트 구현 |
-| flutter-frontend-expert | Flutter 컨벤션 준수, WS 이벤트 스펙 기반 클라이언트 구현 |
-| exchange-api-expert | Provider ABC 인터페이스 위치, 모듈 의존성 규칙 적용 |
+| project-architect | **조율자** — 아키텍처 결정, 토론 중재, ADR 기록 |
+| db-architect | DB 모델 ↔ 프로젝트 구조 정합성, 모델 위치 |
+| python-backend-expert | Python 컨벤션 준수, API 스펙 기반 구현 |
+| flutter-frontend-expert | Flutter 컨벤션 준수, WS 이벤트 스펙 기반 구현 |
+| exchange-api-expert | Provider ABC 인터페이스 위치, 모듈 의존성 규칙 |
 | ai-trading-expert | trading/ 모듈 독립성, 서비스 레이어 연동 규칙 |
 
 ## 구현 규칙

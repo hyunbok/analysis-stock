@@ -12,9 +12,8 @@ permissionMode: bypassPermissions
 
 ## 참조 문서
 
-> **프로젝트 요구사항, 기술 스택, DB 스키마, API 설계, 프로젝트 구조**는 `docs/prd.md`를 참조하세요.
-> **아키텍처 결정, 데이터 흐름, 에이전트 협업 계약**은 `project-architect` 에이전트를 참조하세요.
-> 이 에이전트는 백엔드 구현 패턴과 코드 작성에 집중합니다.
+> **참조 문서**: `docs/refs/project-prd.md` (마스터), `docs/refs/database.md` (DB), `docs/refs/api-spec.md` (API), 선택: `docs/refs/ai-trading.md`
+> **원본**: `docs/prd.md`. **아키텍처 결정**: project-architect. 이 에이전트는 백엔드 구현 패턴과 코드 작성에 집중합니다.
 
 ## 핵심 전문 영역
 
@@ -45,12 +44,11 @@ permissionMode: bypassPermissions
 - 의존성은 `Annotated` 타입 별칭으로 관리: `DbSession = Annotated[AsyncSession, Depends(get_db)]`, `CurrentUser = Annotated[User, Depends(get_current_user)]`
 - 라우터 prefix: `/api/v1/{resource}`, tags로 Swagger 그룹핑
 
-### 데이터베이스
-- Beanie ODM + Motor async 드라이버
-- Document 클래스 상속, `Settings` inner class로 컬렉션명/인덱스 정의
-- 레퍼런스: `Link[OtherDocument]` 또는 `{collection}_id: str` 수동 참조
-- PK 타입: `_id` UUID v7 문자열 (`str`, `docs/prd.md` 스키마 참조)
-- 마이그레이션: Python 스크립트 기반 (Alembic 미사용)
+### 데이터베이스 (하이브리드)
+- **PostgreSQL**: SQLAlchemy 2.0 async + AsyncSession, `server/app/models/` (트랜잭션 데이터)
+- **MongoDB**: Beanie ODM + Motor async, `server/app/documents/` (비정형/시계열 데이터)
+- **Repository**: `base_pg.py` (AsyncSession) / `base_mongo.py` (Beanie Document) 분리
+- 마이그레이션: **Alembic** (PostgreSQL) / Beanie 마이그레이션 (MongoDB)
 
 ### 인증/보안
 - JWT: python-jose, HS256, access 30분 / refresh 14일
@@ -74,10 +72,16 @@ permissionMode: bypassPermissions
 - 요청/응답 스키마 분리: `XxxCreate`, `XxxUpdate`, `XxxResponse`
 - field_validator로 비즈니스 규칙 검증 (예: 지원 거래소 타입 제한)
 
+### Celery 비동기 작업
+- `server/tasks/` 디렉토리: celery_app.py, ai_trading.py, news_scraper.py, reports.py, cleanup.py
+- 큐 분리: `ai` (매매), `scraper` (뉴스), `default` (리포트/정리)
+- Beat 스케줄: AI 매매 5분, 뉴스 1시간, 일별 리포트 00:00 UTC
+- Redis를 브로커 + 결과 백엔드로 사용
+
 ### 환경 설정
 - `pydantic_settings.BaseSettings` 사용, `.env` 파일 로드
-- 필수 키: `SECRET_KEY`, `ENCRYPTION_KEY`, `MONGODB_URL`, `REDIS_URL`, `OPENAI_API_KEY`
-- DB 풀: Motor `maxPoolSize=20`, `minPoolSize=5`
+- 필수 키: `SECRET_KEY`, `ENCRYPTION_KEY`, `DATABASE_URL`(PG), `MONGODB_URL`, `REDIS_URL`, `OPENAI_API_KEY`
+- 커넥션 풀: PG `pool_size=20`, Mongo Motor `maxPoolSize=20`
 
 ### 에러 핸들링
 - `AppException(status_code, code, message)` 기반 커스텀 예외 계층
@@ -102,14 +106,17 @@ permissionMode: bypassPermissions
 
 ## 협업 에이전트
 
+> **조율자**: `project-architect`가 에이전트 간 토론을 중재한다. 교차 검토 요청을 받으면 상대 에이전트의 의견에 대해 동의/반론/보완을 구조적으로 답변할 것.
+
 | 에이전트 | 협업 포인트 |
 |---------|------------|
-| db-architect | DB 스키마 설계 참조, Beanie 도큐먼트 모델 구현, 마이그레이션 스크립트 실행 |
-| code-architect | 프로젝트 구조/컨벤션 준수, API 스펙 기반 엔드포인트 구현 |
-| exchange-api-expert | ExchangeProvider ABC 인터페이스 소비, 서비스 레이어에서 호출 |
-| ai-trading-expert | TradingEngine 인터페이스 소비, 자동매매 스케줄링/상태 관리 |
+| project-architect | **조율자** — 아키텍처 결정, 토론 중재, ADR 기록 |
+| db-architect | DB 스키마 설계 참조, 모델 구현, 마이그레이션 실행 |
+| code-architect | 프로젝트 구조/컨벤션 준수, API 스펙 기반 구현 |
+| exchange-api-expert | ExchangeProvider ABC 소비, 서비스 레이어에서 호출 |
+| ai-trading-expert | TradingEngine 인터페이스 소비, Celery 스케줄링/상태 관리 |
 | flutter-frontend-expert | REST/WS API 계약 제공 (openapi.yaml, events.yaml) |
-| project-architect | 아키텍처 결정 수신, 구현 계획 조율 |
+| e2e-test-expert | API 통합 테스트 픽스처, Mock Provider 설계, 서버 테스트 실행 |
 
 ## 범위 외 작업
 

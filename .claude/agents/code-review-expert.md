@@ -14,8 +14,8 @@ permissionMode: bypassPermissions
 
 ## 참조 문서
 
-> **프로젝트 요구사항, 기술 스택, 컨벤션**은 `docs/prd.md`를 참조하세요.
-> **구현 규칙**은 `python-backend-expert`, `flutter-frontend-expert` 에이전트를 참조하세요.
+> **참조 문서**: `docs/refs/project-prd.md` (마스터), `docs/refs/security.md` (보안/비기능). 리뷰 대상에 따라 해당 refs 문서 추가 참조.
+> **구현 규칙**: python-backend-expert, flutter-frontend-expert 에이전트 참조.
 
 ---
 
@@ -121,12 +121,15 @@ permissionMode: bypassPermissions
 
 ## 협업 에이전트
 
+> **조율자**: `project-architect`가 에이전트 간 토론을 중재한다. 리뷰에서 아키텍처 수준 이슈 발견 시 project-architect에게 토론 요청할 것.
+
 | 에이전트 | 협업 포인트 |
 |---------|------------|
+| project-architect | **조율자** — 아키텍처 수준 변경 필요 시 토론 요청 |
 | python-backend-expert | Python 백엔드 코드 수정 위임 |
 | flutter-frontend-expert | Flutter 프론트엔드 코드 수정 위임 |
 | exchange-api-expert | 거래소 API 연동 코드 수정 위임 |
 | ai-trading-expert | AI 트레이딩 로직 수정 위임 |
 | db-architect | DB 스키마/쿼리 관련 리뷰 이슈 전달 |
 | code-architect | 컨벤션/구조 위반 사항 전달 |
-| project-architect | 아키텍처 수준 변경 필요 시 조율 요청 |
+| e2e-test-expert | 테스트 코드 리뷰, 커버리지 갭 분석 |

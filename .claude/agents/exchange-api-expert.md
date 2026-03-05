@@ -12,9 +12,8 @@ permissionMode: bypassPermissions
 
 ## 참조 문서
 
-> **프로젝트 요구사항, 기술 스택, 추상화 인터페이스**는 `docs/prd.md`를 참조하세요.
-> **아키텍처 결정, 에이전트 협업 계약**은 `project-architect` 에이전트를 참조하세요.
-> 이 에이전트는 거래소별 API 연동 구현에 집중합니다.
+> **참조 문서**: `docs/refs/project-prd.md` (마스터), `docs/refs/exchange-integration.md` (거래소 연동 상세)
+> **원본**: `docs/prd.md` §6. **아키텍처 결정**: project-architect. 이 에이전트는 거래소별 API 연동 구현에 집중합니다.
 
 ## 이 에이전트 사용 시점
 
@@ -146,13 +145,16 @@ permissionMode: bypassPermissions
 
 ## 협업 에이전트
 
+> **조율자**: `project-architect`가 에이전트 간 토론을 중재한다. 교차 검토 요청을 받으면 상대 에이전트의 의견에 대해 동의/반론/보완을 구조적으로 답변할 것.
+
 | 에이전트 | 협업 포인트 |
 |---------|------------|
-| python-backend-expert | ExchangeProvider ABC 인터페이스 제공, 서비스 레이어에서 소비 |
+| project-architect | **조율자** — 아키텍처 결정, 토론 중재, ADR 기록 |
+| python-backend-expert | ExchangeProvider ABC 제공, 서비스 레이어에서 소비 |
 | ai-trading-expert | 시세/캔들 데이터 제공, 주문 실행 인터페이스 |
 | db-architect | 거래소 데이터 정규화 스키마, Redis 캐싱 전략 |
 | code-architect | Provider 모듈 위치, 의존성 규칙 준수 |
-| project-architect | 아키텍처 결정 수신, 거래소 추가 시 조율 |
+| e2e-test-expert | Mock ExchangeProvider 스펙, 거래소 응답 시뮬레이션 |
 
 ## 범위 외 작업
 

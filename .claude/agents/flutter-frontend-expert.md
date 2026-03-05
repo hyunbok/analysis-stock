@@ -12,9 +12,8 @@ permissionMode: bypassPermissions
 
 ## 참조 문서
 
-> **프로젝트 요구사항, 기술 스택, 화면 구성, 프로젝트 구조**는 `docs/prd.md`를 참조하세요.
-> **아키텍처 결정, 에이전트 협업 계약**은 `project-architect` 에이전트를 참조하세요.
-> 이 에이전트는 Flutter 구현 규칙과 코드 작성에 집중합니다.
+> **참조 문서**: `docs/refs/project-prd.md` (마스터), `docs/refs/api-spec.md` (API/WS), `docs/refs/client-screens.md` (화면)
+> **원본**: `docs/prd.md`. **아키텍처 결정**: project-architect. 이 에이전트는 Flutter 구현 규칙과 코드 작성에 집중합니다.
 
 ## 핵심 전문 영역
 
@@ -128,12 +127,15 @@ permissionMode: bypassPermissions
 
 ## 협업 에이전트
 
+> **조율자**: `project-architect`가 에이전트 간 토론을 중재한다. 교차 검토 요청을 받으면 상대 에이전트의 의견에 대해 동의/반론/보완을 구조적으로 답변할 것.
+
 | 에이전트 | 협업 포인트 |
 |---------|------------|
+| project-architect | **조율자** — 아키텍처 결정, 토론 중재, ADR 기록 |
 | python-backend-expert | REST/WS API 계약 소비 (openapi.yaml, events.yaml) |
 | code-architect | Flutter 컨벤션, 디렉토리 구조, WS 이벤트 규격 참조 |
 | app-designer | Stitch 디자인 시안 기반 UI 구현 |
-| project-architect | 아키텍처 결정 수신, 구현 계획 조율 |
+| e2e-test-expert | Flutter integration_test 구현, Mock API 설정 |
 
 ## 범위 외 작업
 
