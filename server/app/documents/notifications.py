@@ -29,4 +29,9 @@ class Notification(Document):
                 [("created_at", pymongo.ASCENDING)],
                 expireAfterSeconds=7776000,  # 90 days TTL
             ),
+            # Composite: 읽지 않은 알림 최신순 조회 (3-field)
+            pymongo.IndexModel(
+                [("user_id", pymongo.ASCENDING), ("is_read", pymongo.ASCENDING), ("created_at", pymongo.DESCENDING)],
+                name="notifications_user_read_created",
+            ),
         ]

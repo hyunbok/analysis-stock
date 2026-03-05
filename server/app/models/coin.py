@@ -15,6 +15,13 @@ class Coin(Base):
         UniqueConstraint("exchange_type", "market_code", name="uq_coin_exchange_market"),
         Index("ix_coins_symbol", "symbol"),
         Index("ix_coins_exchange_type", "exchange_type"),
+        # GIN trgm index for symbol fuzzy/prefix search
+        Index(
+            "ix_coins_symbol_trgm",
+            "symbol",
+            postgresql_using="gin",
+            postgresql_ops={"symbol": "gin_trgm_ops"},
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -57,6 +64,12 @@ class WatchlistCoin(Base):
             name="uq_watchlist_user_coin_account",
         ),
         Index("ix_watchlist_coins_user_id_sort_order", "user_id", "sort_order"),
+        # Covering index: user_id lookup with coin_id + sort_order included (index-only scan)
+        Index(
+            "ix_watchlist_coins_user_id_covering",
+            "user_id",
+            postgresql_include=["coin_id", "sort_order"],
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(

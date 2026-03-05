@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 
 import sqlalchemy.dialects.postgresql as pg
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Numeric, String, text
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, Numeric, String, text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
@@ -15,6 +15,23 @@ class AiTradingConfig(Base):
     __table_args__ = (
         Index("ix_ai_trading_configs_watchlist_coin_id", "watchlist_coin_id", unique=True),
         Index("ix_ai_trading_configs_is_enabled", "is_enabled"),
+        # Partial index: active configs only (is_enabled=true)
+        Index(
+            "ix_ai_trading_configs_is_enabled_partial",
+            "watchlist_coin_id",
+            postgresql_where=text("is_enabled = true"),
+        ),
+        # GIN index for JSONB strategy_params queries
+        Index(
+            "ix_ai_trading_configs_strategy_params_gin",
+            "strategy_params",
+            postgresql_using="gin",
+        ),
+        # CHECK constraints on ratio fields (0.0 ~ 1.0)
+        CheckConstraint("max_investment_ratio >= 0.0 AND max_investment_ratio <= 1.0", name="ck_ai_config_max_investment_ratio"),
+        CheckConstraint("stop_loss_ratio >= 0.0 AND stop_loss_ratio <= 1.0", name="ck_ai_config_stop_loss_ratio"),
+        CheckConstraint("take_profit_ratio >= 0.0 AND take_profit_ratio <= 1.0", name="ck_ai_config_take_profit_ratio"),
+        CheckConstraint("daily_max_loss_ratio >= 0.0 AND daily_max_loss_ratio <= 1.0", name="ck_ai_config_daily_max_loss_ratio"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -106,6 +123,20 @@ class TradeOrder(Base):
         Index("ix_trade_orders_status", "status"),
         Index("ix_trade_orders_created_at", "created_at"),
         Index("ix_trade_orders_is_ai_order", "is_ai_order"),
+        # Composite indexes for common query patterns
+        Index("ix_trade_orders_user_status_created", "user_id", "status", "created_at"),
+        Index("ix_trade_orders_user_ai_created", "user_id", "is_ai_order", "created_at"),
+        # Partial index: pending orders only (미체결 주문 조회 최적화)
+        Index(
+            "ix_trade_orders_pending",
+            "user_id",
+            "created_at",
+            postgresql_where=text("status = 'pending'"),
+        ),
+        # CHECK constraints
+        CheckConstraint("status IN ('pending', 'filled', 'cancelled', 'partial')", name="ck_trade_orders_status"),
+        CheckConstraint("order_type IN ('buy', 'sell')", name="ck_trade_orders_order_type"),
+        CheckConstraint("order_method IN ('market', 'limit')", name="ck_trade_orders_order_method"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -165,6 +196,15 @@ class PriceAlert(Base):
         Index("ix_price_alerts_user_id", "user_id"),
         Index("ix_price_alerts_is_active", "is_active"),
         Index("ix_price_alerts_coin_id", "coin_id"),
+        # Partial index: active untriggered alerts only (알림 체크 최적화)
+        Index(
+            "ix_price_alerts_active_untriggered",
+            "user_id",
+            "coin_id",
+            postgresql_where=text("is_active = true AND is_triggered = false"),
+        ),
+        # CHECK constraint on condition
+        CheckConstraint("condition IN ('above', 'below')", name="ck_price_alerts_condition"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(

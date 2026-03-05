@@ -78,6 +78,11 @@ class TradeLog(Document):
             pymongo.IndexModel([("trade_order_id", pymongo.ASCENDING)]),
             pymongo.IndexModel([("status", pymongo.ASCENDING)]),
             pymongo.IndexModel([("created_at", pymongo.DESCENDING)]),
+            # Composite: user 기준 상태+시간 필터링
+            pymongo.IndexModel(
+                [("user_id", pymongo.ASCENDING), ("status", pymongo.ASCENDING), ("created_at", pymongo.DESCENDING)],
+                name="trade_logs_user_status_created",
+            ),
         ]
 
 
@@ -118,6 +123,11 @@ class AiDecision(Document):
                 [("created_at", pymongo.ASCENDING)],
                 expireAfterSeconds=15552000,
                 name="ai_decisions_ttl",
+            ),
+            # Composite: user+코인별 최신 AI 판단 이력 조회
+            pymongo.IndexModel(
+                [("user_id", pymongo.ASCENDING), ("coin_symbol", pymongo.ASCENDING), ("created_at", pymongo.DESCENDING)],
+                name="ai_decisions_user_coin_created",
             ),
         ]
 
