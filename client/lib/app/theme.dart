@@ -15,14 +15,14 @@ class AppTheme {
   static ThemeData get light => ThemeData(
         colorSchemeSeed: _seedColorLight,
         useMaterial3: true,
-        fontFamily: 'Pretendard',
+        // fontFamily: 'Pretendard', // TODO: Enable after adding font files
       );
 
   static ThemeData get dark => ThemeData(
         colorSchemeSeed: _seedColorDark,
         useMaterial3: true,
         brightness: Brightness.dark,
-        fontFamily: 'Pretendard',
+        // fontFamily: 'Pretendard', // TODO: Enable after adding font files
         scaffoldBackgroundColor: _darkBackground,
       );
 }

@@ -32,7 +32,10 @@ async def init_db() -> None:
         pass
 
 
-async def get_db() -> AsyncSession:
+from typing import AsyncGenerator
+
+
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with AsyncSessionLocal() as session:
         try:
             yield session

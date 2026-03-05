@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timezone
 
 import structlog
@@ -46,10 +47,10 @@ async def _check_redis() -> str:
 
 @router.get("/health", response_model=HealthResponse)
 async def health_check():
-    pg_status, mongo_status, redis_status = (
-        await _check_postgres(),
-        await _check_mongodb(),
-        await _check_redis(),
+    pg_status, mongo_status, redis_status = await asyncio.gather(
+        _check_postgres(),
+        _check_mongodb(),
+        _check_redis(),
     )
 
     all_healthy = all(s == "up" for s in [pg_status, mongo_status, redis_status])

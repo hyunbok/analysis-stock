@@ -11,6 +11,7 @@ from app.core.config import settings
 from app.core.database import init_db
 from app.core.metrics import instrumentator
 from app.core.mongodb import init_mongodb
+from app.core.mongodb import close_mongodb
 from app.core.redis import init_redis, close_redis
 
 if settings.SENTRY_DSN:
@@ -51,6 +52,7 @@ async def lifespan(app: FastAPI):
     yield
 
     # Shutdown
+    await close_mongodb()
     await close_redis()
 
 
@@ -64,7 +66,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if settings.DEBUG else settings.cors_origins_list,
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
