@@ -19,6 +19,7 @@ dependencies = [
     "sentry-sdk[fastapi]",
     "celery[redis]>=5.3",
     "prometheus-fastapi-instrumentator",
+    "alembic>=1.13",
 ]
 
 [project.optional-dependencies]
