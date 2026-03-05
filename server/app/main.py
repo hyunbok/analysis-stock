@@ -46,7 +46,7 @@ async def lifespan(app: FastAPI):
     configure_logging()
     # Startup
     await init_db()
-    await init_mongodb(settings.MONGODB_URL, settings.MONGODB_DB_NAME)
+    await init_mongodb()
     await init_redis(settings.REDIS_URL)
 
     yield
