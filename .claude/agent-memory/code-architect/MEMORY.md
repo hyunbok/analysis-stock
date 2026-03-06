@@ -108,6 +108,55 @@ ws/hub.py -> Redis Pub/Sub (services 직접 호출 금지)
 - Settings 추가: GOOGLE_CLIENT_ID 3개 + APPLE_APP_BUNDLE_ID + APPLE_WEB_CLIENT_ID + OAUTH_JWKS_CACHE_TTL
 - DI: OAuthVerificationServiceDep + SocialAuthServiceDep (단일화)
 
+## v1-7 2FA/세션 관리 설계 결정사항
+
+- 설계서: `docs/tasks/v1-7-2fa-session-management-plan.md` (project-architect 작성 중)
+- **신규 파일**: `schemas/two_factor.py`, `schemas/session.py`, `services/two_factor_service.py`, `services/session_service.py`, `services/audit_service.py`, `repositories/client_repository.py`
+- **기존 확장**: `api/v1/auth.py`, `schemas/auth.py`, `services/auth_service.py`, `core/exceptions.py`, `core/redis_keys.py`, `core/deps.py`
+
+### API 엔드포인트 (auth.py 확장)
+- `POST /2fa/setup` — TOTP 비밀키 + QR 생성 (인증 필요)
+- `POST /2fa/verify` — TOTP 검증 + 2FA 활성화 + **백업 코드 반환** (verify 시점, setup 아님)
+- `POST /2fa/disable` — 비활성화 (POST 채택, DELETE body 호환성 문제)
+- `GET  /2fa/status` — is_enabled, has_backup_codes
+- `POST /2fa/login-verify` — 로그인 2단계 임시 토큰 + TOTP → 최종 JWT
+- `GET  /sessions` — 세션 목록
+- `DELETE /sessions/{client_id}` — 특정 세션 종료
+- `POST /logout-all` — 전체 세션 로그아웃
+
+### 로그인 2FA 플로우 (옵션A)
+- `LoginResponse`에 `requires_2fa: bool`, `temp_token: str | None`, `temp_token_expires_in: int | None` 추가
+- 2FA 활성 사용자: user/tokens=null, requires_2fa=true, temp_token 반환
+- Client 레코드는 **2FA 완료 후** 생성 (pending 시 아직 없음)
+
+### Redis 키 패턴 (auth: 접두사 통일)
+- `auth:2fa_setup:{user_id}` TTL 10분 — TOTP setup 임시 비밀키
+- `auth:2fa_pending:{user_id}:{temp_id}` TTL 5분 — 로그인 2단계 기기 정보 임시 저장
+- `auth:2fa_fail:{user_id}` TTL 15분 — TOTP 실패 카운터 (5회 초과 시 잠금)
+- temp_id = UUID (client_id 아님 — pending 시 Client 레코드 미존재)
+
+### DB 모델 (db-architect 구현 완료)
+- `Client`: device_name(200), user_agent(500), ip_address(45), device_fingerprint(**64**, SHA-256 hex)
+  - `is_active: Boolean, default=True` 필드 **추가 확정** (project-architect 결정)
+  - 세션 종료 시 is_active=False (PG) + refresh token 폐기 (Redis) 양쪽 처리 필수
+  - 활성 세션 목록: `Client.is_active == True` 필터 (Redis Set 불필요)
+- `UserTotpBackupCode`: 별도 테이블 (Redis 소실 위험으로 PostgreSQL 채택)
+  - code_hash(64 SHA-256), is_used, used_at
+
+### device 정보 수집: Header 방식
+- `X-Device-Name`, `X-Device-Fingerprint` 커스텀 헤더
+- `User-Agent` 표준 헤더, `request.client.host` IP
+- LoginRequest body 변경 없음 (하위 호환 유지)
+
+### AuthErrors 추가 (6개)
+- totp_already_enabled(409), totp_not_enabled(400), totp_setup_required(400)
+- invalid_totp_code(400) — TOTP + 백업 코드 통합 (INVALID_BACKUP_CODE 분리 안 함)
+- invalid_temp_token(401), session_not_found(404)
+
+### DI 추가 (deps.py)
+- TwoFactorServiceDep, SessionServiceDep, AuditServiceDep, ClientRepositoryDep
+- SessionService 별도 분리 (AuthService 비대화 방지)
+
 ## 상세 참조
 
 - architecture.md: 디렉토리 구조 전체 최종안
