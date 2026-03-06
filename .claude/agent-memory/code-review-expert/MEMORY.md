@@ -64,9 +64,34 @@
 - `except AppError: raise` → JWKS 가용성 오류를 invalid_token으로 마스킹하지 않음
 - `allowed_audiences` 빈 리스트 조기 검증은 `verify_google_token()` / `verify_apple_token()` 진입 시점
 
+## 자주 발견되는 패턴 (2FA/세션 관리 관련)
+
+### CRITICAL 패턴
+- **Private attribute 직접 접근**: API 레이어에서 `svc._cache.xxx()` 직접 호출 → 서비스에 위임 메서드 추가
+- **Redis 키 하드코딩**: `f"auth:2fa_pending:{token_hash}"` → `RedisKey` 헬퍼 미사용 감지 필수
+- **JWT payload에 client_id 미포함**: logout-all/is_current 기능 불가 → `create_access_token(client_id=)` 포함 확인
+
+### WARNING 패턴
+- **deactivate_all() N+1 UPDATE**: 루프 내 개별 UPDATE → 단일 bulk UPDATE + `rowcount` 반환
+- **광범위한 except Exception**: 암호화 실패는 `cryptography.exceptions.InvalidTag` + `ValueError`로 좁혀야 함
+- **import inside try block**: `from cryptography.exceptions import InvalidTag`는 모듈 상단으로
+
+### Redis 2FA 키 설계 주의
+- `auth:2fa_pending:{user_id}:{token_hash}` (설계서) vs token_hash만 사용 구현 → 인덱스 키 패턴으로 해결:
+  - store: pipeline으로 실제키 + `auth:2fa_pending_idx:{token_hash}` 동시 저장
+  - getdel: 인덱스 GETDEL → user_id 획득 → 실제키 GETDEL (2단계 비원자적이나 보안상 안전)
+- 신규 키 패턴은 반드시 `RedisKey` 클래스에 메서드 추가
+
+### 테스트 패턴 (2FA)
+- 3개 fixture 분리: `test_app` (비인증), `test_app_authed` (2FA 비활성), `test_app_authed_2fa` (2FA 활성)
+- `get_current_client_id` 오버라이드 없으면 logout-all의 `except_client_id=None` → 주의
+- audit log 검증: `mock_audit_service`를 파라미터로 받지 않으면 호출 횟수 검증 불가
+- MongoDB 모듈: `sys.modules`에 `ModuleType` 인스턴스로 mock (Pydantic v2 + bson.Decimal128 비호환 우회)
+
 ## 팀 구성 (v1-5 이후)
 - team-lead: 총괄, 최종 보고 대상
 - python-backend-expert: 백엔드 구현 (리뷰 대상, SendMessage recipient = "python-backend-expert")
+- e2e-test-expert: 통합 테스트 구현 (SendMessage recipient = "e2e-test-expert")
 - code-review-expert: 본인
 
 ## 주요 설계 결정 (v1-3)
@@ -74,3 +99,9 @@
 - Pub/Sub 전용 풀: `socket_timeout=None` (블로킹 listen용 분리)
 - Refresh Token: String + Set 인덱스 (세션 관리)
 - 미들웨어: IP 기반만, user_id Rate Limit은 라우터 의존성
+
+## 주요 설계 결정 (v1-7)
+- JWT access token에 client_id 포함 → `get_current_client_id()` DI로 현재 세션 식별
+- 2FA pending 토큰: `secrets.token_urlsafe(32)` → SHA-256 해시를 Redis 키로 사용
+- AuditService: fire-and-forget (try-except 격리, 실패해도 주요 플로우 차단 안 함)
+- 오케스트레이션: AuthService에 2FA/Session 미주입, API 레이어에서 조율 (순환 의존 방지)

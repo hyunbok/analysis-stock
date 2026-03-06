@@ -88,15 +88,15 @@ class AuthService:
     # 타이밍 어택 방지용 더미 bcrypt 해시 (절대 실제 비밀번호와 일치하지 않음)
     _DUMMY_HASH = "$2b$12$dummyhashfortimingatk.EBpMEtf9JqBFvWv0RVsaHkOy4W"
 
-    async def login(self, email: str, password: str) -> tuple[User, TokenPair]:
-        """로그인: 자격증명 검증 → 토큰 발급.
+    async def verify_credentials(self, email: str, password: str) -> User:
+        """이메일/비밀번호 자격증명 검증만 수행 — 토큰 발급 없음.
 
         Args:
             email: 이메일 주소.
             password: 평문 비밀번호.
 
         Returns:
-            (User, TokenPair) 튜플.
+            검증된 User.
 
         Raises:
             AppError(LOGIN_RATE_LIMIT): 로그인 시도 횟수 초과 (5회/15분).
@@ -104,14 +104,12 @@ class AuthService:
             AppError(EMAIL_NOT_VERIFIED): 이메일 미인증.
             AppError(ACCOUNT_DELETED): 삭제 예약된 계정.
         """
-        # Rate limit 체크 (DB 조회 전 — 부하 공격 차단)
         attempts = await self._cache.get_login_attempts(email)
         if attempts >= self._settings.RATE_LIMIT_LOGIN_MAX:
             raise AuthErrors.login_rate_limit()
 
         user = await self._repo.get_by_email(email)
 
-        # 타이밍 어택 방지: 사용자 존재 여부와 무관하게 항상 bcrypt 수행
         stored_hash = user.password_hash if (user and user.password_hash) else self._DUMMY_HASH
         password_ok = security.verify_password(password, stored_hash)
 
@@ -128,8 +126,98 @@ class AuthService:
         if user.email_verified_at is None:
             raise AuthErrors.email_not_verified()
 
-        # 로그인 성공 시 실패 카운터 리셋 (성공 후 1회 실패로 즉시 잠금 방지)
         await self._cache.reset_login_attempts(email)
+        return user
+
+    def issue_tokens(self, user_id: str, client_id: str) -> "TokenPair":
+        """Access + Refresh 토큰 쌍 발급 (동기 — I/O 없음).
+
+        Args:
+            user_id: 사용자 UUID 문자열.
+            client_id: 클라이언트 UUID 문자열.
+
+        Returns:
+            TokenPair.
+        """
+        access_token = security.create_access_token(user_id=user_id, email="")
+        refresh_token = security.create_refresh_token(user_id=user_id, client_id=client_id)
+        return TokenPair(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            expires_in=self._settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        )
+
+    async def issue_tokens_with_store(
+        self, user: "User", client_id: str
+    ) -> "TokenPair":
+        """토큰 발급 + Redis 저장.
+
+        Args:
+            user: 로그인된 User.
+            client_id: Client UUID 문자열.
+
+        Returns:
+            TokenPair.
+        """
+        user_id_str = str(user.id)
+        # client_id를 access token payload에 포함 → 세션 식별 가능
+        access_token = security.create_access_token(
+            user_id=user_id_str, email=user.email, client_id=client_id
+        )
+        refresh_token = security.create_refresh_token(user_id=user_id_str, client_id=client_id)
+        token_hash = security.hash_token(refresh_token)
+        await self._cache.store_refresh_token(user_id_str, client_id, token_hash)
+
+        return TokenPair(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            expires_in=self._settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        )
+
+    async def store_2fa_login_pending(
+        self, user_id: str, token_hash: str, data: str, ttl: int
+    ) -> None:
+        """2FA 로그인 임시 토큰 저장 위임 메서드 (캡슐화).
+
+        Args:
+            user_id: 사용자 UUID 문자열.
+            token_hash: SHA-256(temp_token) hex.
+            data: JSON 문자열.
+            ttl: TTL 초.
+        """
+        await self._cache.store_2fa_login_pending(user_id, token_hash, data, ttl)
+
+    async def get_and_delete_2fa_login_pending(self, token_hash: str) -> str | None:
+        """2FA 로그인 임시 토큰 조회 + 삭제 위임 메서드 (캡슐화).
+
+        Args:
+            token_hash: SHA-256(temp_token) hex.
+
+        Returns:
+            JSON 문자열 또는 None.
+        """
+        return await self._cache.get_and_delete_2fa_login_pending(token_hash)
+
+    async def login(self, email: str, password: str) -> tuple[User, TokenPair]:
+        """로그인: 자격증명 검증 → 토큰 발급.
+
+        2FA 활성 사용자는 이 메서드 대신 API 레이어에서
+        verify_credentials() → 2FA 분기 → issue_tokens_with_store() 순서로 처리.
+
+        Args:
+            email: 이메일 주소.
+            password: 평문 비밀번호.
+
+        Returns:
+            (User, TokenPair) 튜플.
+
+        Raises:
+            AppError(LOGIN_RATE_LIMIT): 로그인 시도 횟수 초과 (5회/15분).
+            AppError(INVALID_CREDENTIALS): 이메일/비밀번호 불일치.
+            AppError(EMAIL_NOT_VERIFIED): 이메일 미인증.
+            AppError(ACCOUNT_DELETED): 삭제 예약된 계정.
+        """
+        user = await self.verify_credentials(email, password)
 
         user_id_str = str(user.id)
         client_id = str(uuid.uuid4())

@@ -35,6 +35,21 @@
 - AuthErrors에 통합 (별도 SocialAuthErrors 클래스 금지)
 - 의존 라이브러리: python-jose[cryptography] (RSA), httpx (JWKS fetch)
 
+## v1-7 결정 사항 (2FA + 세션 관리)
+- 2FA: TOTP (pyotp), AES-256-GCM 암호화 (cryptography), QR (qrcode[pil])
+- 백업 코드: 10개 × 10자리, 별도 `user_totp_backup_codes` 테이블 (LargeBinary 기각)
+- 백업 코드 반환 시점: setup이 아닌 **verify 성공 시** 반환
+- 로그인 2FA: temp_token(5분 TTL) → POST /2fa/login-verify, LoginResponse nullable 통합
+- Device 정보: Header 방식 (X-Device-Name, X-Device-Fingerprint), Body 아님
+- Client 모델: device_name(200), user_agent, ip_address, device_fingerprint, is_active 추가
+- 에러 통합: INVALID_BACKUP_CODE → invalid_totp_code(), TOTP_SETUP_EXPIRED → totp_setup_required()
+- TOTP 브루트포스: 2fa:fail_count:{user_id} Redis 키 (5회/15분)
+- AuditService: mongodb DI 주입, fire-and-forget (실패해도 주요 로직 차단 안 함)
+- 서비스 오케스트레이션: AuthService에 TwoFactorService 주입 안 함 → API 레이어에서 조율 (순환 의존 방지)
+- Setup TTL: 10분, Temp token TTL: 5분
+- URL: POST /2fa/disable (DELETE 아님, body 필요), POST /2fa/login-verify
+
 ## 협업 패턴
 - code-architect와 이견 시 먼저 합의 후 설계서 반영 (동시 편집 충돌 주의)
 - 설계서 초안을 먼저 작성하고 상대에게 수정/보강 요청하는 방식이 효율적
+- db-architect와 3자 합의 패턴 확립: 초안 → 병렬 리뷰 요청 → 피드백 반영 → 최종 확정

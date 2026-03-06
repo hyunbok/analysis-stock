@@ -8,6 +8,9 @@ class RedisTTL:
     REFRESH_TOKEN = 14 * 24 * 3600  # 14일
     EMAIL_VERIFY = 10 * 60          # 10분
     PASSWORD_RESET = 3600           # 1시간
+    TWO_FA_SETUP = 10 * 60          # 10분 (TOTP 설정 중 임시 비밀키)
+    TWO_FA_PENDING = 5 * 60         # 5분 (로그인 2단계 임시 상태)
+    TWO_FA_FAIL = 15 * 60           # 15분 (TOTP 실패 카운터 윈도우)
 
     # Rate Limiting
     RATE_WINDOW = 60                # 1분
@@ -50,6 +53,26 @@ class RedisKey:
     @staticmethod
     def password_reset(token: str) -> str:
         return f"auth:password_reset:{token}"
+
+    @staticmethod
+    def two_fa_setup(user_id: str) -> str:
+        """TOTP setup 중 임시 비밀키 저장 (10분 TTL)."""
+        return f"auth:2fa_setup:{user_id}"
+
+    @staticmethod
+    def two_fa_pending(user_id: str, temp_id: str) -> str:
+        """로그인 2단계 대기 상태 — 기기 정보 임시 저장 (5분 TTL)."""
+        return f"auth:2fa_pending:{user_id}:{temp_id}"
+
+    @staticmethod
+    def two_fa_fail(user_id: str) -> str:
+        """TOTP 코드 실패 카운터 (15분 고정 윈도우, 최대 5회)."""
+        return f"auth:2fa_fail:{user_id}"
+
+    @staticmethod
+    def two_fa_pending_idx(token_hash: str) -> str:
+        """2FA 로그인 임시 토큰 인덱스 — token_hash → user_id 역참조용."""
+        return f"auth:2fa_pending_idx:{token_hash}"
 
     # ── Rate Limiting ─────────────────────────────────────────────────────────
 

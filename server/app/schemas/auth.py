@@ -120,10 +120,17 @@ class VerifyEmailResponse(BaseModel):
 
 
 class LoginResponse(BaseModel):
-    """로그인 응답."""
+    """로그인 응답 — 2FA 상태에 따라 필드 분기.
 
-    user: UserResponse
-    tokens: TokenPair
+    - 2FA 미활성: user + tokens 채움, requires_2fa=False
+    - 2FA 활성: requires_2fa=True + temp_token 채움, user=None, tokens=None
+    """
+
+    user: UserResponse | None = None
+    tokens: TokenPair | None = None
+    requires_2fa: bool = False
+    temp_token: str | None = None
+    temp_token_expires_in: int | None = None  # 300 (5분)
 
 
 class RefreshResponse(BaseModel):

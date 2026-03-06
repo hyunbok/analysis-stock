@@ -119,3 +119,130 @@ class AuthCacheService:
     async def reset_login_attempts(self, email: str) -> None:
         """로그인 성공 시 시도 횟수 초기화."""
         await self._redis.delete(RedisKey.rate_login_email(email))
+
+    async def revoke_sessions_except(self, user_id: str, except_client_id: str) -> None:
+        """현재 세션을 제외한 모든 Redis refresh token 파이프라인으로 일괄 폐기.
+
+        Args:
+            user_id: 사용자 UUID 문자열.
+            except_client_id: 유지할 현재 세션 client_id.
+        """
+        client_ids = await self.list_sessions(user_id)
+        targets = [cid for cid in client_ids if cid != except_client_id]
+        if not targets:
+            return
+
+        pipe = self._redis.pipeline()
+        for cid in targets:
+            pipe.delete(RedisKey.refresh_token(user_id, cid))
+            pipe.srem(RedisKey.refresh_index(user_id), cid)
+        await pipe.execute()
+
+    # ── 2FA ───────────────────────────────────────────────────────────────────
+
+    async def store_2fa_setup_secret(self, user_id: str, secret: str, ttl: int) -> None:
+        """TOTP setup 임시 secret 저장.
+
+        Args:
+            user_id: 사용자 UUID 문자열.
+            secret: Base32 TOTP secret (평문).
+            ttl: TTL 초 (기본 600초 = 10분).
+        """
+        await self._redis.set(
+            RedisKey.two_fa_setup(user_id),
+            secret,
+            ex=ttl,
+        )
+
+    async def get_2fa_setup_secret(self, user_id: str) -> str | None:
+        """TOTP setup 임시 secret 조회 (삭제 없음).
+
+        Args:
+            user_id: 사용자 UUID 문자열.
+
+        Returns:
+            Base32 secret 문자열 또는 None (만료/없음).
+        """
+        return await self._redis.get(RedisKey.two_fa_setup(user_id))
+
+    async def delete_2fa_setup_secret(self, user_id: str) -> None:
+        """TOTP setup 임시 secret 삭제 (활성화 성공 후 호출).
+
+        Args:
+            user_id: 사용자 UUID 문자열.
+        """
+        await self._redis.delete(RedisKey.two_fa_setup(user_id))
+
+    async def get_2fa_fail_count(self, user_id: str) -> int:
+        """TOTP 실패 횟수 조회.
+
+        Args:
+            user_id: 사용자 UUID 문자열.
+
+        Returns:
+            실패 횟수 (없으면 0).
+        """
+        val = await self._redis.get(RedisKey.two_fa_fail(user_id))
+        return int(val) if val else 0
+
+    async def increment_2fa_fail_count(self, user_id: str, ttl: int) -> int:
+        """TOTP 실패 횟수 증가 (고정 윈도우).
+
+        Args:
+            user_id: 사용자 UUID 문자열.
+            ttl: TTL 초 (기본 900초 = 15분).
+
+        Returns:
+            증가 후 실패 횟수.
+        """
+        key = RedisKey.two_fa_fail(user_id)
+        pipe = self._redis.pipeline()
+        pipe.incr(key)
+        pipe.expire(key, ttl, nx=True)
+        results = await pipe.execute()
+        return int(results[0])
+
+    async def reset_2fa_fail_count(self, user_id: str) -> None:
+        """TOTP 실패 횟수 초기화 (검증 성공 시).
+
+        Args:
+            user_id: 사용자 UUID 문자열.
+        """
+        await self._redis.delete(RedisKey.two_fa_fail(user_id))
+
+    async def store_2fa_login_pending(
+        self, user_id: str, token_hash: str, data: str, ttl: int
+    ) -> None:
+        """2FA 로그인 임시 토큰 저장 (5분 TTL).
+
+        설계서 §10.1의 `auth:2fa_pending:{user_id}:{token_hash}` 키 패턴 준수.
+        조회 시 user_id를 역참조할 수 있도록 인덱스 키도 함께 저장.
+
+        Args:
+            user_id: 사용자 UUID 문자열.
+            token_hash: SHA-256(temp_token) hex.
+            data: JSON 문자열 (user_id, device_info 포함).
+            ttl: TTL 초.
+        """
+        pipe = self._redis.pipeline()
+        # 설계서 키: auth:2fa_pending:{user_id}:{token_hash}
+        pipe.set(RedisKey.two_fa_pending(user_id, token_hash), data, ex=ttl)
+        # 조회용 인덱스: token_hash → user_id (같은 TTL)
+        pipe.set(RedisKey.two_fa_pending_idx(token_hash), user_id, ex=ttl)
+        await pipe.execute()
+
+    async def get_and_delete_2fa_login_pending(self, token_hash: str) -> str | None:
+        """2FA 로그인 임시 토큰 조회 + 삭제 (1회용).
+
+        인덱스 키로 user_id를 찾은 후 설계서 키 패턴으로 GETDEL.
+
+        Args:
+            token_hash: SHA-256(temp_token) hex.
+
+        Returns:
+            JSON 문자열 또는 None (만료/없음).
+        """
+        user_id = await self._redis.getdel(RedisKey.two_fa_pending_idx(token_hash))
+        if user_id is None:
+            return None
+        return await self._redis.getdel(RedisKey.two_fa_pending(user_id, token_hash))

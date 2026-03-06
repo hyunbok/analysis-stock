@@ -4,10 +4,10 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.user import User
+from app.models.user import User, UserTotpBackupCode
 
 
 class UserRepository:
@@ -148,6 +148,112 @@ class UserRepository:
         if user is None:
             raise RuntimeError(f"User {user_id} not found after update")
         return user
+
+    # ── 2FA 메서드 ────────────────────────────────────────────────────────────
+
+    async def update_totp_secret(self, user_id: uuid.UUID, encrypted: bytes | None) -> None:
+        """TOTP secret 암호화값 저장 (또는 삭제 시 None).
+
+        Args:
+            user_id: 사용자 UUID.
+            encrypted: encrypt_totp_secret() 반환값 또는 None (비활성화).
+        """
+        await self._db.execute(
+            update(User)
+            .where(User.id == user_id)
+            .values(totp_secret_encrypted=encrypted)
+        )
+        await self._db.flush()
+
+    async def set_2fa_enabled(self, user_id: uuid.UUID, enabled: bool) -> None:
+        """is_2fa_enabled 플래그 업데이트.
+
+        Args:
+            user_id: 사용자 UUID.
+            enabled: True=활성화, False=비활성화.
+        """
+        await self._db.execute(
+            update(User).where(User.id == user_id).values(is_2fa_enabled=enabled)
+        )
+        await self._db.flush()
+
+    async def create_backup_codes(
+        self, user_id: uuid.UUID, code_hashes: list[str]
+    ) -> None:
+        """백업 코드 해시 목록을 user_totp_backup_codes에 일괄 저장.
+
+        Args:
+            user_id: 사용자 UUID.
+            code_hashes: hash_backup_code() 결과 리스트 (10개).
+        """
+        for code_hash in code_hashes:
+            self._db.add(UserTotpBackupCode(user_id=user_id, code_hash=code_hash))
+        await self._db.flush()
+
+    async def get_unused_backup_code(
+        self, user_id: uuid.UUID, code_hash: str
+    ) -> UserTotpBackupCode | None:
+        """미사용 백업 코드 조회 (해시 일치 + is_used=False).
+
+        Args:
+            user_id: 사용자 UUID.
+            code_hash: SHA-256 해시 (64자 hex).
+
+        Returns:
+            UserTotpBackupCode 또는 None.
+        """
+        result = await self._db.execute(
+            select(UserTotpBackupCode).where(
+                UserTotpBackupCode.user_id == user_id,
+                UserTotpBackupCode.code_hash == code_hash,
+                UserTotpBackupCode.is_used.is_(False),
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def mark_backup_code_used(self, backup_code_id: uuid.UUID) -> None:
+        """백업 코드를 사용 완료 처리 (is_used=True, used_at=now).
+
+        Args:
+            backup_code_id: UserTotpBackupCode.id.
+        """
+        now = datetime.now(timezone.utc)
+        await self._db.execute(
+            update(UserTotpBackupCode)
+            .where(UserTotpBackupCode.id == backup_code_id)
+            .values(is_used=True, used_at=now)
+        )
+        await self._db.flush()
+
+    async def count_unused_backup_codes(self, user_id: uuid.UUID) -> int:
+        """미사용 백업 코드 잔여 수 조회.
+
+        Args:
+            user_id: 사용자 UUID.
+
+        Returns:
+            미사용 코드 수 (0~10).
+        """
+        from sqlalchemy import func as sql_func
+
+        result = await self._db.execute(
+            select(sql_func.count()).where(
+                UserTotpBackupCode.user_id == user_id,
+                UserTotpBackupCode.is_used.is_(False),
+            )
+        )
+        return result.scalar_one()
+
+    async def delete_backup_codes(self, user_id: uuid.UUID) -> None:
+        """사용자의 모든 백업 코드 삭제 (2FA 비활성화 시).
+
+        Args:
+            user_id: 사용자 UUID.
+        """
+        await self._db.execute(
+            delete(UserTotpBackupCode).where(UserTotpBackupCode.user_id == user_id)
+        )
+        await self._db.flush()
 
     async def create_social_user(
         self,

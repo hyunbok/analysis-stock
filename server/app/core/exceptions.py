@@ -85,3 +85,33 @@ class AuthErrors:
             "소셜 인증 서버에 일시적으로 연결할 수 없습니다. 잠시 후 재시도해주세요.",
             502,
         )
+
+    @staticmethod
+    def totp_already_enabled() -> AppError:
+        """2FA 이미 활성화 상태에서 setup 시도."""
+        return AppError("TOTP_ALREADY_ENABLED", "2FA가 이미 활성화되어 있습니다.", 409)
+
+    @staticmethod
+    def totp_not_enabled() -> AppError:
+        """2FA 미활성 상태에서 disable/검증 시도."""
+        return AppError("TOTP_NOT_ENABLED", "2FA가 활성화되어 있지 않습니다.", 400)
+
+    @staticmethod
+    def totp_setup_required() -> AppError:
+        """setup 없이 verify 호출 또는 임시 secret 만료."""
+        return AppError("TOTP_SETUP_REQUIRED", "2FA 설정이 필요합니다. 다시 시도해주세요.", 400)
+
+    @staticmethod
+    def invalid_totp_code() -> AppError:
+        """TOTP 코드 또는 백업 코드 불일치."""
+        return AppError("INVALID_TOTP_CODE", "유효하지 않은 인증 코드입니다.", 400)
+
+    @staticmethod
+    def invalid_temp_token() -> AppError:
+        """2FA 로그인 임시 토큰 만료/불일치."""
+        return AppError("INVALID_TEMP_TOKEN", "유효하지 않은 임시 토큰입니다.", 401)
+
+    @staticmethod
+    def session_not_found() -> AppError:
+        """세션(client_id) 없음."""
+        return AppError("SESSION_NOT_FOUND", "세션을 찾을 수 없습니다.", 404)

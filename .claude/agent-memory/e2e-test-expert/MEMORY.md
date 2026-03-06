@@ -74,8 +74,31 @@ async def bare_client(app):
 
 unhandled exception 테스트는 BaseHTTPMiddleware 없는 별도 fixture로 격리할 것.
 
-## 완료된 테스트 파일 (v1-4)
+## 완료된 테스트 파일
 
-- `server/tests/test_correlation_id.py` — 7개 (Correlation ID 미들웨어)
-- `server/tests/test_error_handler.py` — 14개 (에러 핸들러 포맷)
-- `server/tests/test_middleware_chain.py` — 11개 (CORS, 미들웨어 순서, 헬스체크, Prometheus)
+- `server/tests/test_correlation_id.py` — 7개 (Correlation ID 미들웨어) [v1-4]
+- `server/tests/test_error_handler.py` — 14개 (에러 핸들러 포맷) [v1-4]
+- `server/tests/test_middleware_chain.py` — 11개 (CORS, 미들웨어 순서, 헬스체크, Prometheus) [v1-4]
+- `server/tests/integration/test_auth_api.py` — 28개 (회원가입, 로그인, 토큰갱신 등) [v1-5/7]
+- `server/tests/integration/test_2fa_session_api.py` — 37개 (2FA setup/verify/disable/status, login-verify, 세션관리) [v1-7]
+
+## AsyncMock 의존성 Mock 패턴 (중요!)
+
+**원칙**: 엔드포인트가 `svc.method()` 직접 호출 시, `mock_svc.method.return_value`로 설정.
+`svc._cache.method()` 등 내부 속성으로 위임하더라도, 반드시 **실제 엔드포인트 코드**를 읽고 어떤 객체의 어떤 메서드를 호출하는지 확인 후 Mock 설정.
+
+```python
+# ❌ 잘못: auth.py가 auth_svc.get_and_delete_2fa_login_pending() 직접 호출하는데
+mock_auth_service._cache.get_and_delete_2fa_login_pending.return_value = data
+
+# ✅ 올바름:
+mock_auth_service.get_and_delete_2fa_login_pending.return_value = data
+```
+
+**AsyncMock 자동 메서드 생성**: `AsyncMock()` 인스턴스는 접근 시 자동으로 async 메서드 생성. 별도로 `AsyncMock(return_value=...)` 지정 필요.
+
+## integration/conftest.py 패턴
+
+MongoDB 모듈을 `sys.modules`에 mock 등록 (Pydantic v2 + bson.Decimal128 + Beanie 비호환 우회):
+- `ModuleType` 인스턴스 사용 (MagicMock 사용 시 'is not a package' 에러)
+- 서브모듈을 명시적으로 등록해야 함

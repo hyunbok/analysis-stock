@@ -16,14 +16,18 @@ from app.core.rate_limiter import APIRateLimiter, ExchangeRateLimiter
 from app.core.redis import get_redis, get_pubsub_redis
 from app.core.security import decode_access_token
 from app.models.user import User
+from app.repositories.client_repository import ClientRepository
 from app.repositories.user_repository import UserRepository
 from app.repositories.social_account_repository import SocialAccountRepository
+from app.services.audit_service import AuditService
 from app.services.auth_cache_service import AuthCacheService
 from app.services.auth_service import AuthService
 from app.services.email_service import EmailService
 from app.services.jwks_cache_service import JwksCacheService
 from app.services.oauth_verification_service import OAuthVerificationService
+from app.services.session_service import SessionService
 from app.services.social_auth_service import SocialAuthService
+from app.services.two_factor_service import TwoFactorService
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
@@ -103,6 +107,29 @@ async def get_current_user(
     return user
 
 
+async def get_current_client_id(
+    token: str | None = Depends(oauth2_scheme),
+) -> uuid.UUID | None:
+    """Access JWT payload에서 client_id 추출.
+
+    Returns:
+        client_id UUID 또는 None (토큰 없음 / payload에 미포함).
+    """
+    if not token:
+        return None
+    try:
+        payload = decode_access_token(token)
+    except JWTError:
+        return None
+    client_id_str: str | None = payload.get("client_id")
+    if not client_id_str:
+        return None
+    try:
+        return uuid.UUID(client_id_str)
+    except ValueError:
+        return None
+
+
 async def get_current_user_optional(
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -133,6 +160,31 @@ async def get_current_user_optional(
         return None
 
     return user
+
+
+def get_client_repository(db: AsyncSession = Depends(get_db)) -> ClientRepository:
+    return ClientRepository(db)
+
+
+def get_two_factor_service(
+    user_repo: UserRepository = Depends(get_user_repository),
+    cache: AuthCacheService = Depends(get_auth_cache_service),
+    settings: Settings = Depends(get_settings),
+) -> TwoFactorService:
+    return TwoFactorService(user_repo, cache, settings)
+
+
+def get_session_service(
+    client_repo: ClientRepository = Depends(get_client_repository),
+    cache: AuthCacheService = Depends(get_auth_cache_service),
+) -> SessionService:
+    return SessionService(client_repo, cache)
+
+
+def get_audit_service(
+    mongodb: AsyncIOMotorDatabase = Depends(get_mongodb),
+) -> AuditService:
+    return AuditService(mongodb)
 
 
 def get_social_account_repository(
@@ -179,3 +231,8 @@ CurrentUserOptional = Annotated[User | None, Depends(get_current_user_optional)]
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
 SocialAuthServiceDep = Annotated[SocialAuthService, Depends(get_social_auth_service)]
 OAuthVerificationServiceDep = Annotated[OAuthVerificationService, Depends(get_oauth_verification_service)]
+ClientRepoDep = Annotated[ClientRepository, Depends(get_client_repository)]
+TwoFactorServiceDep = Annotated[TwoFactorService, Depends(get_two_factor_service)]
+SessionServiceDep = Annotated[SessionService, Depends(get_session_service)]
+AuditServiceDep = Annotated[AuditService, Depends(get_audit_service)]
+CurrentClientId = Annotated[uuid.UUID | None, Depends(get_current_client_id)]
