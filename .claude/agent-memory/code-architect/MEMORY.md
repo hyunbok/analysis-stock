@@ -71,6 +71,22 @@ ws/hub.py -> Redis Pub/Sub (services 직접 호출 금지)
 - 파일 업로드(아바타): 별도 스토리지 인프라 결정 필요 (S3/MinIO/로컬 - PRD 미정의)
 - WS notifications 채널 불필요 - `clients.fcm_token`으로 FCM 처리 (백그라운드 알림)
 
+## v1-5 JWT 인증 시스템 설계 결정사항
+
+- User 모델: `soft_deleted_at: datetime | None` 필드 추가 (30일 유예 soft delete)
+- Refresh Token: SHA-256 해시만 Redis 저장 (원본 미저장), `auth:refresh:{user_id}:{client_id}` 키
+- 토큰 로테이션: 갱신 시 기존 refresh token 폐기 + 새 발급, `client_id` 유지
+- AppError 예외 체계: `core/exceptions.py` (AppError + AuthErrors 팩토리)
+- AppError 핸들러: `middleware/error_handler.py`에 통합 (main.py 아님)
+- ApiResponse<T> 공통 래퍼: `schemas/common.py` 신규
+- DI 팩토리: `deps.py`에 `get_auth_service()`, `get_user_repository()` 등 추가
+  - `settings: Settings = Depends(get_settings)` 패턴 사용 (AppSettings 별칭)
+- 인증 엔드포인트: `POST /api/v1/auth/{register,verify-email,login,refresh,logout}`
+- 사용자 엔드포인트: `GET/PUT/DELETE /api/v1/users/me`
+- DELETE /api/v1/users/me: body에 refresh_token 포함 (로그아웃+삭제 동시 처리)
+- Settings SMTP 추가: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM_EMAIL, SMTP_FROM_NAME, SMTP_STARTTLS
+- 설계서: `docs/tasks/v1-5-jwt-auth-system-plan.md`
+
 ## 상세 참조
 
 - architecture.md: 디렉토리 구조 전체 최종안
