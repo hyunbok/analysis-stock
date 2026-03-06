@@ -5,7 +5,7 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.redis import get_redis
+from app.core.redis import get_redis, get_pubsub_redis
 from app.core.rate_limiter import APIRateLimiter, ExchangeRateLimiter
 
 
@@ -20,6 +20,7 @@ def get_exchange_rate_limiter(redis: Redis = Depends(get_redis)) -> ExchangeRate
 # Type aliases for dependency injection
 DbSession = Annotated[AsyncSession, Depends(get_db)]
 RedisClient = Annotated[Redis, Depends(get_redis)]
+PubSubRedisClient = Annotated[Redis, Depends(get_pubsub_redis)]
 ApiRateLimiter = Annotated[APIRateLimiter, Depends(get_api_rate_limiter)]
 ExchangeLimiter = Annotated[ExchangeRateLimiter, Depends(get_exchange_rate_limiter)]
 

@@ -64,11 +64,13 @@ class PubSubSubscriber:
     # ── Listen loop ───────────────────────────────────────────────────────────
 
     async def listen(self) -> None:
-        """메시지 수신 루프 — WS Hub로 전달. 재연결 포함."""
+        """메시지 수신 루프 — WS Hub로 전달. Exponential Backoff 재연결 포함."""
         self._running = True
+        backoff = 0.5  # 초기 대기 0.5s
         while self._running:
             try:
                 await self._ensure_pubsub()
+                backoff = 0.5  # 성공 시 backoff 초기화
                 async for raw in self._pubsub.listen():  # type: ignore[union-attr]
                     if not self._running:
                         break
@@ -78,8 +80,13 @@ class PubSubSubscriber:
             except asyncio.CancelledError:
                 break
             except Exception:
-                logger.exception("PubSubSubscriber listen error; reconnecting in 1s")
-                await asyncio.sleep(1)
+                logger.exception(
+                    "PubSubSubscriber listen error; reconnecting in %.1fs", backoff
+                )
+                # pubsub 재생성을 위해 초기화
+                self._pubsub = None
+                await asyncio.sleep(backoff)
+                backoff = min(backoff * 2, 10.0)  # cap 10s
 
     async def close(self) -> None:
         self._running = False
