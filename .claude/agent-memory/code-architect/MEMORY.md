@@ -87,6 +87,27 @@ ws/hub.py -> Redis Pub/Sub (services 직접 호출 금지)
 - Settings SMTP 추가: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM_EMAIL, SMTP_FROM_NAME, SMTP_STARTTLS
 - 설계서: `docs/tasks/v1-5-jwt-auth-system-plan.md`
 
+## v1-6 소셜 로그인 설계 결정사항
+
+- 설계서: `docs/tasks/v1-6-social-login-oauth2-plan.md`
+- 엔드포인트: `POST /api/v1/auth/social/google|apple` (200 단일 응답 + is_new_user 플래그)
+- 라우터 파일: `api/v1/social_auth.py` (auth.py 분리, SRP)
+- 스키마 파일: `schemas/social_auth.py` (auth.py 분리, SRP)
+- OAuthVerificationService: **단일 클래스** (Google/Apple 통합, _PROVIDER_CONFIG dict 패턴)
+  - JWKS URL은 클래스 상수 고정 (환경변수 노출 금지, SSRF 방지)
+  - `verify_google_token()` / `verify_apple_token()` → `_verify_token()` 공통 메서드
+- JwksCacheService: Redis 기반 (인메모리 dict 사용 금지, 멀티워커 환경)
+  - 캐시 키: `oauth:jwks:{provider}`, TTL: `OAUTH_JWKS_CACHE_TTL` (기본 3600초)
+  - kid 없음(키 순환) 감지 시 캐시 무효화 후 1회 재조회
+- SocialAuthService: OAuthUserInfo DTO만 받음 (검증 책임 분리)
+  - [A] 기존 소셜 계정 → JWT 발급
+  - [B] 이메일 병합 → UserSocialAccount 추가 + email_verified_at 업데이트
+  - [C] 신규 User 생성 (password_hash=None, email_verified_at=now)
+- 에러 코드: AuthErrors에 3개 추가 (별도 SocialAuthErrors 클래스 금지)
+  - INVALID_OAUTH_TOKEN(401), OAUTH_EMAIL_REQUIRED(422), OAUTH_PROVIDER_UNAVAILABLE(502)
+- Settings 추가: GOOGLE_CLIENT_ID 3개 + APPLE_APP_BUNDLE_ID + APPLE_WEB_CLIENT_ID + OAUTH_JWKS_CACHE_TTL
+- DI: OAuthVerificationServiceDep + SocialAuthServiceDep (단일화)
+
 ## 상세 참조
 
 - architecture.md: 디렉토리 구조 전체 최종안

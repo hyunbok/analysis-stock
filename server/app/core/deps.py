@@ -17,9 +17,13 @@ from app.core.redis import get_redis, get_pubsub_redis
 from app.core.security import decode_access_token
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
+from app.repositories.social_account_repository import SocialAccountRepository
 from app.services.auth_cache_service import AuthCacheService
 from app.services.auth_service import AuthService
 from app.services.email_service import EmailService
+from app.services.jwks_cache_service import JwksCacheService
+from app.services.oauth_verification_service import OAuthVerificationService
+from app.services.social_auth_service import SocialAuthService
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
@@ -131,6 +135,35 @@ async def get_current_user_optional(
     return user
 
 
+def get_social_account_repository(
+    db: AsyncSession = Depends(get_db),
+) -> SocialAccountRepository:
+    return SocialAccountRepository(db)
+
+
+def get_jwks_cache_service(
+    redis: Redis = Depends(get_redis),
+    settings: Settings = Depends(get_settings),
+) -> JwksCacheService:
+    return JwksCacheService(redis, settings)
+
+
+def get_oauth_verification_service(
+    jwks_cache: JwksCacheService = Depends(get_jwks_cache_service),
+    settings: Settings = Depends(get_settings),
+) -> OAuthVerificationService:
+    return OAuthVerificationService(settings, jwks_cache)
+
+
+def get_social_auth_service(
+    user_repo: UserRepository = Depends(get_user_repository),
+    social_repo: SocialAccountRepository = Depends(get_social_account_repository),
+    cache: AuthCacheService = Depends(get_auth_cache_service),
+    settings: Settings = Depends(get_settings),
+) -> SocialAuthService:
+    return SocialAuthService(user_repo, social_repo, cache, settings)
+
+
 # ── Type aliases ──────────────────────────────────────────────────────────────
 
 DbSession = Annotated[AsyncSession, Depends(get_db)]
@@ -144,3 +177,5 @@ AppSettings = Annotated[Settings, Depends(get_settings)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
 CurrentUserOptional = Annotated[User | None, Depends(get_current_user_optional)]
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
+SocialAuthServiceDep = Annotated[SocialAuthService, Depends(get_social_auth_service)]
+OAuthVerificationServiceDep = Annotated[OAuthVerificationService, Depends(get_oauth_verification_service)]

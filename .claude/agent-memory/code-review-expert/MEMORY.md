@@ -45,11 +45,28 @@
 - graceful degradation: `patch.object(redis_client, "evalsha", side_effect=ConnectionError(...))`
 - 토큰 리필: `patch("app.core.rate_limiter.time")` 으로 time.time 모킹
 
-## 팀 구성 (team-v1-3)
+## 자주 발견되는 패턴 (OAuth/소셜 로그인 관련)
+
+### CRITICAL 패턴
+- **python-jose private API 사용**: `from jose.backends import RSAKey` → private API, 버전 업 시 깨질 위험
+  → `jwt.decode(token, jwk_dict, algorithms=["RS256"], ...)` 로 JWK dict 직접 전달 (공개 API)
+  → `JwksCacheService._extract_key()`가 PEM 변환 없이 JWK dict 반환하는 패턴으로 수정
+
+### WARNING 패턴
+- **OAuth audience 빈 리스트**: 환경변수 미설정 시 `allowed_audiences=[]` → python-jose가 JWTClaimsError 발생
+  → 모든 소셜 로그인 실패하지만 원인 불명 → verify 메서드 진입 시 빈 리스트 조기 검증 후 `oauth_provider_unavailable()` 발생
+- **소셜 로그인 테스트 누락 패턴**: Google 에러 케이스는 있지만 Apple 동일 케이스 누락 (account_deleted 등)
+- **JWKS 캐시 키 순환**: 캐시 HIT + kid 없음 시 명시적 DEL 없이 덮어쓰기 → 설계서 §7.2 명시 DEL 후 재조회 패턴 준수
+
+### OAuthVerificationService 설계 패턴
+- 단일 클래스 + `_PROVIDER_CONFIG` dict + `_verify_token()` 공통 private 메서드 (DRY)
+- JWKS URL 클래스 상수 하드코딩 (SSRF 방지, 환경변수 금지)
+- `except AppError: raise` → JWKS 가용성 오류를 invalid_token으로 마스킹하지 않음
+- `allowed_audiences` 빈 리스트 조기 검증은 `verify_google_token()` / `verify_apple_token()` 진입 시점
+
+## 팀 구성 (v1-5 이후)
 - team-lead: 총괄, 최종 보고 대상
-- code-architect: 설계서 작성
-- python-backend: 백엔드 구현 (리뷰 대상, SendMessage recipient = "python-backend")
-- db-architect: DB/Redis 구조 최적화
+- python-backend-expert: 백엔드 구현 (리뷰 대상, SendMessage recipient = "python-backend-expert")
 - code-review-expert: 본인
 
 ## 주요 설계 결정 (v1-3)

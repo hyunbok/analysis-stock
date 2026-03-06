@@ -26,3 +26,15 @@
 - soft delete: `soft_deleted_at: datetime | None` (bool 아닌 timestamp)
 - JWT: python-jose, bcrypt: passlib, email: aiosmtplib
 - Refresh token rotation + SHA-256 해시 Redis 저장
+
+## v1-6 결정 사항 (소셜 로그인)
+- 단일 OAuthVerificationService (Google/Apple 통합, _PROVIDER_CONFIG dict + _verify_token() 공통)
+- JWKS URL 하드코딩 (SSRF 방지, 환경변수 노출 금지)
+- JWKS Redis 캐시 (JwksCacheService, 멀티워커 안전)
+- SRP 분리: schemas/social_auth.py, api/v1/social_auth.py (기존 auth.py에 추가 안 함)
+- AuthErrors에 통합 (별도 SocialAuthErrors 클래스 금지)
+- 의존 라이브러리: python-jose[cryptography] (RSA), httpx (JWKS fetch)
+
+## 협업 패턴
+- code-architect와 이견 시 먼저 합의 후 설계서 반영 (동시 편집 충돌 주의)
+- 설계서 초안을 먼저 작성하고 상대에게 수정/보강 요청하는 방식이 효율적
