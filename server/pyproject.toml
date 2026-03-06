@@ -26,8 +26,10 @@ dependencies = [
 dev = [
     "pytest>=8.0",
     "pytest-asyncio",
+    "anyio[asyncio]",
     "pytest-cov",
     "mongomock-motor",
+    "fakeredis[aioredis]>=2.21",
     "ruff>=0.2",
     "mypy>=1.8",
     "pre-commit",

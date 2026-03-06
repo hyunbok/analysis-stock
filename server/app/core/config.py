@@ -20,6 +20,13 @@ class Settings(BaseSettings):
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
+    REDIS_PUBSUB_URL: str = ""  # 비어있으면 REDIS_URL 사용
+
+    # Rate Limiting
+    RATE_LIMIT_API_ANON: int = 60       # 비인증 분당 요청 수
+    RATE_LIMIT_API_AUTH: int = 120      # 인증 사용자 분당 요청 수
+    RATE_LIMIT_LOGIN_MAX: int = 5       # 로그인 시도 최대 횟수
+    RATE_LIMIT_LOGIN_WINDOW: int = 900  # 로그인 제한 윈도우 (초)
 
     # Auth (JWT)
     JWT_SECRET_KEY: str = "dev-secret-key-change-in-production"
