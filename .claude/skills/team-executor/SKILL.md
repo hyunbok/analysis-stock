@@ -118,9 +118,6 @@ description: task-master-ai 통해 계획된 내용을 모든 agent를 동시에
 | [REVIEW] | 리뷰 요청 | [REVIEW] server/app/services/order_service.py 리뷰 부탁. |
 | [ESCALATE] | 팀 리더 중재 요청 | [ESCALATE] API 버저닝 방식 이견. 중재 요청. |
 
-### 팀 구성원 확인
-
-팀 구성원은 ~/.claude/teams/{team-name}/config.json에서 확인 가능.
 ```
 
 ## 에이전트 유형
