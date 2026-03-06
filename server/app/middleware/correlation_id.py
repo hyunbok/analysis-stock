@@ -32,7 +32,8 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
     """
 
     async def dispatch(self, request: Request, call_next) -> Response:
-        cid = request.headers.get(CORRELATION_ID_HEADER) or str(uuid.uuid4())
+        raw = request.headers.get(CORRELATION_ID_HEADER, "")
+        cid = raw[:128] if raw else str(uuid.uuid4())
 
         # contextvars에 저장
         token = correlation_id_ctx.set(cid)

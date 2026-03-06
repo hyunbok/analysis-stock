@@ -38,7 +38,10 @@ def register_error_handlers(app: FastAPI) -> None:
             details=details,
             correlation_id=get_correlation_id() or None,
         )
-        logger.warning("validation_error", errors=exc.errors())
+        logger.warning(
+            "validation_error",
+            errors=[{"loc": e["loc"], "msg": e["msg"], "type": e["type"]} for e in exc.errors()],
+        )
         return JSONResponse(
             status_code=422,
             content={"error": body.model_dump(exclude_none=True)},
