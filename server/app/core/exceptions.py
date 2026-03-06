@@ -62,3 +62,26 @@ class AuthErrors:
     @staticmethod
     def login_rate_limit() -> AppError:
         return AppError("LOGIN_RATE_LIMIT", "로그인 시도 횟수를 초과했습니다. 15분 후 재시도해주세요.", 429)
+
+    @staticmethod
+    def invalid_oauth_token() -> AppError:
+        """Google/Apple id_token 서명 검증 실패 또는 만료."""
+        return AppError("INVALID_OAUTH_TOKEN", "유효하지 않은 OAuth 토큰입니다.", 401)
+
+    @staticmethod
+    def oauth_email_required() -> AppError:
+        """OAuth 토큰에 이메일이 포함되지 않아 처리 불가 (Google 이메일 공개 미허용)."""
+        return AppError(
+            "OAUTH_EMAIL_REQUIRED",
+            "소셜 로그인에 이메일 제공이 필요합니다. 설정에서 이메일 공개 권한을 허용해주세요.",
+            422,
+        )
+
+    @staticmethod
+    def oauth_provider_unavailable() -> AppError:
+        """JWKS 조회 실패 등 OAuth 공급자 서버 오류."""
+        return AppError(
+            "OAUTH_PROVIDER_UNAVAILABLE",
+            "소셜 인증 서버에 일시적으로 연결할 수 없습니다. 잠시 후 재시도해주세요.",
+            502,
+        )

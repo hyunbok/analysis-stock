@@ -56,6 +56,33 @@ class Settings(BaseSettings):
     # Monitoring
     SENTRY_DSN: str = ""
 
+    # OAuth2 (Social Login)
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_ID_IOS: str = ""
+    GOOGLE_CLIENT_ID_ANDROID: str = ""
+
+    APPLE_APP_BUNDLE_ID: str = ""
+    APPLE_WEB_CLIENT_ID: str = ""
+
+    OAUTH_JWKS_CACHE_TTL: int = 3600  # JWKS 공개키 Redis 캐시 TTL (초, 기본 1시간)
+
+    @property
+    def google_allowed_audiences(self) -> list[str]:
+        """Google aud 검증에 허용할 Client ID 목록."""
+        return [v for v in [
+            self.GOOGLE_CLIENT_ID,
+            self.GOOGLE_CLIENT_ID_IOS,
+            self.GOOGLE_CLIENT_ID_ANDROID,
+        ] if v]
+
+    @property
+    def apple_allowed_audiences(self) -> list[str]:
+        """Apple aud 검증에 허용할 audience 목록."""
+        return [v for v in [
+            self.APPLE_APP_BUNDLE_ID,
+            self.APPLE_WEB_CLIENT_ID,
+        ] if v]
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]

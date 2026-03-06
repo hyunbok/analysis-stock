@@ -660,7 +660,7 @@
         "dependencies": [
           "5"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -668,7 +668,7 @@
             "description": "Google/Apple OAuth2 서드파티 라이브러리 설정 및 환경변수(GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_TEAM_ID 등) 추가",
             "dependencies": [],
             "details": "1. config.py에 Google/Apple OAuth2 관련 환경변수 추가 (GOOGLE_CLIENT_ID, APPLE_CLIENT_ID, APPLE_KEY_ID, APPLE_TEAM_ID, APPLE_BUNDLE_ID)\n2. PyJWT, cryptography 라이브러리 버전 확정\n3. 타사 공개키 캐싱 전략 정의 (예: JWKS 엔드포인트에서 주기적으로 갱신)\n4. 라이브러리 dependency 해결 및 requirements.txt 업데이트",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "환경변수가 올바르게 로드되는지 테스트, 라이브러리 import 검증"
           },
           {
@@ -679,7 +679,7 @@
               1
             ],
             "details": "1. app/services/oauth2_verification.py 생성\n2. OAuthVerificationService 클래스 구현:\n   - verify_google_token(id_token: str) → dict (subject, email, email_verified, name, picture)\n   - verify_apple_token(id_token: str, user_input: dict) → dict (subject, email)\n3. Google JWKS 캐싱 (TTL 1시간)\n4. Apple JWT 서명 검증 (private key 사용)\n5. 토큰 만료 시간 확인\n6. ISS, AUD, ALG 클레임 검증\n7. 예외 처리: InvalidTokenError, ExpiredTokenError, SignatureVerificationError",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Google/Apple OAuth Playground에서 실제 id_token 생성 후 검증 테스트, 위조된 토큰 거부 확인, 만료 토큰 처리 검증"
           },
           {
@@ -688,7 +688,7 @@
             "description": "UserSocialAccount 모델에 대한 CRUD 작업을 수행하는 저장소 클래스 작성",
             "dependencies": [],
             "details": "1. app/repositories/user_social_account.py 생성\n2. UserSocialAccountRepository 클래스 구현:\n   - find_by_provider_id(provider: str, provider_id: str) → UserSocialAccount | None\n   - find_by_user_id(user_id: UUID) → list[UserSocialAccount]\n   - find_by_provider_email(provider_email: str) → UserSocialAccount | None (선택적)\n   - create(user_id: UUID, provider: str, provider_id: str, provider_email: str) → UserSocialAccount\n   - delete(id: UUID) → bool\n3. 인덱스 활용 최적화 (provider + provider_id는 unique constraint 활용)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "단위 테스트: 기존 소셜 계정 조회, 신규 계정 생성, 없는 계정 조회 시 None 반환 검증"
           },
           {
@@ -697,7 +697,7 @@
             "description": "기존 User 저장소에 이메일 기반 조회 및 소셜 계정 병합 관련 메서드 추가",
             "dependencies": [],
             "details": "1. app/repositories/user.py 생성 (또는 기존 파일 확장)\n2. UserRepository 클래스 구현:\n   - find_by_email(email: str) → User | None\n   - find_by_id(id: UUID) → User | None\n   - create(email: str, password_hash: str | None, nickname: str | None) → User\n   - update(user_id: UUID, **kwargs) → User (email_verified_at 포함)\n3. 트랜잭션 처리: 소셜 계정 생성 시 User 생성과 함께 원자성 보장",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "기존 유저 조회, 신규 유저 생성, 트랜잭션 롤백 검증"
           },
           {
@@ -710,7 +710,7 @@
               4
             ],
             "details": "1. app/services/social_auth.py 생성\n2. SocialAuthService 클래스 구현:\n   - login_or_register_google(id_token: str) → LoginResponse(user, access_token, refresh_token)\n   - login_or_register_apple(id_token: str, user_input: dict) → LoginResponse\n3. Flow 구현:\n   a. id_token 검증 → provider_id, email 추출\n   b. provider + provider_id로 기존 social account 조회\n   c. 있으면: 관련 User 조회 → 로그인 (토큰 발급)\n   d. 없으면:\n      - provider_email과 일치하는 기존 User 조회 (선택적: 병합 로직)\n      - 없으면: 신규 User 생성, UserSocialAccount 생성\n   e. email_verified_at 자동 설정 (소셜 로그인은 검증됨)\n4. 중복 방지: 동일 provider + provider_id의 중복 로그인 불가",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "신규 사용자 회원가입, 기존 사용자 로그인, 중복 소셜 계정 거부, 토큰 발급 검증"
           },
           {
@@ -721,7 +721,7 @@
               5
             ],
             "details": "1. app/api/v1/auth.py 라우터 생성\n2. Pydantic 스키마 정의 (app/schemas/auth.py):\n   - SocialLoginRequest(id_token: str, user: dict | None)\n   - LoginResponse(access_token: str, refresh_token: str, user: UserResponse)\n3. 엔드포인트 구현:\n   - POST /social/google: id_token만 필요\n   - POST /social/apple: id_token + user (이름 등 추가정보)\n4. 에러 처리:\n   - 400: 잘못된 토큰\n   - 401: 토큰 검증 실패\n   - 409: 이미 다른 계정과 연결된 소셜 ID (충돌)\n5. 응답: 200 + LoginResponse",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "각 엔드포인트에 유효한 id_token 전송 및 응답 검증, 잘못된 토큰 거부, 중복 요청 처리"
           },
           {
@@ -732,7 +732,7 @@
               4
             ],
             "details": "1. app/services/auth.py (또는 기존) 확장\n2. TokenService 클래스 구현:\n   - create_access_token(user_id: UUID, expires_delta: int | None) → str\n   - create_refresh_token(user_id: UUID, client_id: str | None, expires_delta: int | None) → str\n   - verify_token(token: str) → TokenPayload\n   - refresh_access_token(refresh_token: str) → str\n3. Redis 캐싱 활용:\n   - refresh token을 auth:refresh:{user_id}:{client_id}에 저장\n   - TTL: JWT_REFRESH_TOKEN_EXPIRE_DAYS\n4. 토큰 클레임: sub (user_id), type (access/refresh), exp, iat",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "토큰 생성 및 검증, 만료 토큰 거부, 리프레시 토큰 갱신, Redis 저장 확인"
           },
           {
@@ -746,7 +746,7 @@
               5
             ],
             "details": "1. SocialAuthService에 merge_accounts 메서드 추가 (선택사항)\n2. Flow:\n   a. provider_email로 기존 social account 확인\n   b. 있으면 관련 User 조회\n   c. 확인 절차: 사용자에게 병합 여부 확인 또는 자동 병합\n   d. 자동 병합 시: 신규 social account 생성, 기존 user_id 사용\n3. 중복 방지: 한 user가 동일 provider의 여러 계정 연결 불가\n4. 선택사항: 나중에 추가 구현 가능",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "동일 이메일 소셜 계정 병합, 중복 계정 거부, 병합 후 로그인 검증"
           },
           {
@@ -759,7 +759,7 @@
               7
             ],
             "details": "1. tests/integration/test_social_auth.py 생성\n2. 테스트 케이스:\n   a. test_google_login_new_user: Google id_token으로 신규 사용자 가입\n   b. test_google_login_existing_user: 기존 social account로 로그인\n   c. test_apple_login_new_user: Apple id_token으로 신규 사용자 가입\n   d. test_apple_login_existing_user: 기존 social account로 로그인\n   e. test_invalid_google_token: 위조된 Google token 거부\n   f. test_invalid_apple_token: 위조된 Apple token 거부\n   g. test_duplicate_social_login_prevention: 동일 provider_id 중복 방지\n   h. test_email_verified_auto_set: 소셜 로그인 시 email_verified_at 자동 설정\n3. Mock JWT 토큰 생성 유틸리티 작성\n4. Fixture: test_user, test_social_account",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "pytest로 모든 테스트 실행, 커버리지 80% 이상, 주요 분기점 검증"
           },
           {
@@ -772,7 +772,7 @@
               9
             ],
             "details": "1. 보안 검증:\n   - JWT 토큰 서명 검증 (Google/Apple 공개키 사용)\n   - Token 만료시간 확인 필수\n   - 토큰 재사용 방지 (nonce 확인, 일회성 검증)\n   - Rate limiting 검토 (과도한 로그인 시도 차단)\n   - SQL Injection 방지 (SQLAlchemy 파라미터화 쿼리)\n   - XSS 방지 (응답 데이터 sanitization)\n2. 성능 검증:\n   - Google JWKS 캐시 적중률 확인\n   - 데이터베이스 쿼리 최적화\n   - N+1 쿼리 문제 확인\n3. 코드 스타일:\n   - ruff lint 검증\n   - mypy 타입 검사\n   - 함수/클래스 문서화\n4. 예외 처리:\n   - 모든 에러 경로 검증\n   - 사용자 친화적 에러 메시지\n5. 개선 사항 적용 및 최종 테스트",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Lint, 타입 체크, 보안 스캔 도구 실행, 수동 코드 리뷰, 성능 프로파일링"
           }
         ]

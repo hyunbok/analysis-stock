@@ -148,3 +148,37 @@ class UserRepository:
         if user is None:
             raise RuntimeError(f"User {user_id} not found after update")
         return user
+
+    async def create_social_user(
+        self,
+        *,
+        email: str,
+        nickname: str | None = None,
+        avatar_url: str | None = None,
+    ) -> User:
+        """소셜 로그인 전용 User 생성.
+
+        Args:
+            email: OAuth 공급자에서 확인된 이메일 (또는 플레이스홀더).
+            nickname: 표시 이름 (없으면 None, 온보딩에서 설정).
+            avatar_url: 프로필 이미지 URL (Google만 제공).
+
+        Returns:
+            생성된 User.
+
+        특이사항:
+            - password_hash=None (소셜 전용 계정, 비밀번호 로그인 불가)
+            - email_verified_at=now() (OAuth가 이메일 검증 보장)
+        """
+        now = datetime.now(timezone.utc)
+        user = User(
+            email=email,
+            password_hash=None,
+            nickname=nickname,
+            avatar_url=avatar_url,
+            email_verified_at=now,
+        )
+        self._db.add(user)
+        await self._db.flush()
+        await self._db.refresh(user)
+        return user
