@@ -1,7 +1,7 @@
 # python-backend-expert Memory
 
 ## 팀 에이전트 이름 (정확한 recipient)
-- 코드 리뷰어: **code-reviewer** (code-review-expert 아님 — 잘못된 이름으로 보내면 미전달)
+- 코드 리뷰어: **code-review-expert** (code-reviewer 아님 — 잘못된 이름으로 보내면 미전달)
 
 ## 프로젝트 구조 (server/app/)
 
