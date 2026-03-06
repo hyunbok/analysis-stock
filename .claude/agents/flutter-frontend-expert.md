@@ -3,7 +3,7 @@ name: flutter-frontend-expert
 description: "Use this agent when building the Flutter cross-platform coin trading app client. Specializes in Flutter UI development, state management, real-time chart integration (TradingView lightweight-charts), internationalization (i18n), responsive design, and theme systems."
 model: sonnet
 color: blue
-tools: Read, Edit, Write, Glob, Grep, Bash, WebFetch, WebSearch
+tools: Read, Edit, Write, Glob, Grep, Bash, WebFetch, WebSearch, SendMessage
 mcpServers:
   - stitch
 memory: project

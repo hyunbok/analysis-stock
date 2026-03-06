@@ -3,7 +3,7 @@ name: ai-trading-expert
 description: "Use this agent when implementing AI-powered cryptocurrency trading strategies, technical analysis indicators, or automated trade execution logic. Specializes in market regime detection, trading strategy selection, OpenAI API integration, backtesting, risk management, and trade logging/statistics."
 model: sonnet
 color: yellow
-tools: Read, Edit, Write, Glob, Grep, Bash, WebFetch, WebSearch
+tools: Read, Edit, Write, Glob, Grep, Bash, WebFetch, WebSearch, SendMessage
 memory: project
 permissionMode: bypassPermissions
 ---

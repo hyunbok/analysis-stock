@@ -3,7 +3,7 @@ name: code-architect
 description: "Use this agent when designing project directory structure, defining code conventions, creating API/WebSocket specifications, or establishing module dependency rules. Specializes in monorepo structure, Python/Flutter code standards, REST/WebSocket protocol design, and shared spec management."
 model: sonnet
 color: green
-tools: Read, Edit, Write, Glob, Grep, Bash, WebFetch, WebSearch
+tools: Read, Edit, Write, Glob, Grep, Bash, WebFetch, WebSearch, SendMessage
 memory: project
 permissionMode: bypassPermissions
 ---

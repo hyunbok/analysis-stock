@@ -3,7 +3,7 @@ name: code-review-expert
 description: "Use this agent when reviewing code changes, pull requests, or performing code quality audits for the coin trading application. Specializes in Python/FastAPI backend review, Flutter/Dart frontend review, exchange API integration security, AI trading logic validation, and automated lint/test execution."
 model: sonnet
 color: purple
-tools: Read, Glob, Grep, Bash, WebFetch, WebSearch, Write, Edit
+tools: Read, Glob, Grep, Bash, WebFetch, WebSearch, Write, Edit, SendMessage
 memory: project
 permissionMode: bypassPermissions
 ---

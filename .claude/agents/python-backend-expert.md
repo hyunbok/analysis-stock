@@ -3,7 +3,7 @@ name: python-backend-expert
 description: "Use this agent when building or maintaining the Python backend server for the coin trading application. Specializes in FastAPI async patterns, database design, WebSocket real-time communication, REST API design, exchange provider integration, and AI auto-trading logic."
 model: sonnet
 color: green
-tools: Read, Edit, Write, Glob, Grep, Bash, WebFetch, WebSearch
+tools: Read, Edit, Write, Glob, Grep, Bash, WebFetch, WebSearch, SendMessage
 memory: project
 permissionMode: bypassPermissions
 ---

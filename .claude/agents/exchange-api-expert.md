@@ -3,7 +3,7 @@ name: exchange-api-expert
 description: "Use this agent when integrating cryptocurrency exchange APIs (Upbit, CoinOne, Coinbase, Binance). Specializes in exchange API authentication, WebSocket streaming, order execution, and multi-exchange abstraction layer design."
 model: sonnet
 color: cyan
-tools: Read, Edit, Write, Glob, Grep, Bash, WebFetch, WebSearch
+tools: Read, Edit, Write, Glob, Grep, Bash, WebFetch, WebSearch, SendMessage
 memory: project
 permissionMode: bypassPermissions
 ---

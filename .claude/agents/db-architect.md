@@ -3,7 +3,7 @@ name: db-architect
 description: "Use this agent when designing database schemas, optimizing queries, planning migrations, configuring Redis caching, or making database-related architectural decisions for the coin trading application. Specializes in MongoDB schema design, indexing strategies, migration planning, Redis caching patterns, and query optimization."
 model: sonnet
 color: cyan
-tools: Read, Edit, Write, Glob, Grep, Bash, WebFetch, WebSearch
+tools: Read, Edit, Write, Glob, Grep, Bash, WebFetch, WebSearch, SendMessage
 memory: project
 permissionMode: bypassPermissions
 ---

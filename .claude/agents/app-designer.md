@@ -3,7 +3,7 @@ name: app-designer
 description: "Use this agent when designing UI screens, creating mockups, generating design variants, or iterating on visual layouts for the coin trading application. Specializes in mobile/desktop app screen design using Google Stitch, UX patterns for trading apps, and design system management."
 model: sonnet
 color: orange
-tools: Read, Glob, Grep, Bash, WebFetch, WebSearch
+tools: Read, Glob, Grep, Bash, WebFetch, WebSearch, SendMessage
 mcpServers:
   - stitch
 memory: project
