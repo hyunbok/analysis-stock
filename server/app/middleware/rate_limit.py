@@ -1,7 +1,14 @@
-"""FastAPI Rate Limit 미들웨어 — 전역 API Rate Limiting."""
+"""FastAPI Rate Limit 미들웨어 — 전역 API Rate Limiting.
+
+미들웨어는 IP 기반 Rate Limit만 적용한다.
+user_id 기반 Rate Limit은 라우터 레벨에서 ApiRateLimiter 의존성으로 처리.
+
+IP 주소는 request.client.host를 사용한다. 역방향 프록시 환경에서는
+starlette.middleware.trustedhost.TrustedHostMiddleware 또는
+uvicorn --proxy-headers 옵션으로 X-Forwarded-For를 안전하게 처리해야 한다.
+"""
 from __future__ import annotations
 
-import json
 import logging
 
 from fastapi import Request, Response
@@ -18,10 +25,12 @@ _SKIP_PREFIXES = ("/docs", "/redoc", "/openapi", "/metrics", "/health")
 
 
 def _get_client_ip(request: Request) -> str:
-    """X-Forwarded-For 헤더 우선, 없으면 직접 IP."""
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
+    """클라이언트 IP 반환.
+
+    request.client.host 사용 — 역방향 프록시 환경에서는 Starlette의
+    ProxyHeadersMiddleware(또는 uvicorn --proxy-headers)가 X-Forwarded-For를
+    검증 후 client.host를 올바르게 설정해 주어야 한다.
+    """
     return request.client.host if request.client else "unknown"
 
 
@@ -39,7 +48,10 @@ def _too_many_response(result: RateLimitResult) -> JSONResponse:
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    """전역 API Rate Limiting 미들웨어"""
+    """전역 IP 기반 Rate Limiting 미들웨어.
+
+    user_id 기반 Rate Limit은 JWT 디코딩 비용 때문에 라우터 레벨에서 처리.
+    """
 
     async def dispatch(self, request: Request, call_next) -> Response:
         path = request.url.path
@@ -50,18 +62,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             redis = get_redis()
             limiter = APIRateLimiter(redis)
 
-            # 인증 여부 판단 — Authorization 헤더 존재 여부로 간단히 판별
-            auth_header = request.headers.get("Authorization", "")
-            authenticated = auth_header.startswith("Bearer ")
-
-            if authenticated:
-                # Bearer 토큰에서 user_id 추출은 비용이 크므로
-                # 여기서는 토큰 자체를 식별자로 사용 (검증은 라우터에서)
-                identifier = auth_header.removeprefix("Bearer ").strip()[:64]
-            else:
-                identifier = _get_client_ip(request)
-
-            result = await limiter.check(identifier, authenticated)
+            # IP 기반 비인증 Rate Limit만 적용
+            identifier = _get_client_ip(request)
+            result = await limiter.check(identifier, authenticated=False)
 
             if not result.allowed:
                 return _too_many_response(result)

@@ -77,14 +77,10 @@ class AICacheService:
         return int(raw) if raw else 0
 
     async def increment_unread_count(self, user_id: str) -> int:
-        """미읽 알림 수 1 증가. TTL이 없으면 새로 설정. 증가 후 값 반환."""
+        """미읽 알림 수 1 증가. 증가 후 값 반환."""
         key = RedisKey.unread_count(user_id)
         pipe = self._redis.pipeline()
         pipe.incr(key)
-        pipe.expire(key, RedisTTL.UNREAD_COUNT, xx=True)  # 기존 키만 expire 갱신
+        pipe.expire(key, RedisTTL.UNREAD_COUNT)  # 신규/기존 키 모두 TTL 항상 갱신
         results = await pipe.execute()
-        new_value: int = results[0]
-        # expire가 적용되지 않은 신규 키라면 TTL 설정
-        if results[1] == 0:
-            await self._redis.expire(key, RedisTTL.UNREAD_COUNT)
-        return new_value
+        return results[0]

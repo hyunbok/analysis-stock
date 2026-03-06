@@ -42,6 +42,14 @@ class RedisPublisher:
         channel = PubSubChannel.price_alert(user_id)
         return await self._publish(channel, "price_alert", data)
 
+    async def publish_trades(self, exchange: str, market: str, data: dict) -> int:
+        channel = PubSubChannel.trades(exchange, market)
+        return await self._publish(channel, "trades", data)
+
+    async def publish_my_orders(self, user_id: str, data: dict) -> int:
+        channel = PubSubChannel.my_orders(user_id)
+        return await self._publish(channel, "my_orders", data)
+
     async def publish_system(self, data: dict) -> int:
         channel = PubSubChannel.system()
         return await self._publish(channel, "system", data)

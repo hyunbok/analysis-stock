@@ -136,5 +136,13 @@ class PubSubChannel:
         return f"ch:price_alert:{user_id}"
 
     @staticmethod
+    def trades(exchange: str, market: str) -> str:
+        return f"ch:trades:{exchange}:{market}"
+
+    @staticmethod
+    def my_orders(user_id: str) -> str:
+        return f"ch:my_orders:{user_id}"
+
+    @staticmethod
     def system() -> str:
         return "ch:system"

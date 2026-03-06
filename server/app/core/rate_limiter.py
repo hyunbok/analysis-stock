@@ -1,6 +1,7 @@
 """Token Bucket 기반 Rate Limiter — Lua 스크립트 원자적 구현."""
 from __future__ import annotations
 
+import json
 import logging
 import time
 from dataclasses import dataclass
@@ -13,7 +14,12 @@ from app.core.redis_keys import RedisKey, RedisTTL
 logger = logging.getLogger(__name__)
 
 _LUA_SCRIPT_PATH = Path(__file__).parent / "lua" / "token_bucket.lua"
-_LUA_SCRIPT: str = _LUA_SCRIPT_PATH.read_text()
+try:
+    _LUA_SCRIPT: str = _LUA_SCRIPT_PATH.read_text()
+except FileNotFoundError as e:
+    raise FileNotFoundError(
+        f"Token Bucket Lua 스크립트를 찾을 수 없습니다: {_LUA_SCRIPT_PATH}"
+    ) from e
 
 
 @dataclass
@@ -126,18 +132,37 @@ class ExchangeRateLimiter:
         )
 
     async def get_status(self, exchange: str, user_id: str) -> dict[str, RateLimitResult]:
-        """현재 남은 토큰 수 조회 (소비 없이)."""
+        """현재 남은 토큰 수 조회 (토큰 소비 없음).
+
+        Redis GET으로 원시 JSON을 읽어 현재 시각 기준 리필 후 remaining을 계산한다.
+        버킷이 없으면 full 상태로 반환.
+        """
         configs = self.EXCHANGE_LIMITS.get(exchange)
         if configs is None:
             return {}
 
         sec_cfg, min_cfg = configs
-        # config 복사 후 consume=0으로 조회 불가 → 상태만 반환하는 전용 Lua는 없으므로
-        # 이 메서드는 현재 상태를 근사치로 제공 (실제 소비하지 않음)
         base_key = RedisKey.rate_exchange(exchange, user_id)
+
+        async def _read(key: str, cfg: RateLimitConfig) -> RateLimitResult:
+            raw = await self._limiter._redis.get(key)
+            if raw is None:
+                return RateLimitResult(
+                    allowed=True, remaining=float(cfg.max_tokens), retry_after_ms=0
+                )
+            data = json.loads(raw)
+            now = time.time()
+            elapsed = now - data["last_refill"]
+            tokens = min(float(cfg.max_tokens), data["tokens"] + elapsed * cfg.refill_rate)
+            allowed = tokens >= 1.0
+            retry_ms = (
+                max(0, int((1.0 - tokens) / cfg.refill_rate * 1000)) if not allowed else 0
+            )
+            return RateLimitResult(allowed=allowed, remaining=tokens, retry_after_ms=retry_ms)
+
         return {
-            "per_second": await self._limiter.acquire(f"{base_key}:{_SECOND_BUCKET}", sec_cfg),
-            "per_minute": await self._limiter.acquire(f"{base_key}:{_MINUTE_BUCKET}", min_cfg),
+            "per_second": await _read(f"{base_key}:{_SECOND_BUCKET}", sec_cfg),
+            "per_minute": await _read(f"{base_key}:{_MINUTE_BUCKET}", min_cfg),
         }
 
 

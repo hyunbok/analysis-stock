@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import pytest_asyncio
@@ -10,6 +11,7 @@ import fakeredis.aioredis as fakeredis
 
 from app.core.pubsub import RedisPublisher
 from app.core.redis_keys import PubSubChannel
+from app.ws.subscribers import PubSubSubscriber
 
 
 @pytest_asyncio.fixture
@@ -152,3 +154,123 @@ async def test_envelope_format(redis_client, publisher):
     assert envelope["timestamp"].endswith("Z")
 
     await pubsub.aclose()
+
+
+@pytest.mark.anyio
+async def test_publish_trades_and_my_orders(redis_client, publisher):
+    """trades, my_orders 채널 발행 검증"""
+    # trades 채널
+    trades_channel = PubSubChannel.trades("upbit", "KRW-BTC")
+    pubsub_trades = redis_client.pubsub()
+    await pubsub_trades.subscribe(trades_channel)
+
+    await publisher.publish_trades("upbit", "KRW-BTC", {"price": 95000000, "volume": 0.01})
+
+    messages = []
+    async for msg in pubsub_trades.listen():
+        if msg["type"] == "message":
+            messages.append(msg)
+            break
+    envelope = json.loads(messages[0]["data"])
+    assert envelope["type"] == "trades"
+    assert envelope["channel"] == trades_channel
+    await pubsub_trades.aclose()
+
+    # my_orders 채널
+    orders_channel = PubSubChannel.my_orders("user-1")
+    pubsub_orders = redis_client.pubsub()
+    await pubsub_orders.subscribe(orders_channel)
+
+    await publisher.publish_my_orders("user-1", {"order_id": "o-1", "status": "filled"})
+
+    messages2 = []
+    async for msg in pubsub_orders.listen():
+        if msg["type"] == "message":
+            messages2.append(msg)
+            break
+    envelope2 = json.loads(messages2[0]["data"])
+    assert envelope2["type"] == "my_orders"
+    assert envelope2["channel"] == orders_channel
+    await pubsub_orders.aclose()
+
+
+# ── PubSubSubscriber Tests ────────────────────────────────────────────────────
+
+@pytest_asyncio.fixture
+async def ws_hub():
+    """Mock WSHub."""
+    hub = MagicMock()
+    hub.broadcast_to_channel = AsyncMock()
+    return hub
+
+
+@pytest.mark.anyio
+async def test_subscriber_dispatches_to_ws_hub(redis_client, ws_hub):
+    """PubSubSubscriber가 수신 메시지를 WSHub로 브로드캐스트하는지 검증."""
+    subscriber = PubSubSubscriber(redis_client, ws_hub)
+    await subscriber.subscribe_ticker("upbit", "KRW-BTC")
+
+    channel = PubSubChannel.ticker("upbit", "KRW-BTC")
+    message = {"type": "ticker", "channel": channel, "timestamp": "2026-03-06T10:00:00Z", "data": {}}
+
+    # listen 루프를 백그라운드 태스크로 실행
+    listen_task = asyncio.create_task(subscriber.listen())
+
+    # 메시지 발행
+    publisher = RedisPublisher(redis_client)
+    await publisher.publish_ticker("upbit", "KRW-BTC", {"price": 95000000})
+
+    # WS Hub 호출 대기
+    for _ in range(20):
+        await asyncio.sleep(0.05)
+        if ws_hub.broadcast_to_channel.called:
+            break
+
+    listen_task.cancel()
+    try:
+        await listen_task
+    except asyncio.CancelledError:
+        pass
+
+    await subscriber.close()
+    ws_hub.broadcast_to_channel.assert_called_once()
+    call_channel = ws_hub.broadcast_to_channel.call_args[0][0]
+    assert call_channel == channel
+
+
+@pytest.mark.anyio
+async def test_subscriber_subscribe_user_channels(redis_client, ws_hub):
+    """subscribe_user_channels가 ai_signal/notification/price_alert 구독하는지 검증."""
+    subscriber = PubSubSubscriber(redis_client, ws_hub)
+    user_id = "user-sub-1"
+    await subscriber.subscribe_user_channels(user_id)
+
+    expected = {
+        PubSubChannel.ai_signal(user_id),
+        PubSubChannel.notification(user_id),
+        PubSubChannel.price_alert(user_id),
+    }
+    assert subscriber._subscribed_channels == expected
+    await subscriber.close()
+
+
+@pytest.mark.anyio
+async def test_subscriber_unsubscribe(redis_client, ws_hub):
+    """unsubscribe_ticker 후 채널 집합에서 제거되는지 검증."""
+    subscriber = PubSubSubscriber(redis_client, ws_hub)
+    await subscriber.subscribe_ticker("upbit", "KRW-BTC")
+    assert PubSubChannel.ticker("upbit", "KRW-BTC") in subscriber._subscribed_channels
+
+    await subscriber.unsubscribe_ticker("upbit", "KRW-BTC")
+    assert PubSubChannel.ticker("upbit", "KRW-BTC") not in subscriber._subscribed_channels
+    await subscriber.close()
+
+
+@pytest.mark.anyio
+async def test_subscriber_invalid_json_does_not_crash(redis_client, ws_hub):
+    """잘못된 JSON 수신 시 크래시 없이 로깅만 하는지 검증."""
+    subscriber = PubSubSubscriber(redis_client, ws_hub)
+    # _dispatch 직접 호출로 JSON 오류 경로 테스트
+    await subscriber._dispatch("ch:ticker:upbit:KRW-BTC", "NOT_VALID_JSON{{{")
+    ws_hub.broadcast_to_channel.assert_not_called()
+    await subscriber.close()

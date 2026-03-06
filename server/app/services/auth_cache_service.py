@@ -68,12 +68,12 @@ class AuthCacheService:
         )
 
     async def verify_email_code(self, email: str, code: str) -> bool:
-        """인증 코드 검증 후 삭제 (1회용). 일치 여부 반환."""
-        stored = await self._redis.get(RedisKey.email_verify(email))
-        if stored is None or stored != code:
-            return False
-        await self._redis.delete(RedisKey.email_verify(email))
-        return True
+        """인증 코드 검증 후 삭제 (1회용). 일치 여부 반환.
+
+        GETDEL로 원자적 조회+삭제 — TOCTOU 레이스 컨디션 방지 (Redis 6.2+).
+        """
+        stored = await self._redis.getdel(RedisKey.email_verify(email))
+        return stored is not None and stored == code
 
     async def store_password_reset_token(self, token: str, user_id: str) -> None:
         """비밀번호 재설정 토큰 저장 (1시간 TTL)"""
