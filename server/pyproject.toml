@@ -1,0 +1,51 @@
+[project]
+name = "cointrader-server"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.109.0",
+    "uvicorn[standard]",
+    "sqlalchemy[asyncio]>=2.0",
+    "asyncpg",
+    "beanie>=1.26",
+    "motor",
+    "redis>=5.0",
+    "pydantic>=2.6",
+    "pydantic-settings",
+    "python-jose[cryptography]",
+    "bcrypt",
+    "httpx",
+    "structlog",
+    "sentry-sdk[fastapi]",
+    "celery[redis]>=5.3",
+    "prometheus-fastapi-instrumentator",
+    "alembic>=1.13",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio",
+    "pytest-cov",
+    "mongomock-motor",
+    "ruff>=0.2",
+    "mypy>=1.8",
+    "pre-commit",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+testpaths = ["tests"]
