@@ -12,7 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class IndicatorsSnapshot(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
     ema_20: Optional[Decimal128] = None
     ema_50: Optional[Decimal128] = None
@@ -40,7 +40,7 @@ class IndicatorsSnapshot(BaseModel):
 
 
 class TradeLog(Document):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
     user_id: UUID
     trade_order_id: UUID
@@ -87,7 +87,7 @@ class TradeLog(Document):
 
 
 class AiDecision(Document):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
     user_id: UUID
     coin_symbol: str
@@ -132,7 +132,7 @@ class AiDecision(Document):
 
 
 class DailyPnlReport(Document):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
     user_id: UUID
     report_date: date

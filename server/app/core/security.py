@@ -44,25 +44,28 @@ def verify_password(plain: str, hashed: str) -> bool:
 # ── JWT ───────────────────────────────────────────────────────────────────────
 
 
-def create_access_token(user_id: str, email: str) -> str:
+def create_access_token(user_id: str, email: str, client_id: str | None = None) -> str:
     """Access JWT 생성 (30분 만료).
 
     Args:
         user_id: 사용자 UUID 문자열.
         email: 사용자 이메일.
+        client_id: 디바이스 세션 UUID 문자열 (현재 세션 식별용, 선택).
 
     Returns:
         서명된 JWT 문자열.
     """
     now = datetime.now(timezone.utc)
     expire = now + timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
-    payload = {
+    payload: dict = {
         "sub": user_id,
         "type": "access",
         "email": email,
         "iat": int(now.timestamp()),
         "exp": int(expire.timestamp()),
     }
+    if client_id is not None:
+        payload["client_id"] = client_id
     return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
 

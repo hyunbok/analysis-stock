@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 
 import sqlalchemy.dialects.postgresql as pg
-from sqlalchemy import DateTime, ForeignKey, Index, LargeBinary, String, Text, UniqueConstraint, text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, LargeBinary, String, Text, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -72,6 +72,9 @@ class User(Base):
     price_alerts: Mapped[list["PriceAlert"]] = relationship(
         "PriceAlert", back_populates="user", cascade="all, delete-orphan"
     )
+    totp_backup_codes: Mapped[list["UserTotpBackupCode"]] = relationship(
+        "UserTotpBackupCode", back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class UserSocialAccount(Base):
@@ -106,6 +109,7 @@ class Client(Base):
     __table_args__ = (
         Index("ix_clients_user_id", "user_id"),
         Index("ix_clients_fcm_token", "fcm_token"),
+        Index("ix_clients_user_fingerprint", "user_id", "device_fingerprint"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -120,7 +124,14 @@ class Client(Base):
         nullable=False,
     )
     device_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    device_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
     fcm_token: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    user_agent: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    device_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, default=True, server_default=text("true"), nullable=False
+    )
     last_active_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
@@ -129,6 +140,35 @@ class Client(Base):
     )
 
     user: Mapped["User"] = relationship("User", back_populates="clients")
+
+
+class UserTotpBackupCode(Base):
+    """TOTP 비상 백업 코드 (1회 사용 후 무효화)"""
+
+    __tablename__ = "user_totp_backup_codes"
+    __table_args__ = (Index("ix_totp_backup_codes_user_id", "user_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        pg.UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        server_default=text("gen_random_uuid()"),
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        pg.UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    code_hash: Mapped[str] = mapped_column(String(64), nullable=False)  # SHA-256 hex
+    is_used: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=text("false"), nullable=False
+    )
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    user: Mapped["User"] = relationship("User", back_populates="totp_backup_codes")
 
 
 class UserConsent(Base):

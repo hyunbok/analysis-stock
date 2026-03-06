@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastapi import FastAPI
@@ -24,6 +24,7 @@ def _make_user(
     nickname: str = "테스터",
     email_verified: bool = True,
     soft_deleted: bool = False,
+    is_2fa_enabled: bool = False,
 ) -> User:
     user = MagicMock(spec=User)
     user.id = uuid.uuid4()
@@ -34,7 +35,8 @@ def _make_user(
     user.theme = "system"
     user.price_color_style = "korean"
     user.ai_trading_enabled = False
-    user.is_2fa_enabled = False
+    user.is_2fa_enabled = is_2fa_enabled
+    user.totp_secret_encrypted = None
     user.email_verified_at = datetime.now(timezone.utc) if email_verified else None
     user.soft_deleted_at = datetime.now(timezone.utc) if soft_deleted else None
     user.created_at = datetime.now(timezone.utc)
@@ -49,21 +51,46 @@ def _make_token_pair() -> TokenPair:
     )
 
 
+def _make_client() -> MagicMock:
+    client = MagicMock()
+    client.id = uuid.uuid4()
+    return client
+
+
 # ── Fixture: 테스트 앱 ────────────────────────────────────────────────────────
 
 
 @pytest.fixture
 def mock_auth_service() -> AsyncMock:
     svc = AsyncMock()
+    svc._cache = AsyncMock()  # 2FA pending 저장/조회용
     return svc
 
 
 @pytest.fixture
-def test_app(mock_auth_service: AsyncMock) -> FastAPI:
+def mock_session_service() -> AsyncMock:
+    svc = AsyncMock()
+    svc.create_or_update_session.return_value = (_make_client(), False)
+    return svc
+
+
+@pytest.fixture
+def mock_audit_service() -> AsyncMock:
+    svc = AsyncMock()
+    svc.log.return_value = None
+    return svc
+
+
+@pytest.fixture
+def test_app(
+    mock_auth_service: AsyncMock,
+    mock_session_service: AsyncMock,
+    mock_audit_service: AsyncMock,
+) -> FastAPI:
     """에러 핸들러 포함 테스트 FastAPI 앱."""
     from app.api.v1.auth import router as auth_router
     from app.api.v1.users import router as users_router
-    from app.core.deps import get_auth_service
+    from app.core.deps import get_audit_service, get_auth_service, get_session_service
 
     app = FastAPI()
     register_error_handlers(app)
@@ -73,15 +100,21 @@ def test_app(mock_auth_service: AsyncMock) -> FastAPI:
     app.include_router(users_router, prefix="/users")
 
     app.dependency_overrides[get_auth_service] = lambda: mock_auth_service
+    app.dependency_overrides[get_session_service] = lambda: mock_session_service
+    app.dependency_overrides[get_audit_service] = lambda: mock_audit_service
     return app
 
 
 @pytest.fixture
-def test_app_authed(mock_auth_service: AsyncMock) -> FastAPI:
+def test_app_authed(
+    mock_auth_service: AsyncMock,
+    mock_session_service: AsyncMock,
+    mock_audit_service: AsyncMock,
+) -> FastAPI:
     """인증된 사용자가 필요한 엔드포인트 테스트용 앱."""
     from app.api.v1.auth import router as auth_router
     from app.api.v1.users import router as users_router
-    from app.core.deps import get_auth_service, get_current_user
+    from app.core.deps import get_audit_service, get_auth_service, get_current_user, get_session_service
 
     mock_user = _make_user()
 
@@ -93,6 +126,8 @@ def test_app_authed(mock_auth_service: AsyncMock) -> FastAPI:
     app.include_router(users_router, prefix="/users")
 
     app.dependency_overrides[get_auth_service] = lambda: mock_auth_service
+    app.dependency_overrides[get_session_service] = lambda: mock_session_service
+    app.dependency_overrides[get_audit_service] = lambda: mock_audit_service
     app.dependency_overrides[get_current_user] = lambda: mock_user
     return app
 
@@ -252,10 +287,16 @@ async def test_verify_email_invalid_code_format(client: AsyncClient, mock_auth_s
 
 
 @pytest.mark.anyio
-async def test_login_success(client: AsyncClient, mock_auth_service: AsyncMock):
-    user = _make_user()
+async def test_login_success(
+    client: AsyncClient,
+    mock_auth_service: AsyncMock,
+    mock_session_service: AsyncMock,
+):
+    """2FA 비활성 사용자 → 정상 토큰 발급."""
+    user = _make_user(is_2fa_enabled=False)
     tokens = _make_token_pair()
-    mock_auth_service.login.return_value = (user, tokens)
+    mock_auth_service.verify_credentials.return_value = user
+    mock_auth_service.issue_tokens_with_store.return_value = tokens
 
     resp = await client.post(
         "/auth/login",
@@ -268,11 +309,12 @@ async def test_login_success(client: AsyncClient, mock_auth_service: AsyncMock):
     assert "tokens" in data
     assert data["tokens"]["token_type"] == "Bearer"
     assert data["tokens"]["expires_in"] == 1800
+    assert data["requires_2fa"] is False
 
 
 @pytest.mark.anyio
 async def test_login_invalid_credentials(client: AsyncClient, mock_auth_service: AsyncMock):
-    mock_auth_service.login.side_effect = AuthErrors.invalid_credentials()
+    mock_auth_service.verify_credentials.side_effect = AuthErrors.invalid_credentials()
 
     resp = await client.post(
         "/auth/login",
@@ -285,7 +327,7 @@ async def test_login_invalid_credentials(client: AsyncClient, mock_auth_service:
 
 @pytest.mark.anyio
 async def test_login_email_not_verified(client: AsyncClient, mock_auth_service: AsyncMock):
-    mock_auth_service.login.side_effect = AuthErrors.email_not_verified()
+    mock_auth_service.verify_credentials.side_effect = AuthErrors.email_not_verified()
 
     resp = await client.post(
         "/auth/login",
@@ -298,7 +340,7 @@ async def test_login_email_not_verified(client: AsyncClient, mock_auth_service: 
 
 @pytest.mark.anyio
 async def test_login_account_deleted(client: AsyncClient, mock_auth_service: AsyncMock):
-    mock_auth_service.login.side_effect = AuthErrors.account_deleted()
+    mock_auth_service.verify_credentials.side_effect = AuthErrors.account_deleted()
 
     resp = await client.post(
         "/auth/login",
@@ -312,7 +354,7 @@ async def test_login_account_deleted(client: AsyncClient, mock_auth_service: Asy
 @pytest.mark.anyio
 async def test_login_rate_limit(client: AsyncClient, mock_auth_service: AsyncMock):
     """로그인 시도 횟수 초과 → 429 LOGIN_RATE_LIMIT."""
-    mock_auth_service.login.side_effect = AuthErrors.login_rate_limit()
+    mock_auth_service.verify_credentials.side_effect = AuthErrors.login_rate_limit()
 
     resp = await client.post(
         "/auth/login",
@@ -465,7 +507,8 @@ async def test_delete_account_success(
     mock_auth_service.logout.return_value = None
     mock_auth_service.delete_account.return_value = future_date
 
-    resp = await auth_client.delete(
+    resp = await auth_client.request(
+        "DELETE",
         "/users/me",
         json={"refresh_token": "valid.refresh.token"},
         headers={"Authorization": "Bearer valid.access.token"},
@@ -483,7 +526,8 @@ async def test_delete_account_invalid_token(
 ):
     mock_auth_service.logout.side_effect = AuthErrors.invalid_refresh_token()
 
-    resp = await auth_client.delete(
+    resp = await auth_client.request(
+        "DELETE",
         "/users/me",
         json={"refresh_token": "bad.refresh.token"},
         headers={"Authorization": "Bearer valid.access.token"},
@@ -499,7 +543,7 @@ async def test_delete_account_invalid_token(
 @pytest.mark.anyio
 async def test_app_error_response_format(client: AsyncClient, mock_auth_service: AsyncMock):
     """AppError → error 포맷 검증 (code, message 필드 존재)."""
-    mock_auth_service.login.side_effect = AppError("TEST_ERROR", "테스트 에러", 400)
+    mock_auth_service.verify_credentials.side_effect = AppError("TEST_ERROR", "테스트 에러", 400)
 
     resp = await client.post(
         "/auth/login",

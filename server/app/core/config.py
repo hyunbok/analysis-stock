@@ -1,3 +1,4 @@
+from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
 
@@ -56,6 +57,12 @@ class Settings(BaseSettings):
     # Monitoring
     SENTRY_DSN: str = ""
 
+    # TOTP 2FA
+    TOTP_ENCRYPTION_KEY: str = ""  # 32바이트 hex (64자) — bytes.fromhex()로 사용
+    TOTP_SETUP_TTL: int = 600       # 10분 (setup 세션 TTL)
+    TOTP_TEMP_TOKEN_TTL: int = 300  # 5분 (2FA 로그인 임시 토큰 TTL)
+    TOTP_FAIL_MAX: int = 5          # TOTP 최대 실패 횟수 (15분 윈도우)
+
     # OAuth2 (Social Login)
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_ID_IOS: str = ""
@@ -65,6 +72,24 @@ class Settings(BaseSettings):
     APPLE_WEB_CLIENT_ID: str = ""
 
     OAUTH_JWKS_CACHE_TTL: int = 3600  # JWKS 공개키 Redis 캐시 TTL (초, 기본 1시간)
+
+    @model_validator(mode="after")
+    def _validate_totp_key(self) -> "Settings":
+        """TOTP_ENCRYPTION_KEY 형식 검증 — 64자 hex 문자열 (32바이트 AES-256 키)."""
+        key = self.TOTP_ENCRYPTION_KEY
+        if key:
+            if len(key) != 64:
+                raise ValueError(
+                    "TOTP_ENCRYPTION_KEY must be 64 hex characters (32 bytes). "
+                    f"Got {len(key)} characters."
+                )
+            try:
+                bytes.fromhex(key)
+            except ValueError:
+                raise ValueError(
+                    "TOTP_ENCRYPTION_KEY must be a valid hex string."
+                )
+        return self
 
     @property
     def google_allowed_audiences(self) -> list[str]:
