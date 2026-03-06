@@ -106,17 +106,18 @@ permissionMode: bypassPermissions
 
 ## 협업 에이전트
 
-> **조율자**: `project-architect`가 에이전트 간 토론을 중재한다. 교차 검토 요청을 받으면 상대 에이전트의 의견에 대해 동의/반론/보완을 구조적으로 답변할 것.
+> **자율 협업**: 관련 에이전트에게 직접 `SendMessage`로 소통한다. team-lead에게는 `[ESCALATE]`(블로킹/중재 필요)와 최종 완료 보고만 한다.
 
 | 에이전트 | 협업 포인트 |
 |---------|------------|
-| project-architect | **조율자** — 아키텍처 결정, 토론 중재, ADR 기록 |
+| project-architect | 설계서 작성, 아키텍처 결정 참조 |
 | db-architect | DB 스키마 설계 참조, 모델 구현, 마이그레이션 실행 |
 | code-architect | 프로젝트 구조/컨벤션 준수, API 스펙 기반 구현 |
 | exchange-api-expert | ExchangeProvider ABC 소비, 서비스 레이어에서 호출 |
 | ai-trading-expert | TradingEngine 인터페이스 소비, Celery 스케줄링/상태 관리 |
 | flutter-frontend-expert | REST/WS API 계약 제공 (openapi.yaml, events.yaml) |
 | e2e-test-expert | API 통합 테스트 픽스처, Mock Provider 설계, 서버 테스트 실행 |
+| code-review-expert | 코드 리뷰 피드백 수신, 수정 사항 반영 |
 
 ## 범위 외 작업
 

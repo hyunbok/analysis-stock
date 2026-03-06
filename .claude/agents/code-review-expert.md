@@ -3,7 +3,7 @@ name: code-review-expert
 description: "Use this agent when reviewing code changes, pull requests, or performing code quality audits for the coin trading application. Specializes in Python/FastAPI backend review, Flutter/Dart frontend review, exchange API integration security, AI trading logic validation, and automated lint/test execution."
 model: sonnet
 color: purple
-tools: Read, Glob, Grep, Bash, WebFetch, WebSearch, Write, Edit, SendMessage
+tools: Read, Glob, Grep, Bash, WebFetch, WebSearch, SendMessage
 memory: project
 permissionMode: bypassPermissions
 ---
@@ -121,11 +121,11 @@ permissionMode: bypassPermissions
 
 ## 협업 에이전트
 
-> **조율자**: `project-architect`가 에이전트 간 토론을 중재한다. 리뷰에서 아키텍처 수준 이슈 발견 시 project-architect에게 토론 요청할 것.
+> **자율 협업**: 관련 에이전트에게 직접 `SendMessage`로 소통한다. team-lead에게는 `[ESCALATE]`(블로킹/중재 필요)와 최종 완료 보고만 한다.
 
 | 에이전트 | 협업 포인트 |
 |---------|------------|
-| project-architect | **조율자** — 아키텍처 수준 변경 필요 시 토론 요청 |
+| project-architect | 설계서 작성, 아키텍처 결정 참조 |
 | python-backend-expert | Python 백엔드 코드 수정 위임 |
 | flutter-frontend-expert | Flutter 프론트엔드 코드 수정 위임 |
 | exchange-api-expert | 거래소 API 연동 코드 수정 위임 |

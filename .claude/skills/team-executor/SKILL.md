@@ -97,7 +97,7 @@ description: task-master-ai 통해 계획된 내용을 모든 agent를 동시에
 3. **선행 작업 알림**: 완료 시 의존하는 에이전트에게 알림
 4. **설계 우선**: 구현 전 관련 에이전트와 인터페이스/스펙 합의
 5. **충돌 회피**: 같은 파일 수정 시 관련 에이전트와 조율
-6. **팀 리더 보고**: 주요 결정/블로킹/완료는 team-lead에게 보고
+6. **팀 리더 보고**: [ESCALATE](블로킹/중재 필요)와 최종 완료 보고만 team-lead에게 전달
 
 ### 소통 패턴
 
@@ -118,7 +118,7 @@ description: task-master-ai 통해 계획된 내용을 모든 agent를 동시에
 
 | 태스크 특성 | subagent_type |
 |------------|---------------|
-| 시스템 아키텍처 설계, 에이전트 간 조율 | `project-architect` |
+| 시스템 아키텍처 설계, 설계서 작성 | `project-architect` |
 | 코드 구조 설계, API/WebSocket 규격, 컨벤션 | `code-architect` |
 | DB 스키마, 인덱스, 마이그레이션, 캐싱 | `db-architect` |
 | Python/FastAPI 백엔드 구현 | `python-backend-expert` |
@@ -134,5 +134,5 @@ description: task-master-ai 통해 계획된 내용을 모든 agent를 동시에
 - 에이전트 정의: `.claude/agents/`
 - 커밋: `/commit` 스킬 사용
 - 메인 에이전트가 직접 팀 리더 역할 수행 (project-architect에게 위임하지 않음)
-- project-architect는 설계서 작성 및 아키텍처 조율 전담
+- project-architect는 설계서 작성 전담
 - 자율 협업 프로토콜은 반드시 각 에이전트 스폰 시 전달

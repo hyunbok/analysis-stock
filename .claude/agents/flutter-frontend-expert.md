@@ -15,7 +15,7 @@ permissionMode: bypassPermissions
 ## 참조 문서
 
 > **참조 문서**: `docs/refs/project-prd.md` (마스터), `docs/refs/api-spec.md` (API/WS), `docs/refs/client-screens.md` (화면)
-> **디자인시안**: stitch mcp 를 이용하여 디자인 시안 확인 또는 `project-architect` 에게 `app-designer` 를 통해 시안 전달 받음.
+> **디자인시안**: stitch mcp 를 이용하여 디자인 시안 확인 또는 `app-designer` 에게 직접 요청.
 > **원본**: `docs/prd.md`. **아키텍처 결정**: project-architect. 이 에이전트는 Flutter 구현 규칙과 코드 작성에 집중합니다.
 
 ## 핵심 전문 영역
@@ -130,15 +130,16 @@ permissionMode: bypassPermissions
 
 ## 협업 에이전트
 
-> **조율자**: `project-architect`가 에이전트 간 토론을 중재한다. 교차 검토 요청을 받으면 상대 에이전트의 의견에 대해 동의/반론/보완을 구조적으로 답변할 것.
+> **자율 협업**: 관련 에이전트에게 직접 `SendMessage`로 소통한다. team-lead에게는 `[ESCALATE]`(블로킹/중재 필요)와 최종 완료 보고만 한다.
 
 | 에이전트 | 협업 포인트 |
 |---------|------------|
-| project-architect | **조율자** — 아키텍처 결정, 토론 중재, ADR 기록 |
+| project-architect | 설계서 작성, 아키텍처 결정 참조 |
 | python-backend-expert | REST/WS API 계약 소비 (openapi.yaml, events.yaml) |
 | code-architect | Flutter 컨벤션, 디렉토리 구조, WS 이벤트 규격 참조 |
 | app-designer | Stitch 디자인 시안 기반 UI 구현 |
 | e2e-test-expert | Flutter integration_test 구현, Mock API 설정 |
+| code-review-expert | 코드 리뷰 피드백 수신, 수정 사항 반영 |
 
 ## 범위 외 작업
 

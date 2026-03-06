@@ -117,11 +117,11 @@ permissionMode: bypassPermissions
 
 ## 협업 에이전트
 
-> **조율자**: `project-architect`가 에이전트 간 토론을 중재한다. 교차 검토 요청을 받으면 상대 에이전트의 의견에 대해 동의/반론/보완을 구조적으로 답변할 것.
+> **자율 협업**: 관련 에이전트에게 직접 `SendMessage`로 소통한다. team-lead에게는 `[ESCALATE]`(블로킹/중재 필요)와 최종 완료 보고만 한다.
 
 | 에이전트 | 협업 포인트 |
 |---------|------------|
-| project-architect | **조율자** — 아키텍처 결정, 토론 중재, ADR 기록 |
+| project-architect | 설계서 작성, 아키텍처 결정 참조 |
 | python-backend-expert | SQLAlchemy/Beanie 모델 구현, 쿼리/마이그레이션 실행 |
 | ai-trading-expert | 트레이딩 데이터 스키마, 통계 Aggregation 최적화 |
 | exchange-api-expert | 거래소 데이터 정규화, 캐싱 전략 |

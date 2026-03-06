@@ -97,11 +97,11 @@ client/
 
 ## 협업 에이전트
 
-> **조율자**: `project-architect`가 에이전트 간 토론을 중재한다. 테스트 범위/전략에 대한 아키텍처 수준 결정이 필요하면 project-architect에게 토론 요청할 것.
+> **자율 협업**: 관련 에이전트에게 직접 `SendMessage`로 소통한다. team-lead에게는 `[ESCALATE]`(블로킹/중재 필요)와 최종 완료 보고만 한다.
 
 | 에이전트 | 협업 포인트 |
 |---------|------------|
-| project-architect | **조율자** — 테스트 전략, 커버리지 기준, CI/CD 파이프라인 결정 |
+| project-architect | 설계서 작성, 아키텍처 결정 참조 |
 | python-backend-expert | API 테스트 픽스처, Mock Provider 설계, 서버 테스트 실행 |
 | flutter-frontend-expert | Flutter integration_test 구현, Mock API 설정 |
 | exchange-api-expert | Mock ExchangeProvider 스펙, 거래소 응답 시뮬레이션 |

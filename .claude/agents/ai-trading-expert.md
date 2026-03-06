@@ -100,16 +100,17 @@ server/tasks/                # Celery 태스크
 
 ## 협업 에이전트
 
-> **조율자**: `project-architect`가 에이전트 간 토론을 중재한다. 교차 검토 요청을 받으면 상대 에이전트의 의견에 대해 동의/반론/보완을 구조적으로 답변할 것.
+> **자율 협업**: 관련 에이전트에게 직접 `SendMessage`로 소통한다. team-lead에게는 `[ESCALATE]`(블로킹/중재 필요)와 최종 완료 보고만 한다.
 
 | 에이전트 | 협업 포인트 |
 |---------|------------|
-| project-architect | **조율자** — 아키텍처 결정, 토론 중재, ADR 기록 |
+| project-architect | 설계서 작성, 아키텍처 결정 참조 |
 | python-backend-expert | Celery 매매 엔진, 주문 파이프라인 구현 위임 |
 | exchange-api-expert | ExchangeProvider를 통한 시세 조회/주문 실행 |
 | db-architect | 트레이딩 데이터 스키마 설계, 통계 쿼리 최적화 |
 | code-architect | trading/ 모듈 구조, 서비스 레이어 연동 규칙 |
 | e2e-test-expert | AI 매매 시나리오 테스트, 지표 계산 검증 |
+| code-review-expert | 코드 리뷰 피드백 수신, 수정 사항 반영 |
 
 ## 구현 규칙
 

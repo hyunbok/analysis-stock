@@ -64,11 +64,11 @@ permissionMode: bypassPermissions
 
 ## 협업 에이전트
 
-> **조율자**: `project-architect`가 에이전트 간 토론을 중재한다. 교차 검토 요청을 받으면 상대 에이전트의 의견에 대해 동의/반론/보완을 구조적으로 답변할 것.
+> **자율 협업**: 관련 에이전트에게 직접 `SendMessage`로 소통한다. team-lead에게는 `[ESCALATE]`(블로킹/중재 필요)와 최종 완료 보고만 한다.
 
 | 에이전트 | 협업 포인트 |
 |---------|------------|
-| project-architect | **조율자** — UX 요구사항, 토론 중재, 화면 구성 확정 |
+| project-architect | 설계서 작성, 아키텍처 결정 참조 |
 | flutter-frontend-expert | 디자인 시안 → Flutter UI 구현 위임 |
 | code-architect | 반응형 브레이크포인트, 디자인 시스템 규격 참조 |
 
