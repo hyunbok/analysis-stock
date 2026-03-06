@@ -69,6 +69,10 @@ class RedisKey:
     def rate_login(ip: str) -> str:
         return f"rate:login:{ip}"
 
+    @staticmethod
+    def rate_login_email(email: str) -> str:
+        return f"rate:login:{email}"
+
     # ── Market Data ───────────────────────────────────────────────────────────
 
     @staticmethod

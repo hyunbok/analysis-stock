@@ -13,6 +13,7 @@ class User(Base):
     __tablename__ = "users"
     __table_args__ = (
         Index("ix_users_created_at", "created_at"),
+        Index("ix_users_soft_deleted_at", "soft_deleted_at"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -38,6 +39,9 @@ class User(Base):
         pg.BOOLEAN, default=False, server_default=text("false")
     )
     email_verified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    soft_deleted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(

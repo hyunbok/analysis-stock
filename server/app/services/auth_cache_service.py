@@ -90,3 +90,32 @@ class AuthCacheService:
     async def revoke_password_reset_token(self, token: str) -> None:
         """재설정 토큰 폐기"""
         await self._redis.delete(RedisKey.password_reset(token))
+
+    async def get_login_attempts(self, email: str) -> int:
+        """이메일 기반 로그인 시도 횟수 조회."""
+        val = await self._redis.get(RedisKey.rate_login_email(email))
+        return int(val) if val else 0
+
+    async def increment_login_attempts(self, email: str, window: int) -> int:
+        """로그인 시도 횟수 증가 후 반환. 고정 윈도우 TTL 적용.
+
+        nx=True: 첫 번째 incr 시에만 TTL 설정 (이후 실패에서 리셋 방지).
+        설계서 §10.3 고정 윈도우(5회/15분) 정합성 유지.
+
+        Args:
+            email: 식별자 (이메일 주소).
+            window: 카운터 TTL (초) — 첫 실패 시 1회만 설정.
+
+        Returns:
+            증가 후 현재 시도 횟수.
+        """
+        key = RedisKey.rate_login_email(email)
+        pipe = self._redis.pipeline()
+        pipe.incr(key)
+        pipe.expire(key, window, nx=True)  # 고정 윈도우: TTL 없을 때만 설정
+        results = await pipe.execute()
+        return int(results[0])
+
+    async def reset_login_attempts(self, email: str) -> None:
+        """로그인 성공 시 시도 횟수 초기화."""
+        await self._redis.delete(RedisKey.rate_login_email(email))

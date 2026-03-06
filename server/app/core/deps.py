@@ -1,15 +1,27 @@
+import uuid
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Depends, Request
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, settings as _settings
 from app.core.database import get_db
+from app.core.exceptions import AuthErrors
 from app.core.mongodb import get_mongodb
-from app.core.redis import get_redis, get_pubsub_redis
 from app.core.rate_limiter import APIRateLimiter, ExchangeRateLimiter
+from app.core.redis import get_redis, get_pubsub_redis
+from app.core.security import decode_access_token
+from app.models.user import User
+from app.repositories.user_repository import UserRepository
+from app.services.auth_cache_service import AuthCacheService
+from app.services.auth_service import AuthService
+from app.services.email_service import EmailService
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 
 def get_api_rate_limiter(redis: Redis = Depends(get_redis)) -> APIRateLimiter:
@@ -24,7 +36,103 @@ def get_settings() -> Settings:
     return _settings
 
 
-# Type aliases for dependency injection
+def get_user_repository(db: AsyncSession = Depends(get_db)) -> UserRepository:
+    return UserRepository(db)
+
+
+def get_email_service(settings: Settings = Depends(get_settings)) -> EmailService:
+    return EmailService(settings)
+
+
+def get_auth_cache_service(redis: Redis = Depends(get_redis)) -> AuthCacheService:
+    return AuthCacheService(redis)
+
+
+def get_auth_service(
+    user_repo: UserRepository = Depends(get_user_repository),
+    auth_cache: AuthCacheService = Depends(get_auth_cache_service),
+    email_svc: EmailService = Depends(get_email_service),
+    settings: Settings = Depends(get_settings),
+) -> AuthService:
+    return AuthService(user_repo, auth_cache, email_svc, settings)
+
+
+async def get_current_user(
+    token: str | None = Depends(oauth2_scheme),
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    """Bearer JWT 검증 → User 반환.
+
+    Raises:
+        AppError(UNAUTHORIZED): 토큰 없음/만료/변조.
+        AppError(ACCOUNT_DELETED): 삭제 예약된 계정.
+        AppError(EMAIL_NOT_VERIFIED): 이메일 미인증.
+    """
+    if not token:
+        raise AuthErrors.unauthorized()
+
+    try:
+        payload = decode_access_token(token)
+    except JWTError:
+        raise AuthErrors.unauthorized()
+
+    user_id_str: str | None = payload.get("sub")
+    if not user_id_str:
+        raise AuthErrors.unauthorized()
+
+    try:
+        user_id = uuid.UUID(user_id_str)
+    except ValueError:
+        raise AuthErrors.unauthorized()
+
+    repo = UserRepository(db)
+    user = await repo.get_by_id(user_id)
+    if user is None:
+        raise AuthErrors.unauthorized()
+
+    if user.soft_deleted_at is not None:
+        raise AuthErrors.account_deleted()
+
+    if user.email_verified_at is None:
+        raise AuthErrors.email_not_verified()
+
+    return user
+
+
+async def get_current_user_optional(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> User | None:
+    """인증 선택적 — 토큰 없으면 None 반환."""
+    auth_header: str | None = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return None
+
+    token = auth_header.removeprefix("Bearer ").strip()
+    try:
+        payload = decode_access_token(token)
+    except JWTError:
+        return None
+
+    user_id_str: str | None = payload.get("sub")
+    if not user_id_str:
+        return None
+
+    try:
+        user_id = uuid.UUID(user_id_str)
+    except ValueError:
+        return None
+
+    repo = UserRepository(db)
+    user = await repo.get_by_id(user_id)
+    if user is None or user.soft_deleted_at is not None:
+        return None
+
+    return user
+
+
+# ── Type aliases ──────────────────────────────────────────────────────────────
+
 DbSession = Annotated[AsyncSession, Depends(get_db)]
 MongoDb = Annotated[AsyncIOMotorDatabase, Depends(get_mongodb)]
 RedisClient = Annotated[Redis, Depends(get_redis)]
@@ -33,6 +141,6 @@ ApiRateLimiter = Annotated[APIRateLimiter, Depends(get_api_rate_limiter)]
 ExchangeLimiter = Annotated[ExchangeRateLimiter, Depends(get_exchange_rate_limiter)]
 AppSettings = Annotated[Settings, Depends(get_settings)]
 
-# Auth dependencies will be added in v1-5:
-# CurrentUser = Annotated[User, Depends(get_current_user)]
-# CurrentUserOptional = Annotated[User | None, Depends(get_current_user_optional)]
+CurrentUser = Annotated[User, Depends(get_current_user)]
+CurrentUserOptional = Annotated[User | None, Depends(get_current_user_optional)]
+AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]

@@ -142,3 +142,5 @@ description: task-master-ai 통해 계획된 내용을 모든 agent를 동시에
 - 메인 에이전트가 직접 팀 리더 역할 수행 (project-architect에게 위임하지 않음)
 - project-architect는 설계서 작성 전담
 - 자율 협업 프로토콜은 반드시 각 에이전트 스폰 시 전달
+- **에이전트 `name` = `subagent_type`** (별칭 금지). SendMessage recipient 불일치 방지.
+- **스폰 시 팀 구성원 `name` 목록을 프롬프트에 명시** (SendMessage 대상 이름 혼동 방지)

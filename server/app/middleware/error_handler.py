@@ -11,14 +11,29 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse
 
+from app.core.exceptions import AppError
 from app.middleware.correlation_id import get_correlation_id
-from app.schemas.error import ErrorBody, ErrorDetail
+from app.schemas.error import ErrorBody, ErrorDetail, ErrorResponse
 
 logger = structlog.get_logger(__name__)
 
 
 def register_error_handlers(app: FastAPI) -> None:
     """앱에 글로벌 에러 핸들러 등록."""
+
+    @app.exception_handler(AppError)
+    async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
+        correlation_id = get_correlation_id()
+        logger.warning("app_error", code=exc.code, status=exc.http_status)
+        body = ErrorBody(
+            code=exc.code,
+            message=exc.message,
+            correlation_id=correlation_id or None,
+        )
+        return JSONResponse(
+            status_code=exc.http_status,
+            content={"error": body.model_dump(exclude_none=True)},
+        )
 
     @app.exception_handler(RequestValidationError)
     async def validation_error_handler(
