@@ -10,9 +10,11 @@ from sentry_sdk.integrations.fastapi import FastApiIntegration
 from app.core.config import settings
 from app.core.database import init_db
 from app.core.metrics import instrumentator
-from app.core.mongodb import init_mongodb
-from app.core.mongodb import close_mongodb
-from app.core.redis import init_redis, close_redis
+from app.core.mongodb import close_mongodb, init_mongodb
+from app.core.redis import close_redis, init_redis
+from app.middleware.correlation_id import CorrelationIdMiddleware
+from app.middleware.error_handler import register_error_handlers
+from app.middleware.rate_limit import RateLimitMiddleware
 
 if settings.SENTRY_DSN:
     sentry_sdk.init(
@@ -64,15 +66,29 @@ app = FastAPI(
     redoc_url="/redoc" if settings.DEBUG else None,
 )
 
+# 글로벌 에러 핸들러 등록
+register_error_handlers(app)
+
+# 미들웨어 등록 (순서 중요 — LIFO: 마지막 등록이 가장 외부에서 실행)
+# 1. Prometheus instrumentator (가장 내부)
+instrumentator.instrument(app).expose(app, endpoint="/metrics")
+
+# 2. RateLimitMiddleware
+app.add_middleware(RateLimitMiddleware)
+
+# 3. CorrelationIdMiddleware
+app.add_middleware(CorrelationIdMiddleware)
+
+# 4. CORSMiddleware (가장 외부 — 마지막 등록)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Correlation-ID", "X-RateLimit-Remaining", "X-RateLimit-Retry-After-Ms"],
 )
 
 from app.api.v1 import router as v1_router  # noqa: E402
-app.include_router(v1_router, prefix="/api/v1")
 
-instrumentator.instrument(app).expose(app, endpoint="/metrics")
+app.include_router(v1_router, prefix="/api/v1")
