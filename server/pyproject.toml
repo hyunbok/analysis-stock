@@ -10,7 +10,7 @@ dependencies = [
     "beanie>=1.26",
     "motor",
     "redis>=5.0",
-    "pydantic>=2.6",
+    "pydantic[email]>=2.6",
     "pydantic-settings",
     "python-jose[cryptography]",
     "bcrypt",
@@ -22,6 +22,7 @@ dependencies = [
     "alembic>=1.13",
     "PyJWT>=2.8",
     "websockets>=12.0",
+    "lupa>=2.6",
 ]
 
 [project.optional-dependencies]

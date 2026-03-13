@@ -5,12 +5,13 @@ import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
 
+import bcrypt
+
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from app.core.config import settings
 
-_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12)
+_BCRYPT_ROUNDS = 12
 
 
 # ── 비밀번호 ──────────────────────────────────────────────────────────────────
@@ -25,7 +26,9 @@ def hash_password(plain: str) -> str:
     Returns:
         bcrypt 해시 문자열.
     """
-    return _pwd_context.hash(plain)
+    secret = plain.encode("utf-8")[:72]
+    salt = bcrypt.gensalt(rounds=_BCRYPT_ROUNDS, prefix=b"2b")
+    return bcrypt.hashpw(secret, salt).decode("ascii")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
@@ -38,7 +41,8 @@ def verify_password(plain: str, hashed: str) -> bool:
     Returns:
         일치 여부.
     """
-    return _pwd_context.verify(plain, hashed)
+    secret = plain.encode("utf-8")[:72]
+    return bcrypt.checkpw(secret, hashed.encode("ascii"))
 
 
 # ── JWT ───────────────────────────────────────────────────────────────────────

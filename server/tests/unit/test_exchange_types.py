@@ -231,7 +231,7 @@ def test_symbol_mapper_to_symbol_coinone():
 
 def test_symbol_mapper_invalid_symbol():
     with pytest.raises(ExchangeInvalidSymbolError):
-        SymbolMapper.to_market(ExchangeType.UPBIT, "DOGE/KRW")
+        SymbolMapper.to_market(ExchangeType.UPBIT, "NONEXISTENT/KRW")
 
 
 def test_symbol_mapper_invalid_market():
