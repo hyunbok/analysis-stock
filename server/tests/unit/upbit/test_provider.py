@@ -37,7 +37,7 @@ def _make_provider(
     provider = UpbitProvider(
         exchange_type=ExchangeType.UPBIT,
         api_key="test-key",
-        api_secret="test-secret",
+        api_secret="test-secret-padding-for-hs512-minimum-sixty-four-bytes-requirement-ok",
         rate_limiter=ExchangeRateLimiter(redis_client),
         circuit_breaker=cb,
         user_id="user-123",

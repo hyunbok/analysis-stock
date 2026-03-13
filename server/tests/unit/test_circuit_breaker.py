@@ -334,8 +334,6 @@ async def test_half_open_max_calls_limit():
     with pytest.raises(RuntimeError):
         await cb2.call(fail_fn)
 
-    # 첫 번째 HALF_OPEN 호출 (허용 — 아직 실패하지 않았으므로 HALF_OPEN 카운트 증가)
-    slow_fn = AsyncMock(side_effect=asyncio.sleep(0))  # 즉시 반환
     # 동시에 2개 호출 → 하나는 허용, 하나는 거부
     results = await asyncio.gather(
         cb2.call(success_fn),

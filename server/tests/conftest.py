@@ -1,8 +1,17 @@
 """공통 pytest fixtures: PostgreSQL + MongoDB."""
 
 import os
+from datetime import UTC, datetime
 
+import mongomock
+import mongomock.helpers
 import pytest
+import pytest_asyncio
+
+# mongomock 4.3.0이 내부적으로 deprecated datetime.utcnow()를 사용 — 패치로 해결
+_utcnow_fixed = lambda: datetime.now(UTC)
+mongomock.helpers.utcnow = _utcnow_fixed
+mongomock.utcnow = _utcnow_fixed
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.config import settings
@@ -27,7 +36,7 @@ def _get_test_mongo_db() -> str:
 
 # ── PostgreSQL fixtures ───────────────────────────────────────────────────────
 
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def pg_engine():
     """세션 시작 시 테스트 DB 테이블 생성, 종료 시 삭제."""
     engine = create_async_engine(_get_test_pg_url(), echo=False)
@@ -39,9 +48,13 @@ async def pg_engine():
     await engine.dispose()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture(loop_scope="session")
 async def db_session(pg_engine):
-    """함수 범위 세션 - 테스트 후 자동 롤백."""
+    """함수 범위 세션 - 테스트 후 자동 롤백.
+
+    loop_scope="session" 으로 pg_engine 과 동일한 세션 이벤트 루프를 공유.
+    asyncpg 커넥션 풀은 루프에 바인딩되므로, 루프가 다르면 RuntimeError 발생.
+    """
     async_session = async_sessionmaker(pg_engine, class_=AsyncSession, expire_on_commit=False)
     async with async_session() as session:
         transaction = await session.begin()
@@ -62,7 +75,7 @@ def _build_mongo_document_models() -> list:
     return [TradeLog, AiDecision, DailyPnlReport, Notification, AuditLog, NewsData]
 
 
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def mongo_client():
     """세션 범위 MongoDB 목 클라이언트 + Beanie 초기화."""
     try:
@@ -80,7 +93,7 @@ async def mongo_client():
     yield client
 
 
-@pytest.fixture
+@pytest_asyncio.fixture(loop_scope="session")
 async def mongo_db(mongo_client):
     """함수 범위 MongoDB - 테스트 후 컬렉션 초기화."""
     db = mongo_client.get_database(_get_test_mongo_db())

@@ -165,13 +165,15 @@ async def test_watchlist_coin_relations(db_session):
     """WatchlistCoin → User/Coin 관계 검증."""
     user = make_user()
     coin = make_coin(symbol=f"W{uuid.uuid4().hex[:4].upper()}")
-    db_session.add_all([user, coin])
+    exchange_account = make_exchange_account(user.id)
+    db_session.add_all([user, coin, exchange_account])
     await db_session.flush()
 
     wl = WatchlistCoin(
         id=uuid.uuid4(),
         user_id=user.id,
         coin_id=coin.id,
+        exchange_account_id=exchange_account.id,
         sort_order=1,
     )
     db_session.add(wl)
@@ -185,11 +187,14 @@ async def test_watchlist_coin_relations(db_session):
     assert fetched.coin_id == coin.id
     assert fetched.sort_order == 1
 
-    # UNIQUE(user_id, coin_id, exchange_account_id) 중복 검증
+    # UNIQUE(user_id, coin_id, exchange_account_id) 중복 검증.
+    # exchange_account_id가 NULL이면 PostgreSQL unique constraint가 NULL != NULL 으로
+    # 처리하여 중복을 허용하므로, 동일한 exchange_account_id를 가진 행으로 테스트.
     duplicate_wl = WatchlistCoin(
         id=uuid.uuid4(),
         user_id=user.id,
         coin_id=coin.id,
+        exchange_account_id=exchange_account.id,
         sort_order=2,
     )
     db_session.add(duplicate_wl)

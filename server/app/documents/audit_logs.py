@@ -3,7 +3,7 @@ from typing import Optional
 from uuid import UUID
 
 import pymongo
-from beanie import Document, Indexed
+from beanie import Document
 from pydantic import Field
 
 

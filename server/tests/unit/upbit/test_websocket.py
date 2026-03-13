@@ -28,7 +28,7 @@ def _make_fake_ws(messages: list[bytes | str] | None = None) -> MagicMock:
     async def fake_recv() -> bytes | str:
         if _msgs:
             return _msgs.pop(0)
-        await asyncio.sleep(999)  # 블로킹 (태스크 취소 전까지)
+        await asyncio.Event().wait()  # 블로킹 (태스크 취소 전까지)
         return b""
 
     ws.recv = fake_recv
@@ -161,7 +161,10 @@ async def test_reconnect_on_close() -> None:
             raise websockets.exceptions.WebSocketException("initial failure")
         return _make_fake_ws()
 
-    with patch("websockets.connect", side_effect=fake_connect):
+    with (
+        patch("websockets.connect", side_effect=fake_connect),
+        patch("asyncio.sleep", new=AsyncMock()),
+    ):
         await client.connect()
 
     assert call_count == 2

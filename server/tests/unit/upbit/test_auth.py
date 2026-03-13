@@ -12,7 +12,10 @@ from app.providers.upbit.auth import UpbitJwtAuth
 
 @pytest.fixture
 def auth() -> UpbitJwtAuth:
-    return UpbitJwtAuth(api_key="test-access-key", api_secret="test-secret-key")
+    return UpbitJwtAuth(
+        api_key="test-access-key",
+        api_secret="test-secret-key-padding-for-hs512-minimum-sixty-four-bytes-requirement-ok",
+    )
 
 
 # ── TC1: 기본 토큰 생성 ────────────────────────────────────────────────────────
@@ -21,7 +24,7 @@ def auth() -> UpbitJwtAuth:
 def test_generate_without_query(auth: UpbitJwtAuth) -> None:
     """query_params 없이 생성 시 access_key, nonce 포함, query_hash 미포함."""
     token = auth.generate()
-    payload = jwt.decode(token, "test-secret-key", algorithms=["HS512"])
+    payload = jwt.decode(token, "test-secret-key-padding-for-hs512-minimum-sixty-four-bytes-requirement-ok", algorithms=["HS512"])
     assert payload["access_key"] == "test-access-key"
     assert "nonce" in payload
     assert "query_hash" not in payload
@@ -32,7 +35,7 @@ def test_generate_with_query_params(auth: UpbitJwtAuth) -> None:
     """query_params 있을 때 query_hash, query_hash_alg='SHA512' 포함."""
     params = {"market": "KRW-BTC"}
     token = auth.generate(query_params=params)
-    payload = jwt.decode(token, "test-secret-key", algorithms=["HS512"])
+    payload = jwt.decode(token, "test-secret-key-padding-for-hs512-minimum-sixty-four-bytes-requirement-ok", algorithms=["HS512"])
     assert "query_hash" in payload
     assert payload["query_hash_alg"] == "SHA512"
 
@@ -45,7 +48,7 @@ def test_generate_for_body(auth: UpbitJwtAuth) -> None:
     """POST body dict → query_hash 변환."""
     body = {"market": "KRW-BTC", "side": "bid", "ord_type": "limit"}
     token = auth.generate_for_body(body)
-    payload = jwt.decode(token, "test-secret-key", algorithms=["HS512"])
+    payload = jwt.decode(token, "test-secret-key-padding-for-hs512-minimum-sixty-four-bytes-requirement-ok", algorithms=["HS512"])
     assert "query_hash" in payload
     assert payload["query_hash_alg"] == "SHA512"
 
@@ -76,8 +79,8 @@ def test_nonce_uniqueness(auth: UpbitJwtAuth) -> None:
     """연속 호출 시 nonce가 매번 다름."""
     token1 = auth.generate()
     token2 = auth.generate()
-    payload1 = jwt.decode(token1, "test-secret-key", algorithms=["HS512"])
-    payload2 = jwt.decode(token2, "test-secret-key", algorithms=["HS512"])
+    payload1 = jwt.decode(token1, "test-secret-key-padding-for-hs512-minimum-sixty-four-bytes-requirement-ok", algorithms=["HS512"])
+    payload2 = jwt.decode(token2, "test-secret-key-padding-for-hs512-minimum-sixty-four-bytes-requirement-ok", algorithms=["HS512"])
     assert payload1["nonce"] != payload2["nonce"]
 
 

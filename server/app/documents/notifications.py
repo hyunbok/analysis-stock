@@ -3,12 +3,12 @@ from typing import Optional
 from uuid import UUID
 
 import pymongo
-from beanie import Document, Indexed
+from beanie import Document
 from pydantic import Field
 
 
 class Notification(Document):
-    user_id: Indexed(UUID)
+    user_id: UUID
     type: str  # price_alert / ai_trading / order_execution
     title: str = Field(max_length=100)
     body: str = Field(max_length=500)
