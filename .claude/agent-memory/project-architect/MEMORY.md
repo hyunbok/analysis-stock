@@ -62,6 +62,22 @@
 - 의존 라이브러리: websockets 신규 추가, httpx 기존 의존
 - SymbolMapper: 정규화 심볼 "BTC/KRW" ↔ 거래소 마켓 코드 양방향 변환
 
+## v1-9 결정 사항 (Upbit 거래소 프로바이더)
+- 디렉토리: `providers/upbit/` (provider.py, auth.py, stream.py, mappers.py, constants.py)
+- JWT 알고리즘: **HS512** (Upbit 공식 문서 기준, HS256 아님)
+- JWT payload: access_key, nonce(UUID4), query_hash(SHA-512, 조건부), query_hash_alg
+- POST body query_hash: body를 "key=value&key=value"로 변환 후 SHA-512
+- WS 파일명: `stream.py` (websockets 라이브러리명 충돌 방지, ExchangeStreamProvider 일관성)
+- WS 클래스: `_UpbitWebSocketClient` (언더스코어 prefix로 internal 표시)
+- SymbolMapper 동적 등록: initialize() 시 GET /v1/market/all → register_batch()
+- 정적 fallback: UPBIT_STATIC_MARKETS 15개 (동적 로드 실패 시 유지)
+- 에러 매핑: UPBIT_ERROR_MAP(error.name 기반) + HTTP_STATUS_ERROR_MAP(폴백)
+- HTTP 418 처리: Upbit 고유 IP 차단 → ExchangeRateLimitError
+- 시장가 매수 특이사항: ord_type="price", volume 대신 price(총 KRW)로 입력
+- 재시도: Provider는 단발 호출, 서비스 레이어에서 Exponential Backoff (최대 3회)
+- 의존 라이브러리: PyJWT>=2.8, websockets>=12.0
+- 테스트: 42건 (단위 38 + 통합 4)
+
 ## 협업 패턴
 - code-architect와 이견 시 먼저 합의 후 설계서 반영 (동시 편집 충돌 주의)
 - 설계서 초안을 먼저 작성하고 상대에게 수정/보강 요청하는 방식이 효율적

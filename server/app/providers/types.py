@@ -138,9 +138,21 @@ class SymbolMapper:
 
     _MAPS: dict[ExchangeType, dict[str, str]] = {
         ExchangeType.UPBIT: {
-            "BTC/KRW": "KRW-BTC",
-            "ETH/KRW": "KRW-ETH",
-            "XRP/KRW": "KRW-XRP",
+            "BTC/KRW":   "KRW-BTC",
+            "ETH/KRW":   "KRW-ETH",
+            "XRP/KRW":   "KRW-XRP",
+            "SOL/KRW":   "KRW-SOL",
+            "ADA/KRW":   "KRW-ADA",
+            "DOGE/KRW":  "KRW-DOGE",
+            "DOT/KRW":   "KRW-DOT",
+            "AVAX/KRW":  "KRW-AVAX",
+            "MATIC/KRW": "KRW-MATIC",
+            "LINK/KRW":  "KRW-LINK",
+            "ATOM/KRW":  "KRW-ATOM",
+            "NEAR/KRW":  "KRW-NEAR",
+            "TRX/KRW":   "KRW-TRX",
+            "LTC/KRW":   "KRW-LTC",
+            "BCH/KRW":   "KRW-BCH",
         },
         ExchangeType.COINONE: {
             "BTC/KRW": "btc",

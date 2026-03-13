@@ -27,6 +27,7 @@ from .exceptions import (
     ExchangeUnavailableError,
 )
 from .factory import ExchangeProviderFactory, ExchangeProviderRegistry
+from .upbit import UpbitProvider  # noqa: F401 — import 시 자동 Registry 등록
 from .types import (
     ApiKeyInfo,
     Balance,
@@ -46,6 +47,8 @@ __all__ = [
     "ExchangeRestProvider",
     "ExchangeStreamProvider",
     "BaseExchangeProvider",
+    # Providers
+    "UpbitProvider",
     # Factory
     "ExchangeProviderFactory",
     "ExchangeProviderRegistry",

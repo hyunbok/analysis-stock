@@ -12,6 +12,7 @@ pydantic-settings
 python-jose[cryptography]
 bcrypt
 httpx
+PyJWT>=2.8
 websockets>=12.0
 structlog
 sentry-sdk[fastapi]
