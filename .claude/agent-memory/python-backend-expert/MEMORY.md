@@ -89,3 +89,23 @@ Router → get_current_user() → decode_access_token() → UserRepository.get_b
   - ST9: services/audit_service.py
   - **리뷰 반영**: AuthService 캡슐화(위임 메서드), Redis 키 설계서 준수(인덱스 키 패턴), Access Token client_id 클레임, bulk UPDATE, 파이프라인
   - **65/65 테스트 통과**, 코드 리뷰 승인 완료
+
+- **v1-8**: 거래소 추상화 계층 구현
+  - ST1: providers/enums.py, providers/types.py
+  - ST2/ST3/ST4: providers/base.py (ABC), providers/exceptions.py
+  - ST5: base_impl.py에서 ExchangeRateLimiter 연동
+  - ST6: exchange-api-expert 선구현 circuit_breaker.py 활용
+  - ST7: providers/factory.py (ExchangeProviderFactory + Registry)
+  - ST8: core/encryption.py encrypt_value/decrypt_value 추가
+  - ST9: providers/base_impl.py, requirements.txt websockets>=12.0
+  - ST10: providers/mock_provider.py, 테스트 4개 파일
+  - 추가: core/exceptions.py ExchangeErrors, core/config.py CB+Exchange 설정, core/redis_keys.py CB 키, core/deps.py ExchangeFactoryDep, main.py lifespan Factory 통합
+  - **66/66 테스트 통과**, 리뷰 요청 완료
+
+### Provider 패턴 (v1-8)
+- **ABC 계층**: ExchangeRestProvider → ExchangeStreamProvider → ExchangeProvider → BaseExchangeProvider → 구체 구현
+- **Factory**: 싱글턴, lifespan에서 init(redis) + register_defaults() 호출
+- **Circuit Breaker**: 거래소별 독립 인메모리 인스턴스 (ExchangeAuth/Permission/InvalidSymbol 예외 카운트 제외)
+- **_execute_rest()**: Rate Limiter acquire → Circuit Breaker call 순서로 래핑
+- **SymbolMapper**: types.py에 위치, to_market/to_symbol에서 exceptions lazy import (순환 방지)
+- **ExchangeErrors**: core/exceptions.py에 AppError 팩토리 클래스 (서비스 레이어에서 변환용)

@@ -49,6 +49,19 @@
 - Setup TTL: 10분, Temp token TTL: 5분
 - URL: POST /2fa/disable (DELETE 아님, body 필요), POST /2fa/login-verify
 
+## v1-8 결정 사항 (거래소 추상화 계층)
+- ABC 3단계: ExchangeRestProvider → ExchangeStreamProvider → ExchangeProvider (통합)
+- BaseExchangeProvider: `_execute_rest()` 래퍼로 Rate Limiter → Circuit Breaker 자동 적용
+- Factory 싱글턴: `ExchangeProviderFactory.init(redis)` → `.instance()` 패턴
+- Registry 데코레이터: `@ExchangeProviderRegistry.register(ExchangeType.UPBIT)` 방식
+- Circuit Breaker: 인메모리, 거래소별 독립, 슬라이딩 윈도우 + 연속 실패 하이브리드
+- Circuit Breaker 제외 예외: Auth, Permission, InvalidSymbol, InsufficientBalance (사용자 오류)
+- 기존 ExchangeRateLimiter 100% 재사용 (providers/rate_limiter.py 별도 생성 안 함)
+- 예외 이중 계층: providers/exceptions.py (내부) → core/exceptions.py ExchangeErrors (HTTP 응답)
+- v1-8 범위: 추상화 + Mock Provider만. 실제 거래소는 M3(Upbit), M5(CoinOne) 등에서 구현
+- 의존 라이브러리: websockets 신규 추가, httpx 기존 의존
+- SymbolMapper: 정규화 심볼 "BTC/KRW" ↔ 거래소 마켓 코드 양방향 변환
+
 ## 협업 패턴
 - code-architect와 이견 시 먼저 합의 후 설계서 반영 (동시 편집 충돌 주의)
 - 설계서 초안을 먼저 작성하고 상대에게 수정/보강 요청하는 방식이 효율적
