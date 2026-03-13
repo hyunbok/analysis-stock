@@ -39,6 +39,22 @@ class PubSubSubscriber:
         channel = PubSubChannel.ticker(exchange, market)
         await self._subscribe(channel)
 
+    async def subscribe_orderbook(self, exchange: str, market: str) -> None:
+        channel = PubSubChannel.orderbook(exchange, market)
+        await self._subscribe(channel)
+
+    async def subscribe_trades(self, exchange: str, market: str) -> None:
+        channel = PubSubChannel.trades(exchange, market)
+        await self._subscribe(channel)
+
+    async def subscribe_my_orders(self, user_id: str) -> None:
+        channel = PubSubChannel.my_orders(user_id)
+        await self._subscribe(channel)
+
+    async def subscribe_system(self) -> None:
+        channel = PubSubChannel.system()
+        await self._subscribe(channel)
+
     async def subscribe_user_channels(self, user_id: str) -> None:
         channels = [
             PubSubChannel.ai_signal(user_id),
@@ -50,6 +66,18 @@ class PubSubSubscriber:
 
     async def unsubscribe_ticker(self, exchange: str, market: str) -> None:
         channel = PubSubChannel.ticker(exchange, market)
+        await self._unsubscribe(channel)
+
+    async def unsubscribe_orderbook(self, exchange: str, market: str) -> None:
+        channel = PubSubChannel.orderbook(exchange, market)
+        await self._unsubscribe(channel)
+
+    async def unsubscribe_trades(self, exchange: str, market: str) -> None:
+        channel = PubSubChannel.trades(exchange, market)
+        await self._unsubscribe(channel)
+
+    async def unsubscribe_my_orders(self, user_id: str) -> None:
+        channel = PubSubChannel.my_orders(user_id)
         await self._unsubscribe(channel)
 
     async def unsubscribe_user_channels(self, user_id: str) -> None:

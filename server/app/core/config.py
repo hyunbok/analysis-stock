@@ -75,6 +75,13 @@ class Settings(BaseSettings):
     TOTP_TEMP_TOKEN_TTL: int = 300  # 5분 (2FA 로그인 임시 토큰 TTL)
     TOTP_FAIL_MAX: int = 5          # TOTP 최대 실패 횟수 (15분 윈도우)
 
+    # WebSocket Hub
+    WS_MAX_CONNECTIONS: int = 1000
+    WS_MAX_CONNECTIONS_PER_USER: int = 5
+    WS_MAX_SUBSCRIPTIONS_PER_CONN: int = 50
+    WS_HEARTBEAT_INTERVAL: int = 30       # 초 (Heartbeat 확인 주기)
+    WS_HEARTBEAT_TIMEOUT: int = 60        # 초 (무응답 연결 강제 종료 기준)
+
     # OAuth2 (Social Login)
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_ID_IOS: str = ""

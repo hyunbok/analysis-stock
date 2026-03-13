@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
@@ -11,7 +12,7 @@ from app.core.config import settings
 from app.core.database import init_db
 from app.core.metrics import instrumentator
 from app.core.mongodb import close_mongodb, init_mongodb
-from app.core.redis import close_redis, get_redis, init_redis
+from app.core.redis import close_redis, get_pubsub_redis, get_redis, init_redis
 from app.middleware.correlation_id import CorrelationIdMiddleware
 from app.middleware.error_handler import register_error_handlers
 from app.middleware.rate_limit import RateLimitMiddleware
@@ -57,7 +58,50 @@ async def lifespan(app: FastAPI):
     factory = ExchangeProviderFactory.init(redis=get_redis())
     factory.register_defaults()
 
+    # WebSocket Hub 초기화
+    from app.ws.hub import WSHub
+
+    ws_hub = WSHub()
+
+    # PubSubSubscriber 초기화 (Redis Pub/Sub → WSHub 브리지)
+    from app.ws.subscribers import PubSubSubscriber
+
+    subscriber = PubSubSubscriber(get_pubsub_redis(), ws_hub)
+
+    # ExchangeStreamBridge 초기화 (거래소 WS → Redis)
+    from app.core.pubsub import RedisPublisher
+    from app.ws.bridge import ExchangeStreamBridge
+
+    publisher = RedisPublisher(get_redis())
+    bridge = ExchangeStreamBridge(factory, publisher)
+
+    # 시스템 채널 구독 (서버 상태 브로드캐스트용)
+    await subscriber.subscribe_system()
+
+    # Pub/Sub listen 태스크 시작
+    listen_task = asyncio.create_task(subscriber.listen())
+
+    # Heartbeat 태스크 시작
+    heartbeat_task = asyncio.create_task(ws_hub.heartbeat_loop())
+
+    # MessageRouter 싱글턴 (연결당 재생성 불필요)
+    from app.ws.router import MessageRouter
+
+    ws_router = MessageRouter(ws_hub, subscriber, bridge)
+
+    # app.state에 저장 (WS 엔드포인트에서 직접 접근)
+    app.state.ws_hub = ws_hub
+    app.state.ws_subscriber = subscriber
+    app.state.ws_bridge = bridge
+    app.state.ws_router = ws_router
+
     yield
+
+    # Shutdown — WS 태스크 정리
+    heartbeat_task.cancel()
+    listen_task.cancel()
+    await bridge.close_all()
+    await subscriber.close()
 
     # Exchange Provider 정리
     await factory.close_all()
@@ -99,5 +143,7 @@ app.add_middleware(
 )
 
 from app.api.v1 import router as v1_router  # noqa: E402
+from app.api.v1.ws import router as ws_router  # noqa: E402
 
 app.include_router(v1_router, prefix="/api/v1")
+app.include_router(ws_router)  # /ws/v1 — prefix 없음 (WebSocket 전용)
