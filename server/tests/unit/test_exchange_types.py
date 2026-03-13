@@ -225,7 +225,7 @@ def test_symbol_mapper_to_symbol_upbit():
 
 
 def test_symbol_mapper_to_symbol_coinone():
-    symbol = SymbolMapper.to_symbol(ExchangeType.COINONE, "btc")
+    symbol = SymbolMapper.to_symbol(ExchangeType.COINONE, "BTC")
     assert symbol == "BTC/KRW"
 
 

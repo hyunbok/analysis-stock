@@ -78,6 +78,24 @@
 - 의존 라이브러리: PyJWT>=2.8, websockets>=12.0
 - 테스트: 42건 (단위 38 + 통합 4)
 
+## v1-10 결정 사항 (CoinOne 거래소 프로바이더)
+- 디렉토리: `providers/coinone/` (provider.py, auth.py, stream.py, mappers.py, constants.py)
+- 인증: HMAC-SHA512 (표준 라이브러리만 사용, PyJWT 불필요)
+  - Body → JSON → Base64 → X-COINONE-PAYLOAD 헤더
+  - HMAC-SHA512(payload, secret_key) → X-COINONE-SIGNATURE 헤더
+  - access_token을 body에 포함, nonce는 UUID v4
+- REST 헬퍼 분리: `_public_request(GET)` / `_private_request(POST+HMAC)` (Upbit의 단일 `_request` 대신)
+- 마켓 코드: target_currency 소문자 ("BTC/KRW" → "btc"), quote_currency 항상 "KRW" 고정
+- 에러 처리: 숫자 error_code 기반 COINONE_ERROR_MAP (error_code "4" = rate limit 초과)
+- WS URL: wss://stream.coinone.co.kr, 개별 SUBSCRIBE 메시지 방식 (Upbit 배열 방식과 다름)
+- WS 타임아웃: 30분 (Upbit 120초 대비 여유), PING 간격 5분(300초)
+- WS 연결: IP당 20개 (Upbit 5개 대비 여유)
+- Rate Limit: Public 1200/분(IP), Private Order 40/초, Other 80/초 (포트폴리오 기준)
+- 수수료: API 사용자 Maker/Taker 0.02%
+- 추가 의존성: 없음 (websockets는 v1-9에서 이미 추가)
+- 테스트: 42건 예상 (단위 38 + 통합 4)
+- ST7/ST8 (Rate Limit/Circuit Breaker): 기존 인프라 100% 재사용, 별도 구현 없음
+
 ## 협업 패턴
 - code-architect와 이견 시 먼저 합의 후 설계서 반영 (동시 편집 충돌 주의)
 - 설계서 초안을 먼저 작성하고 상대에게 수정/보강 요청하는 방식이 효율적

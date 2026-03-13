@@ -28,6 +28,7 @@ from .exceptions import (
 )
 from .factory import ExchangeProviderFactory, ExchangeProviderRegistry
 from .upbit import UpbitProvider  # noqa: F401 — import 시 자동 Registry 등록
+from .coinone import CoinOneProvider  # noqa: F401 — import 시 자동 Registry 등록
 from .types import (
     ApiKeyInfo,
     Balance,
@@ -49,6 +50,7 @@ __all__ = [
     "BaseExchangeProvider",
     # Providers
     "UpbitProvider",
+    "CoinOneProvider",
     # Factory
     "ExchangeProviderFactory",
     "ExchangeProviderRegistry",
