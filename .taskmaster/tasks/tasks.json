@@ -1049,7 +1049,7 @@
         "dependencies": [
           "8"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1057,7 +1057,7 @@
             "description": "ExchangeRestProvider 추상 클래스를 상속하여 Upbit REST API 프로바이더의 기본 클래스 구조를 정의합니다. Upbit API 문서를 참고하여 메서드 시그니처를 설계하고 프로토콜을 확립합니다.",
             "dependencies": [],
             "details": "providers/upbit.py 파일 생성, UpbitRestProvider 클래스 정의, get_ticker, get_orderbook, get_candles, place_order, cancel_order, get_balance, get_trading_fee, verify_api_key 메서드 선언 및 입출력 타입 정의, Upbit API 엔드포인트 상수 정의",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "구조 검증: 프로바이더 클래스 임포트 및 메서드 존재 확인"
           },
           {
@@ -1068,7 +1068,7 @@
               1
             ],
             "details": "PyJWT 라이브러리 활용, _generate_jwt_token() 메서드 구현, 요청 쿼리/바디 포함하여 서명, Authorization 헤더 포맷 설정 (Bearer {jwt}), 토큰 만료 시간(기본 10초) 설정, 에러 시 예외 처리",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "JWT 토큰 생성 및 검증: pyotp/jwt 라이브러리로 서명 확인, 토큰 만료 테스트, 잘못된 secret으로 검증 실패 확인"
           },
           {
@@ -1080,7 +1080,7 @@
               2
             ],
             "details": "Upbit GET /v1/ticker API 호출, 요청 파라미터: markets (KRW-BTC 형식), 응답 필드 매핑 (trade_price→price, bid_ask_spread→spread), timestamp 정규화 (밀리초→초 단위), 여러 마켓 동시 조회 지원, HTTP 에러 처리",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Upbit Sandbox/Mock API로 시세 데이터 조회 검증, 응답 필드 매핑 확인, 잘못된 마켓 코드 입력 시 에러 처리 검증"
           },
           {
@@ -1092,7 +1092,7 @@
               2
             ],
             "details": "Upbit GET /v1/orderbook API: bids/asks 배열 반환, 정렬 순서 확인 (호가 높은 순); GET /v1/candles API: interval(1m/5m/15m/30m/1h/4h/1d 등), count(최대 200), 응답 필드: open, high, low, close, volume, candle_date_time_utc, 타임스탬프 정규화",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Orderbook 깊이 검증 (상위 N개 항목 확인), 캔들 데이터 OHLC 유효성 검사 (high>=max(open,close,low)), 캔들 시간순 정렬 확인"
           },
           {
@@ -1104,7 +1104,7 @@
               2
             ],
             "details": "Upbit POST /v1/orders API: side (buy/sell), ord_type (limit/price), volume, price(지정가인 경우), 응답: uuid(order_id), state, created_at, trades_count; DELETE /v1/orders/{uuid}: 취소 요청, 재시도 로직 구현 (연속 취소 시도 방지), OrderStatus enum 정의 (PENDING/EXECUTED/CANCELLED/FAILED)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "주문 생성 테스트: 시장가/지정가 주문 구분, 주문 응답 필드 검증; 취소 테스트: 미체결 주문 취소 성공, 이미 취소된 주문 재취소 시 에러 처리"
           },
           {
@@ -1116,7 +1116,7 @@
               2
             ],
             "details": "Upbit GET /v1/accounts API: currency, balance, locked 필드, 통화 코드 정규화 (KRW/BTC 등); GET /v1/trading-fees?market={market} API: maker/taker 수수료율, 다중 마켓 요청 시 배열 반환 처리, 잔고 0인 항목 필터링 옵션",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "계정 잔고 조회 및 필드 검증, 수수료율 조회 (0-1 범위 확인), 지원되지 않는 통화 입력 시 404 처리"
           },
           {
@@ -1128,7 +1128,7 @@
               2
             ],
             "details": "Upbit GET /v1/api_keys API: 현재 API 키의 권한 정보 조회 (candle_all, trade, withdraw_address_coin 등), 권한 배열 반석, 출금 권한 감지 시 경고 플래그 설정, ApiKeyInfo 응답 스키마: permissions, has_withdrawal_permission, warning_message",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "정상 API 키 검증 (권한 목록 확인), 제한된 API 키 검증 (조회 전용), 출금 권한 감지 검증, 유효하지 않은 API 키로 401 에러 확인"
           },
           {
@@ -1139,7 +1139,7 @@
               1
             ],
             "details": "Upbit WebSocket 엔드포인트: wss://api.upbit.com/websocket/v1; 연결 유지 로직 (ping/pong 헬스체크); subscribe_ticker: {type: ticker, codes: [KRW-BTC]}, subscribe_orderbook: {type: orderbook, codes: [KRW-BTC]}; 메시지 파싱 및 콜백 실행, 연결 해제 시 자동 재연결 (지수 백오프), 최대 15개 마켓 구독 제한 준수",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "WebSocket 연결 성공 및 메시지 수신 확인, 티커/호가 메시지 파싱 검증, 연결 끊김 시 자동 재연결 확인, 구독 한계 초과 시 에러 처리"
           },
           {
@@ -1156,7 +1156,7 @@
               7
             ],
             "details": "Rate Limiter: 초당 10회(주문), 분당 600회(조회) 제한, Redis INCR/EXPIRE 활용; Circuit Breaker: 상태(Closed/Open/Half-Open), 실패율 모니터링(5회 연속 실패 또는 30초 내 50% 초과), Open 상태에서 30초 후 Half-Open 전환, 테스트 요청 성공 시 Closed 복구, 거래소별 독립 Circuit Breaker 운영, 제한 초과 시 429 상태코드 반환",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Rate Limiter: 한도 초과 시 429 응답 확인, Token Bucket 재생성 시간 검증; Circuit Breaker: 연속 실패 시 상태 전이 확인, Half-Open에서 테스트 요청 성공 시 복구 검증, 상태 모니터링 로그 확인"
           },
           {
@@ -1174,7 +1174,7 @@
               9
             ],
             "details": "Upbit 에러 코드 매핑 (400: 잘못된 요청, 401: 인증 실패, 429: 속도 제한, 500: 서버 에러 등); 재시도 전략: 429/5xx는 재시도, 400/401은 즉시 실패; 백오프 계산: 초기 지연 1초, 최대 지연 60초, 곱셈 계수 2; 최대 재시도 횟수 3회; 로깅: 각 재시도 시도 및 최종 결과, UptimeException 정의",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "각 HTTP 상태 코드별 에러 처리 검증, 재시도 로직: 500 에러 발생 시 자동 재시도 확인, 최대 재시도 횟수 초과 후 예외 발생, 지수 백오프 시간 검증, 에러 로그 기록 확인"
           }
         ]

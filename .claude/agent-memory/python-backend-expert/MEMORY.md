@@ -109,3 +109,22 @@ Router → get_current_user() → decode_access_token() → UserRepository.get_b
 - **_execute_rest()**: Rate Limiter acquire → Circuit Breaker call 순서로 래핑
 - **SymbolMapper**: types.py에 위치, to_market/to_symbol에서 exceptions lazy import (순환 방지)
 - **ExchangeErrors**: core/exceptions.py에 AppError 팩토리 클래스 (서비스 레이어에서 변환용)
+
+- **v1-9**: Upbit 거래소 Provider 구현 (exchange-api-expert 협업)
+  - ST1: upbit/ 디렉토리 + __init__.py/constants.py/mappers.py/stream.py/provider.py 스캐폴딩
+  - ST5: place_order (지정가/시장가 분기), cancel_order
+  - ST6: get_balance, get_trading_fee
+  - ST9: _execute_rest() 래퍼 + _request() httpx 헬퍼
+  - ST10: _parse_upbit_error() — UPBIT_ERROR_MAP → HTTP_STATUS_ERROR_MAP → 5xx 순서 폴백
+  - exchange-api-expert: test_websocket.py (7건)
+  - **38/38 테스트 통과** (test_auth 7 + test_mappers 10 + test_provider 14 + test_websocket 7)
+  - 테스트 경로: `tests/unit/upbit/`
+
+### Upbit Provider 패턴 (v1-9)
+- **등록**: `@ExchangeProviderRegistry.register(ExchangeType.UPBIT)` 데코레이터 — factory.py 수정 불필요
+- **REST 패턴**: `await self._execute_rest(self._do_{action}, ...)` → `_do_{action}`에서 `_request()` 호출
+- **JWT 분기**: auth=True + json_body → generate_for_body / params → generate(query_params) / 없음 → generate()
+- **시장가 매수**: ord_type="price", price=KRW 예산 (수량 없음)
+- **시장가 매도**: ord_type="market", volume=수량 (price 없음)
+- **SymbolMapper 동적 갱신**: initialize()에서 /v1/market/all 호출, 실패 시 정적 fallback 15개 마켓 유지
+- **테스트**: httpx.MockTransport으로 HTTP 응답 모킹 (fakeredis + uv run --with 패턴)

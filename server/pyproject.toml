@@ -20,6 +20,8 @@ dependencies = [
     "celery[redis]>=5.3",
     "prometheus-fastapi-instrumentator",
     "alembic>=1.13",
+    "PyJWT>=2.8",
+    "websockets>=12.0",
 ]
 
 [project.optional-dependencies]
@@ -51,3 +53,9 @@ plugins = ["pydantic.mypy"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"
 testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "asyncpg>=0.31.0",
+    "sqlalchemy>=2.0.48",
+]
