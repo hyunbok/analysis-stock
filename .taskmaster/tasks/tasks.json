@@ -912,7 +912,7 @@
         "dependencies": [
           "4"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -920,7 +920,7 @@
             "description": "모든 거래소 프로바이더가 공유하는 공통 데이터 모델을 정의합니다. Ticker, OrderBook, Candle, Order, OrderResult, Balance, TradingFee, ApiKeyInfo 등의 Pydantic 모델과 Enum 타입을 구현합니다.",
             "dependencies": [],
             "details": "1. app/providers/types.py 파일 생성\n2. 거래소 타입 Enum 정의: ExchangeType(UPBIT, COINONE, COINBASE, BINANCE)\n3. 주문 타입 Enum: OrderSide(BUY, SELL), OrderMethod(MARKET, LIMIT), OrderStatus(PENDING, OPEN, FILLED, PARTIAL, CANCELLED, FAILED)\n4. API 키 권한 Enum: ApiKeyPermission(READ_ONLY, TRADE, WITHDRAW, ALL)\n5. Ticker 모델: market, trade_price, change_rate, volume_24h, high_price, low_price, timestamp\n6. OrderBook 모델: market, bids(list[OrderBookEntry]), asks(list[OrderBookEntry]), timestamp\n7. Candle 모델: market, timestamp, open, high, low, close, volume (모든 금액 필드는 Decimal)\n8. Order 모델: order_id, market, side, method, price, quantity, fee, status, created_at\n9. OrderResult 모델: order_id, status, filled_quantity, avg_price, fee, executed_at\n10. Balance 모델: currency, available, locked, total\n11. TradingFee 모델: market, maker_rate, taker_rate (Decimal, 소수점 4자리까지)\n12. ApiKeyInfo 모델: permissions(set[ApiKeyPermission]), has_withdraw_permission(bool), valid_until(optional datetime)\n13. 심볼 정규화 SymbolMapper 클래스: to_internal(exchange, symbol), to_exchange(exchange, internal_symbol) 메서드",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "각 모델의 직렬화/역직렬화 테스트, Decimal 정밀도 검증, Enum 변환 테스트, SymbolMapper 거래소별 변환 테스트 (Upbit: KRW-BTC ↔ BTC/KRW, Binance: BTCUSDT ↔ BTC/USDT)",
             "parentId": "undefined"
           },
@@ -932,7 +932,7 @@
               1
             ],
             "details": "1. app/providers/base.py 파일 생성\n2. ExchangeRestProvider(ABC) 클래스 정의:\n   - __init__(api_key: str, api_secret: str, exchange_type: ExchangeType)\n   - @abstractmethod async def get_ticker(market: str) -> Ticker\n   - @abstractmethod async def get_orderbook(market: str, depth: int = 15) -> OrderBook\n   - @abstractmethod async def get_candles(market: str, interval: str, count: int = 200) -> list[Candle]\n   - @abstractmethod async def place_order(order: Order) -> OrderResult\n   - @abstractmethod async def cancel_order(order_id: str) -> bool\n   - @abstractmethod async def get_balance() -> list[Balance]\n   - @abstractmethod async def get_trading_fee(market: str) -> TradingFee\n   - @abstractmethod async def verify_api_key() -> ApiKeyInfo\n   - @abstractmethod async def close() -> None (리소스 정리)\n3. 공통 헬퍼 메서드:\n   - _normalize_symbol(symbol: str) -> str (내부 포맷 변환)\n   - _denormalize_symbol(internal: str) -> str (거래소 포맷 변환)\n4. 컨텍스트 매니저 지원 (__aenter__, __aexit__)\n5. exchange_type 속성으로 거래소 타입 반환\n6. httpx.AsyncClient 공유 인스턴스 관리 (하위 클래스에서 사용)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "ABC 추상 메서드 누락 시 TypeError 발생 확인, Mock 구현체로 인터페이스 계약 검증, 컨텍스트 매니저 진입/종료 동작 확인",
             "parentId": "undefined"
           },
@@ -944,7 +944,7 @@
               1
             ],
             "details": "1. providers/base.py에 추가\n2. 콜백 타입 정의:\n   - TickerCallback = Callable[[Ticker], Awaitable[None]]\n   - OrderBookCallback = Callable[[OrderBook], Awaitable[None]]\n3. ExchangeStreamProvider(ABC) 클래스 정의:\n   - __init__(exchange_type: ExchangeType)\n   - @abstractmethod async def subscribe_ticker(markets: list[str], callback: TickerCallback) -> None\n   - @abstractmethod async def subscribe_orderbook(markets: list[str], callback: OrderBookCallback) -> None\n   - @abstractmethod async def unsubscribe(channel: str, markets: list[str] | None = None) -> None\n   - @abstractmethod async def unsubscribe_all() -> None\n   - @abstractmethod async def close() -> None\n   - @property @abstractmethod def is_connected(self) -> bool\n4. 재연결 정책 상수:\n   - RECONNECT_DELAY_BASE = 1.0\n   - RECONNECT_DELAY_MAX = 60.0\n   - RECONNECT_MAX_ATTEMPTS = 10\n5. 연결 상태 추적 속성\n6. 구독 목록 관리 (reconnect 시 복원용)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "ABC 인터페이스 계약 검증, Mock 콜백 함수로 호출 확인, 연결 상태 속성 테스트",
             "parentId": "undefined"
           },
@@ -957,7 +957,7 @@
               3
             ],
             "details": "1. providers/base.py에 추가\n2. ExchangeProvider(ExchangeRestProvider, ExchangeStreamProvider) 클래스:\n   - 다중 상속으로 REST + Stream 기능 통합\n   - __init__(api_key, api_secret, exchange_type) 호출 체인 관리\n   - async def close() 오버라이드: 양쪽 리소스 정리\n3. providers/exceptions.py 생성:\n   - ExchangeError(Exception): base 클래스, exchange, error_type, code, message, retryable 속성\n   - ExchangeErrorType(Enum): AUTH_FAILED, RATE_LIMITED, INSUFFICIENT_FUNDS, ORDER_NOT_FOUND, INVALID_PARAMETER, SERVER_ERROR, NETWORK_ERROR, MAINTENANCE\n   - AuthenticationError(ExchangeError): API 키 인증 실패\n   - RateLimitError(ExchangeError): 요청 한도 초과, retry_after 속성 포함\n   - InsufficientFundsError(ExchangeError): 잔고 부족\n   - OrderNotFoundError(ExchangeError): 주문 미존재\n   - InvalidParameterError(ExchangeError): 잘못된 파라미터\n   - ServerError(ExchangeError): 거래소 서버 오류 (5xx)\n   - NetworkError(ExchangeError): 네트워크 연결 오류\n   - MaintenanceError(ExchangeError): 거래소 점검 중\n4. 각 예외 클래스에 retryable 기본값 설정",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "예외 계층 구조 isinstance 검증, retryable 속성 기본값 테스트, 예외 메시지 포맷팅 확인",
             "parentId": "undefined"
           },
@@ -969,7 +969,7 @@
               1
             ],
             "details": "1. app/providers/rate_limiter.py 파일 생성\n2. TokenBucket 클래스:\n   - __init__(rate: float, capacity: int, window: float = 1.0) # rate: 초당 토큰 생성 수, capacity: 버킷 용량\n   - tokens: float = capacity (현재 토큰 수)\n   - last_refill: float = time.monotonic()\n   - _refill(): 경과 시간에 따라 토큰 보충\n   - async def acquire(tokens: int = 1) -> float: 토큰 소비, 대기 시간 반환\n   - async def wait_for_token(tokens: int = 1): 토큰 확보까지 비동기 대기\n   - try_acquire(tokens: int = 1) -> bool: 논블로킹 시도\n3. RateLimiter 클래스 (거래소별 복합 리밋 관리):\n   - __init__(exchange_type: ExchangeType)\n   - _buckets: dict[str, TokenBucket] (용도별 버킷: 'order', 'query', 'default')\n   - 거래소별 기본 설정 적용:\n     * Upbit: order=10/sec, query=600/min\n     * CoinOne: default=10/sec\n     * Coinbase: default=10000/min\n     * Binance: default=1200/min (Weight 기반 확장 가능)\n   - async def acquire(category: str = 'default', tokens: int = 1): 카테고리별 토큰 획득\n   - reset(): 모든 버킷 초기화\n4. asyncio.Lock으로 동시성 보호\n5. 로깅: 토큰 대기 발생 시 warning 로그",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "토큰 소비/보충 시간 검증 (asyncio 시뮬레이션), 동시 요청 시 rate limit 준수 확인, 거래소별 기본 설정 적용 테스트, 버킷 용량 초과 시 대기 동작 검증",
             "parentId": "undefined"
           },
@@ -981,7 +981,7 @@
               4
             ],
             "details": "1. app/providers/circuit_breaker.py 파일 생성\n2. CircuitState(Enum): CLOSED, OPEN, HALF_OPEN\n3. CircuitBreakerConfig dataclass:\n   - failure_threshold: int = 5 (연속 실패 횟수)\n   - failure_rate_threshold: float = 0.5 (30초 내 실패율)\n   - failure_rate_window: float = 30.0 (실패율 측정 윈도우)\n   - recovery_timeout: float = 30.0 (Half-Open 전환 대기)\n   - half_open_max_calls: int = 1 (Half-Open에서 허용할 테스트 요청 수)\n4. CircuitBreaker 클래스:\n   - __init__(config: CircuitBreakerConfig, exchange_type: ExchangeType)\n   - state: CircuitState = CLOSED\n   - failure_count: int = 0\n   - _failure_timestamps: list[float] (실패율 계산용)\n   - last_failure_time: float | None\n   - last_state_change: float\n   - async def call(func: Callable[..., Awaitable[T]], *args, **kwargs) -> T: 래핑된 함수 호출\n   - _should_allow_request() -> bool: 현재 상태에서 요청 허용 여부\n   - _on_success(): 성공 시 상태 전이 (HALF_OPEN → CLOSED)\n   - _on_failure(error: Exception): 실패 시 상태 전이\n   - _calculate_failure_rate() -> float: 윈도우 내 실패율 계산\n   - _transition_to(state: CircuitState): 상태 전이 및 로깅\n   - reset(): 수동 초기화\n5. CircuitOpenError(ExchangeError) 예외: Open 상태에서 요청 시 발생\n6. 데코레이터 @circuit_breaker(breaker) 제공\n7. 로깅: 상태 전이 시 INFO, 요청 차단 시 WARNING",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "상태 전이 시나리오 테스트 (CLOSED→OPEN: 5회 연속 실패 / 실패율 50% 초과, OPEN→HALF_OPEN: 30초 경과, HALF_OPEN→CLOSED: 성공, HALF_OPEN→OPEN: 실패), 실패율 윈도우 계산 정확성 검증, 동시 요청 시 상태 일관성 확인",
             "parentId": "undefined"
           },
@@ -995,7 +995,7 @@
               6
             ],
             "details": "1. app/providers/factory.py 파일 생성\n2. ProviderRegistry 클래스 (싱글톤):\n   - _providers: dict[ExchangeType, type[ExchangeProvider]]\n   - register(exchange_type: ExchangeType, provider_class: type[ExchangeProvider]): 등록\n   - get(exchange_type: ExchangeType) -> type[ExchangeProvider] | None: 조회\n   - list_available() -> list[ExchangeType]: 등록된 거래소 목록\n   - is_registered(exchange_type: ExchangeType) -> bool\n3. @register_provider(exchange_type) 데코레이터: 클래스 자동 등록\n4. ExchangeProviderFactory 클래스:\n   - __init__(registry: ProviderRegistry = default_registry)\n   - create(exchange_type: str | ExchangeType, api_key: str, api_secret: str, **kwargs) -> ExchangeProvider\n   - 문자열 exchange_type은 ExchangeType으로 변환\n   - 미등록 거래소 타입 시 UnsupportedExchangeError 발생\n   - 생성된 Provider에 Rate Limiter, Circuit Breaker 자동 주입\n   - kwargs로 추가 설정 전달 (timeout, proxy 등)\n5. ExchangeProviderManager 클래스 (Provider 풀 관리):\n   - _providers: dict[str, ExchangeProvider] (user_id:exchange_type 키)\n   - async def get_or_create(user_id: str, exchange_type: ExchangeType, api_key: str, api_secret: str) -> ExchangeProvider\n   - async def close_all(): 모든 Provider 정리\n   - async def close_user_providers(user_id: str): 특정 사용자 Provider 정리",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Factory로 올바른 Provider 타입 반환 확인, 미등록 거래소 예외 발생 검증, Registry 등록/조회 동작 테스트, Manager 풀링 및 정리 동작 검증",
             "parentId": "undefined"
           },
@@ -1007,7 +1007,7 @@
               4
             ],
             "details": "1. app/providers/permissions.py 파일 생성\n2. ApiKeyValidationResult dataclass:\n   - info: ApiKeyInfo\n   - warnings: list[str] (경고 메시지 목록)\n   - allowed_operations: set[str] ('read', 'trade', 'withdraw')\n   - requires_user_confirmation: bool (출금 권한 포함 시 True)\n3. ApiKeyValidator 클래스:\n   - validate(info: ApiKeyInfo) -> ApiKeyValidationResult\n   - _check_withdraw_permission(info) -> str | None: 출금 권한 경고 메시지\n   - _determine_allowed_operations(info) -> set[str]\n   - _generate_warnings(info) -> list[str]\n4. 권한별 안내 메시지 상수:\n   - WITHDRAW_WARNING = \"출금 권한이 포함된 API 키입니다. 보안을 위해 출금 권한 없는 키 사용을 권장합니다.\"\n   - READ_ONLY_INFO = \"조회 전용 API 키입니다. 주문 기능이 비활성화됩니다.\"\n   - TRADE_RECOMMENDED = \"거래 권한이 있는 API 키입니다. (권장)\"\n5. PermissionChecker 데코레이터:\n   - @requires_permission('trade'): 거래 권한 필요 메서드에 적용\n   - 권한 부족 시 InsufficientPermissionError 발생\n6. InsufficientPermissionError(ExchangeError) 예외 정의",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "각 권한 조합(read_only, trade, withdraw, all)에 대한 검증 결과 확인, 경고 메시지 생성 테스트, PermissionChecker 데코레이터 동작 검증, 권한 부족 시 예외 발생 확인",
             "parentId": "undefined"
           },
@@ -1021,7 +1021,7 @@
               8
             ],
             "details": "1. app/providers/base_impl.py 파일 생성\n2. BaseRestProvider(ExchangeRestProvider) 클래스:\n   - __init__ 확장: rate_limiter, circuit_breaker 인스턴스 초기화\n   - _client: httpx.AsyncClient (커넥션 풀링, timeout 설정)\n   - _rate_limiter: RateLimiter\n   - _circuit_breaker: CircuitBreaker\n   - _api_key_info: ApiKeyInfo | None (verify_api_key 결과 캐시)\n   - async def _request(method: str, path: str, **kwargs) -> dict: 공통 요청 메서드\n     * Rate Limiter 토큰 획득\n     * Circuit Breaker 래핑\n     * 거래소별 인증 헤더 추가 (하위 클래스에서 구현)\n     * 에러 응답 → ExchangeError 변환\n     * 재시도 로직 (retryable 에러만, 지수 백오프)\n   - @abstractmethod def _build_auth_headers(method, path, body) -> dict: 인증 헤더 생성\n   - @abstractmethod def _parse_error(response) -> ExchangeError: 에러 파싱\n   - async def close(): httpx 클라이언트 정리\n3. BaseStreamProvider(ExchangeStreamProvider) 클래스:\n   - _ws: websockets.WebSocketClientProtocol | None\n   - _subscriptions: dict[str, set[str]] (채널 → 마켓 목록)\n   - _callbacks: dict[str, Callable]\n   - _reconnect_task: asyncio.Task | None\n   - async def _connect(url: str): WebSocket 연결\n   - async def _reconnect(): 지수 백오프 재연결\n   - async def _message_loop(): 메시지 수신 루프\n   - async def _restore_subscriptions(): 재연결 시 구독 복원\n   - @abstractmethod async def _send_subscribe(channel, markets): 구독 메시지 전송\n   - @abstractmethod def _parse_message(data) -> Ticker | OrderBook | None\n4. BaseExchangeProvider(BaseRestProvider, BaseStreamProvider) 통합",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "HTTP 요청 시 Rate Limiter/Circuit Breaker 적용 확인, 재시도 로직 동작 검증 (지수 백오프 간격), WebSocket 재연결 시 구독 복원 테스트, 에러 응답 파싱 및 변환 테스트",
             "parentId": "undefined"
           },
@@ -1033,7 +1033,7 @@
               9
             ],
             "details": "1. tests/providers/conftest.py 픽스처 구성\n2. app/providers/mock.py 파일 생성:\n   - MockExchangeProvider(BaseExchangeProvider) 클래스\n   - _ticker_data, _orderbook_data, _balance_data: 사전 정의된 테스트 데이터\n   - _delay: float (응답 지연 시뮬레이션)\n   - _fail_next_n: int (다음 N개 요청 실패 시뮬레이션)\n   - _error_type: ExchangeErrorType | None (발생시킬 에러 타입)\n   - set_delay(seconds): 지연 설정\n   - set_failure(count, error_type): 실패 시뮬레이션 설정\n   - set_ticker_response(market, data): 응답 데이터 설정\n   - 각 추상 메서드 구현 (테스트 데이터 반환)\n3. tests/providers/test_types.py: 데이터 모델 테스트\n4. tests/providers/test_rate_limiter.py: Rate Limiter 테스트\n5. tests/providers/test_circuit_breaker.py: Circuit Breaker 테스트\n6. tests/providers/test_factory.py: Factory/Registry 테스트\n7. tests/providers/test_permissions.py: 권한 검증 테스트\n8. tests/providers/test_base_impl.py: 베이스 구현 테스트\n9. 테스트 헬퍼:\n   - create_mock_ticker(market, price, volume)\n   - create_mock_orderbook(market, bid_count, ask_count)\n   - create_mock_balance(currency, available, locked)\n10. pytest-asyncio 설정, @pytest.mark.anyio 데코레이터 사용",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "MockProvider로 모든 추상 메서드 동작 확인, 지연/에러 시뮬레이션 테스트, 전체 테스트 스위트 실행 및 커버리지 80% 이상 달성, Circuit Breaker 상태 전이 시나리오 테스트, Rate Limiter 동시성 테스트",
             "parentId": "undefined"
           }

@@ -12,6 +12,7 @@ pydantic-settings
 python-jose[cryptography]
 bcrypt
 httpx
+websockets>=12.0
 structlog
 sentry-sdk[fastapi]
 celery[redis]>=5.3

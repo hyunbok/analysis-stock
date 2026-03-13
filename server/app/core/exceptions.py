@@ -115,3 +115,73 @@ class AuthErrors:
     def session_not_found() -> AppError:
         """세션(client_id) 없음."""
         return AppError("SESSION_NOT_FOUND", "세션을 찾을 수 없습니다.", 404)
+
+
+class ExchangeErrors:
+    """거래소 도메인 AppError 팩토리 (HTTP 응답용)."""
+
+    @staticmethod
+    def circuit_open(exchange: str) -> AppError:
+        """Circuit Breaker OPEN 상태."""
+        return AppError(
+            "EXCHANGE_CIRCUIT_OPEN",
+            f"{exchange} 거래소가 일시적으로 차단되었습니다. 잠시 후 재시도해주세요.",
+            503,
+        )
+
+    @staticmethod
+    def rate_limited(exchange: str, retry_after_seconds: int | None = None) -> AppError:
+        """Rate Limit 초과."""
+        msg = "거래소 요청 횟수 제한을 초과했습니다."
+        if retry_after_seconds:
+            msg += f" {retry_after_seconds}초 후 재시도해주세요."
+        return AppError("EXCHANGE_RATE_LIMITED", msg, 429)
+
+    @staticmethod
+    def auth_failed(exchange: str) -> AppError:
+        """API 키 인증 실패."""
+        return AppError(
+            "EXCHANGE_AUTH_FAILED",
+            f"{exchange} API 키 인증에 실패했습니다. API 키와 시크릿을 확인해주세요.",
+            401,
+        )
+
+    @staticmethod
+    def permission_denied(exchange: str, missing: str) -> AppError:
+        """API 키 권한 부족."""
+        return AppError(
+            "EXCHANGE_PERMISSION_DENIED",
+            f"{exchange} API 키에 필요한 권한({missing})이 없습니다.",
+            403,
+        )
+
+    @staticmethod
+    def insufficient_balance() -> AppError:
+        """잔고 부족."""
+        return AppError("EXCHANGE_INSUFFICIENT_BALANCE", "잔고가 부족합니다.", 400)
+
+    @staticmethod
+    def order_failed(exchange: str, reason: str) -> AppError:
+        """주문 실패."""
+        return AppError("EXCHANGE_ORDER_FAILED", f"주문 처리 실패: {reason}", 400)
+
+    @staticmethod
+    def unavailable(exchange: str) -> AppError:
+        """거래소 서비스 불가."""
+        return AppError(
+            "EXCHANGE_UNAVAILABLE",
+            f"{exchange} 거래소에 연결할 수 없습니다. 잠시 후 재시도해주세요.",
+            503,
+        )
+
+    @staticmethod
+    def invalid_api_key() -> AppError:
+        """유효하지 않은 API 키."""
+        return AppError("EXCHANGE_INVALID_API_KEY", "유효하지 않은 API 키입니다.", 422)
+
+    @staticmethod
+    def account_not_found() -> AppError:
+        """거래소 계정 미등록."""
+        return AppError(
+            "EXCHANGE_ACCOUNT_NOT_FOUND", "거래소 계정이 등록되지 않았습니다.", 404
+        )

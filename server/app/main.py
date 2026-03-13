@@ -11,7 +11,7 @@ from app.core.config import settings
 from app.core.database import init_db
 from app.core.metrics import instrumentator
 from app.core.mongodb import close_mongodb, init_mongodb
-from app.core.redis import close_redis, init_redis
+from app.core.redis import close_redis, get_redis, init_redis
 from app.middleware.correlation_id import CorrelationIdMiddleware
 from app.middleware.error_handler import register_error_handlers
 from app.middleware.rate_limit import RateLimitMiddleware
@@ -51,7 +51,16 @@ async def lifespan(app: FastAPI):
     await init_mongodb()
     await init_redis(settings.REDIS_URL)
 
+    # Exchange Provider Factory 싱글턴 초기화 + 기본 등록 (Mock Provider)
+    from app.providers.factory import ExchangeProviderFactory
+
+    factory = ExchangeProviderFactory.init(redis=get_redis())
+    factory.register_defaults()
+
     yield
+
+    # Exchange Provider 정리
+    await factory.close_all()
 
     # Shutdown
     await close_mongodb()

@@ -57,6 +57,18 @@ class Settings(BaseSettings):
     # Monitoring
     SENTRY_DSN: str = ""
 
+    # Circuit Breaker
+    CB_FAILURE_THRESHOLD: int = 5           # 연속 실패 허용 횟수
+    CB_FAILURE_RATE_THRESHOLD: float = 0.5  # 실패율 임계값
+    CB_FAILURE_RATE_WINDOW: int = 30        # 실패율 윈도우 (초)
+    CB_RECOVERY_TIMEOUT: int = 60           # OPEN → HALF-OPEN 대기 (초)
+
+    # Exchange Provider
+    EXCHANGE_HTTP_TIMEOUT: int = 10         # HTTP 요청 타임아웃 (초)
+    EXCHANGE_WS_PING_INTERVAL: int = 30     # WebSocket ping 간격 (초)
+    EXCHANGE_WS_RECONNECT_MAX: int = 5      # WS 재연결 최대 시도
+    EXCHANGE_WS_RECONNECT_DELAY: float = 1.0  # WS 재연결 초기 대기 (초)
+
     # TOTP 2FA
     TOTP_ENCRYPTION_KEY: str = ""  # 32바이트 hex (64자) — bytes.fromhex()로 사용
     TOTP_SETUP_TTL: int = 600       # 10분 (setup 세션 TTL)

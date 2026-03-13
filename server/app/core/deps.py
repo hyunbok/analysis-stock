@@ -1,5 +1,8 @@
 import uuid
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated, Any
+
+if TYPE_CHECKING:
+    from app.providers.factory import ExchangeProviderFactory
 
 from fastapi import Depends, Request
 from fastapi.security import OAuth2PasswordBearer
@@ -236,3 +239,15 @@ TwoFactorServiceDep = Annotated[TwoFactorService, Depends(get_two_factor_service
 SessionServiceDep = Annotated[SessionService, Depends(get_session_service)]
 AuditServiceDep = Annotated[AuditService, Depends(get_audit_service)]
 CurrentClientId = Annotated[uuid.UUID | None, Depends(get_current_client_id)]
+
+
+# ── Exchange Factory ───────────────────────────────────────────────────────────
+
+def get_exchange_factory() -> "ExchangeProviderFactory":
+    """앱 시작 시 초기화된 싱글턴 Factory 반환."""
+    from app.providers.factory import ExchangeProviderFactory
+
+    return ExchangeProviderFactory.instance()
+
+
+ExchangeFactoryDep = Annotated["ExchangeProviderFactory", Depends(get_exchange_factory)]

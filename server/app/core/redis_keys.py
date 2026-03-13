@@ -29,6 +29,9 @@ class RedisTTL:
     NEWS_SENTIMENT = 30 * 60        # 30분
     AI_LAST_RUN = 10 * 60           # 10분
 
+    # Circuit Breaker
+    CB_STATE = 300  # 5분 (Circuit Breaker 상태 TTL — 멀티 인스턴스 확장 시 사용)
+
     # Notifications
     UNREAD_COUNT = 3600             # 1시간
 
@@ -131,6 +134,13 @@ class RedisKey:
     @staticmethod
     def ai_last_run(user_id: str, coin: str) -> str:
         return f"ai:last_run:{user_id}:{coin}"
+
+    # ── Circuit Breaker ───────────────────────────────────────────────────────
+
+    @staticmethod
+    def circuit_breaker(exchange: str) -> str:
+        """Circuit Breaker 상태 (향후 Redis 기반 멀티 인스턴스 확장 시 사용)."""
+        return f"cb:{exchange}"
 
     # ── Notifications ─────────────────────────────────────────────────────────
 

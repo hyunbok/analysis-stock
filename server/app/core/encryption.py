@@ -44,6 +44,42 @@ def decrypt_totp_secret(encrypted: bytes, key: bytes) -> str:
     return plaintext.decode()
 
 
+def encrypt_value(plaintext: str, key: bytes) -> bytes:
+    """거래소 API 키 등 일반 문자열 AES-256-GCM 암호화.
+
+    Args:
+        plaintext: 암호화할 문자열 (예: 거래소 API 키).
+        key: 32바이트 AES 키.
+
+    Returns:
+        nonce(12) + ciphertext + auth_tag(16) — 연결된 bytes.
+    """
+    nonce = os.urandom(12)
+    aesgcm = AESGCM(key)
+    ciphertext = aesgcm.encrypt(nonce, plaintext.encode(), None)
+    return nonce + ciphertext
+
+
+def decrypt_value(encrypted: bytes, key: bytes) -> str:
+    """거래소 API 키 등 일반 문자열 AES-256-GCM 복호화.
+
+    Args:
+        encrypted: encrypt_value() 반환값 (nonce + ciphertext + tag).
+        key: 32바이트 AES 키.
+
+    Returns:
+        복호화된 평문 문자열.
+
+    Raises:
+        cryptography.exceptions.InvalidTag: 무결성 검증 실패 (키 불일치 또는 변조).
+    """
+    nonce = encrypted[:12]
+    ciphertext = encrypted[12:]
+    aesgcm = AESGCM(key)
+    plaintext = aesgcm.decrypt(nonce, ciphertext, None)
+    return plaintext.decode()
+
+
 # 혼동 문자 제외 알파벳 (0↔O, 1↔I/L 혼동 방지)
 _BACKUP_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
