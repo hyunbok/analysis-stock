@@ -2,7 +2,16 @@ import uuid
 from datetime import datetime
 
 import sqlalchemy.dialects.postgresql as pg
-from sqlalchemy import DateTime, ForeignKey, Index, LargeBinary, String, UniqueConstraint, text
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    LargeBinary,
+    String,
+    UniqueConstraint,
+    text,
+)
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
@@ -15,6 +24,10 @@ class UserExchangeAccount(Base):
     __table_args__ = (
         UniqueConstraint("user_id", "exchange_type", name="uq_exchange_account_user_type"),
         Index("ix_user_exchange_accounts_user_id", "user_id"),
+        CheckConstraint(
+            "warning_level IN ('none', 'warning', 'critical')",
+            name="ck_exchange_account_warning_level",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -34,8 +47,18 @@ class UserExchangeAccount(Base):
     permissions: Mapped[list[str] | None] = mapped_column(
         ARRAY(String), nullable=True
     )
+    nickname: Mapped[str | None] = mapped_column(String(50), nullable=True)
     is_active: Mapped[bool] = mapped_column(
         pg.BOOLEAN, default=True, server_default=text("true")
+    )
+    is_verified: Mapped[bool] = mapped_column(
+        pg.BOOLEAN, default=False, server_default=text("false")
+    )
+    warning_level: Mapped[str] = mapped_column(
+        String(10), default="none", server_default=text("'none'"), nullable=False
+    )
+    verified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

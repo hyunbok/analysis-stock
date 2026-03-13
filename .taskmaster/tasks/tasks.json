@@ -1314,7 +1314,7 @@
           "9",
           "10"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1322,7 +1322,7 @@
             "description": "AES-256-GCM 암호화/복호화 유틸리티 함수 개발 - encrypt_api_key, decrypt_api_key, generate_nonce 함수 구현",
             "dependencies": [],
             "details": "app/utils/encryption.py 파일에 다음 구현: (1) from cryptography.hazmat.primitives.ciphers.aead import AESGCM, (2) encrypt_api_key(key: str, secret: str) -> tuple[bytes, bytes, bytes] 함수로 암호화된 key, secret, nonce 반환, (3) decrypt_api_key(encrypted_key: bytes, encrypted_secret: bytes, nonce: bytes) -> tuple[str, str] 함수 구현, (4) 환경변수 EXCHANGE_API_KEY_SECRET 사용, (5) 각 암호화마다 unique nonce 생성 (AEAD 보안)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "encrypt/decrypt 라운드트립 테스트, 동일 평문에 대해 매번 다른 nonce 생성 확인, 잘못된 nonce로 복호화 실패 검증"
           },
           {
@@ -1333,7 +1333,7 @@
               1
             ],
             "details": "app/services/exchange_verification.py 파일 생성: (1) verify_api_key(exchange_type: str, api_key: str, api_secret: str) -> dict 함수, (2) 거래소 프로바이더별 권한 검증 로직 (Upbit, CoinOne, Coinbase, Binance), (3) permissions 배열 반환 (예: ['read', 'trade']), (4) has_withdrawal_permission 필드 추가 (출금 권한 감지), (5) is_valid 불린 필드, (6) error_message 필드 (권한 부족시 메시지)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "각 거래소별 권한 검증 테스트, 출금 권한 감지 시나리오 테스트, 잘못된 API 키 거부 테스트"
           },
           {
@@ -1342,7 +1342,7 @@
             "description": "UserExchangeAccount 모델에 필드 추가 - nickname, is_verified, warning_level",
             "dependencies": [],
             "details": "app/models/exchange.py 파일 수정: (1) nickname: str 필드 추가 (거래소 계정 별칭), (2) is_verified: bool 필드 추가 (API 키 검증 여부, default=False), (3) warning_level: str 필드 추가 ('none', 'warning', 'critical' 중 선택, default='none'), (4) CHECK constraint 추가 warning_level IN ('none', 'warning', 'critical'), (5) verified_at: datetime 필드 추가 (검증 시각)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "모델 필드 생성 확인, validation constraints 검증, 데이터베이스 스키마 정합성 확인"
           },
           {
@@ -1353,7 +1353,7 @@
               3
             ],
             "details": "server/alembic/versions/003_add_exchange_account_fields.py 마이그레이션 생성: (1) nickname VARCHAR(100) 컬럼 추가, (2) is_verified BOOLEAN DEFAULT false 추가, (3) warning_level VARCHAR(20) DEFAULT 'none' 추가, (4) CHECK constraint (warning_level IN) 추가, (5) verified_at TIMESTAMP 추가, (6) upgrade/downgrade 함수 작성, (7) 마이그레이션 revision chain 설정",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "마이그레이션 실행 성공 검증, upgrade/downgrade 양방향 테스트, 기존 데이터 유지 확인"
           },
           {
@@ -1364,7 +1364,7 @@
               3
             ],
             "details": "app/schemas/exchange.py 파일 생성: (1) RegisterExchangeRequest: exchange_type, api_key, api_secret, nickname 필드, (2) UpdateExchangeRequest: api_key(optional), api_secret(optional), nickname(optional) 필드, (3) ExchangeAccountResponse: id, exchange_type, nickname, is_verified, warning_level, warning_message, permissions, masked_api_key, masked_api_secret, created_at, updated_at, (4) mask 함수로 ****abc123 형식 마스킹 구현",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "요청 스키마 validation 테스트, 마스킹 형식 검증 (앞의 4글자만 * 처리), 응답 직렬화 테스트"
           },
           {
@@ -1376,7 +1376,7 @@
               5
             ],
             "details": "app/repositories/exchange_repository.py 파일 생성: (1) class ExchangeRepository, (2) async create_account(user_id, exchange_type, encrypted_key, encrypted_secret, nonce, nickname, is_verified, warning_level) -> UserExchangeAccount, (3) async get_account_by_id(id) -> UserExchangeAccount | None, (4) async get_user_accounts(user_id) -> list[UserExchangeAccount], (5) async update_account(id, **updates) -> UserExchangeAccount, (6) async delete_account(id) -> bool, (7) async get_active_accounts(user_id) -> list[UserExchangeAccount] (is_active=True 필터), (8) unique constraint 체크 로직",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "각 CRUD 메서드 기본 동작 테스트, unique constraint 위반 시 예외 처리 검증, N+1 쿼리 문제 없음 확인"
           },
           {
@@ -1390,7 +1390,7 @@
               6
             ],
             "details": "app/api/v1/exchanges.py 파일 생성 (또는 추가): (1) @router.post(\"/exchanges\") 엔드포인트, (2) RegisterExchangeRequest 파라미터 수용, (3) 인증된 사용자 확인 (CurrentUser dependency), (4) encrypt_api_key() 호출하여 encrypted_key, encrypted_secret, nonce 생성, (5) verify_api_key() 호출하여 권한 확인, (6) warning_level 설정 (withdrawal 권한 있으면 'warning'), (7) repository.create_account() 호출 저장, (8) ExchangeAccountResponse 반환 (api_key/api_secret 마스킹), (9) 예외처리: 중복 거래소 계정, 유효하지 않은 API 키",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "정상 등록 흐름 테스트, 중복 거래소 계정 거부, 유효하지 않은 API 키 거부, 출금 권한 감지 및 warning 반환, 암호화 저장 확인"
           },
           {
@@ -1402,7 +1402,7 @@
               6
             ],
             "details": "app/api/v1/exchanges.py 파일: (1) @router.get(\"/exchanges\") 엔드포인트, (2) CurrentUser dependency로 인증 확인, (3) repository.get_user_accounts(user_id) 호출, (4) 각 계정마다 ExchangeAccountResponse로 변환, (5) api_key/api_secret 마스킹 (마지막 6글자만 표시), (6) 선택적 쿼리파라미터 include_balance=true 시 balance 정보 추가 조회 (나중 구현), (7) 결과 배열 반환",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "다중 거래소 계정 조회 테스트, 마스킹 형식 검증, 인증되지 않은 사용자 거부, 조회 권한 검증 (자신의 계정만)"
           },
           {
@@ -1417,7 +1417,7 @@
               7
             ],
             "details": "app/api/v1/exchanges.py 파일: (1) @router.put(\"/exchanges/{account_id}\") 엔드포인트, (2) UpdateExchangeRequest 파라미터, (3) 소유권 검증 (계정이 현재 사용자의 것인지), (4) api_key/api_secret 새로운 값 제공 시 encrypt, verify_api_key() 호출, (5) repository.update_account() 호출, (6) @router.delete(\"/exchanges/{account_id}\") 엔드포인트, (7) 소유권 검증, (8) 관련 watchlist_coins 삭제 또는 exchange_account_id를 NULL로 설정, (9) 관련 ai_trading_configs 비활성화 (is_enabled=false), (10) repository.delete_account() 호출",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "API 키 수정 후 권한 재검증 확인, 타 사용자 계정 수정 거부, 삭제 시 관련 데이터 정리 검증, 소유권 검증 실패 처리"
           },
           {
@@ -1433,7 +1433,7 @@
               9
             ],
             "details": "app/api/v1/exchanges.py 파일: (1) @router.post(\"/exchanges/{account_id}/verify\") 엔드포인트, (2) 해당 거래소 계정 암호화 키 복호화, (3) verify_api_key() 호출 재검증, (4) 성공 시 is_verified=true, verified_at=now() 업데이트, (5) 응답: {success: bool, message: str, permissions: list[str]}. E2E 테스트: tests/integration/test_exchange_accounts.py (1) 정상 등록 → 검증 → 조회 (마스킹 확인) → 수정 → 재검증 → 삭제 전체 흐름, (2) 출금 권한 감지 및 warning 표시 검증, (3) 암호화/복호화 검증 (저장된 키 암호화 상태 확인), (4) 잘못된 API 키 거부, (5) 타 사용자 계정 접근 거부",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "E2E 테스트 모든 엔드포인트 커버리지 100%, API 응답 형식 검증, 에러 케이스 완벽 커버, 암호화 저장 상태 DB 직접 확인, 성능: 각 요청 < 200ms"
           }
         ]

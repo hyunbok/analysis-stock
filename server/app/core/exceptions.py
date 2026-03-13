@@ -185,3 +185,30 @@ class ExchangeErrors:
         return AppError(
             "EXCHANGE_ACCOUNT_NOT_FOUND", "거래소 계정이 등록되지 않았습니다.", 404
         )
+
+    @staticmethod
+    def duplicate_exchange_account(exchange: str) -> AppError:
+        """이미 등록된 거래소 계정."""
+        return AppError(
+            "EXCHANGE_DUPLICATE_ACCOUNT",
+            f"{exchange} 거래소 계정이 이미 등록되어 있습니다.",
+            409,
+        )
+
+    @staticmethod
+    def encryption_key_not_configured() -> AppError:
+        """암호화 키 미설정."""
+        return AppError(
+            "EXCHANGE_ENCRYPTION_NOT_CONFIGURED",
+            "거래소 API 키 암호화 설정이 완료되지 않았습니다.",
+            500,
+        )
+
+    @staticmethod
+    def key_pair_required() -> AppError:
+        """API 키 쌍 불완전 제공."""
+        return AppError(
+            "EXCHANGE_KEY_PAIR_REQUIRED",
+            "API 키와 시크릿은 함께 변경해야 합니다.",
+            400,
+        )

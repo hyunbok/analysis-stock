@@ -1,8 +1,10 @@
 import uuid
-from typing import TYPE_CHECKING, Annotated, Any
+from typing import TYPE_CHECKING, Annotated
 
 if TYPE_CHECKING:
     from app.providers.factory import ExchangeProviderFactory
+    from app.repositories.exchange_account_repository import ExchangeAccountRepository
+    from app.services.exchange_account_service import ExchangeAccountService
 
 from fastapi import Depends, Request
 from fastapi.security import OAuth2PasswordBearer
@@ -11,17 +13,18 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import Settings, settings as _settings
+from app.core.config import Settings
+from app.core.config import settings as _settings
 from app.core.database import get_db
 from app.core.exceptions import AuthErrors
 from app.core.mongodb import get_mongodb
 from app.core.rate_limiter import APIRateLimiter, ExchangeRateLimiter
-from app.core.redis import get_redis, get_pubsub_redis
+from app.core.redis import get_pubsub_redis, get_redis
 from app.core.security import decode_access_token
 from app.models.user import User
 from app.repositories.client_repository import ClientRepository
-from app.repositories.user_repository import UserRepository
 from app.repositories.social_account_repository import SocialAccountRepository
+from app.repositories.user_repository import UserRepository
 from app.services.audit_service import AuditService
 from app.services.auth_cache_service import AuthCacheService
 from app.services.auth_service import AuthService
@@ -233,7 +236,9 @@ CurrentUser = Annotated[User, Depends(get_current_user)]
 CurrentUserOptional = Annotated[User | None, Depends(get_current_user_optional)]
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
 SocialAuthServiceDep = Annotated[SocialAuthService, Depends(get_social_auth_service)]
-OAuthVerificationServiceDep = Annotated[OAuthVerificationService, Depends(get_oauth_verification_service)]
+OAuthVerificationServiceDep = Annotated[
+    OAuthVerificationService, Depends(get_oauth_verification_service)
+]
 ClientRepoDep = Annotated[ClientRepository, Depends(get_client_repository)]
 TwoFactorServiceDep = Annotated[TwoFactorService, Depends(get_two_factor_service)]
 SessionServiceDep = Annotated[SessionService, Depends(get_session_service)]
@@ -251,3 +256,31 @@ def get_exchange_factory() -> "ExchangeProviderFactory":
 
 
 ExchangeFactoryDep = Annotated["ExchangeProviderFactory", Depends(get_exchange_factory)]
+
+
+# ── Exchange Account ───────────────────────────────────────────────────────────
+
+def get_exchange_account_repository(
+    db: AsyncSession = Depends(get_db),
+) -> "ExchangeAccountRepository":
+    from app.repositories.exchange_account_repository import ExchangeAccountRepository
+
+    return ExchangeAccountRepository(db)
+
+
+def get_exchange_account_service(
+    repo: "ExchangeAccountRepository" = Depends(get_exchange_account_repository),
+    factory: "ExchangeProviderFactory" = Depends(get_exchange_factory),
+    settings: Settings = Depends(get_settings),
+) -> "ExchangeAccountService":
+    from app.services.exchange_account_service import ExchangeAccountService
+
+    return ExchangeAccountService(repo, factory, settings)
+
+
+ExchangeAccountRepoDep = Annotated[
+    "ExchangeAccountRepository", Depends(get_exchange_account_repository)
+]
+ExchangeAccountServiceDep = Annotated[
+    "ExchangeAccountService", Depends(get_exchange_account_service)
+]

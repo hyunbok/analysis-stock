@@ -86,21 +86,20 @@ class Settings(BaseSettings):
     OAUTH_JWKS_CACHE_TTL: int = 3600  # JWKS 공개키 Redis 캐시 TTL (초, 기본 1시간)
 
     @model_validator(mode="after")
-    def _validate_totp_key(self) -> "Settings":
-        """TOTP_ENCRYPTION_KEY 형식 검증 — 64자 hex 문자열 (32바이트 AES-256 키)."""
-        key = self.TOTP_ENCRYPTION_KEY
-        if key:
-            if len(key) != 64:
-                raise ValueError(
-                    "TOTP_ENCRYPTION_KEY must be 64 hex characters (32 bytes). "
-                    f"Got {len(key)} characters."
-                )
-            try:
-                bytes.fromhex(key)
-            except ValueError:
-                raise ValueError(
-                    "TOTP_ENCRYPTION_KEY must be a valid hex string."
-                )
+    def _validate_encryption_keys(self) -> "Settings":
+        """TOTP_ENCRYPTION_KEY, EXCHANGE_API_KEY_SECRET 형식 검증 — 64자 hex (32바이트 AES-256 키)."""
+        for key_name in ("TOTP_ENCRYPTION_KEY", "EXCHANGE_API_KEY_SECRET"):
+            key = getattr(self, key_name)
+            if key:
+                if len(key) != 64:
+                    raise ValueError(
+                        f"{key_name} must be 64 hex characters (32 bytes). "
+                        f"Got {len(key)} characters."
+                    )
+                try:
+                    bytes.fromhex(key)
+                except ValueError:
+                    raise ValueError(f"{key_name} must be a valid hex string.")
         return self
 
     @property

@@ -26,6 +26,8 @@ class AuditAction:
     TWO_FACTOR_BACKUP_USED = "2fa_backup_used"
     NEW_DEVICE_LOGIN = "new_device_login"
     SESSION_REVOKED = "session_revoked"
+    EXCHANGE_ACCOUNT_REGISTERED = "exchange_account_registered"
+    EXCHANGE_ACCOUNT_DELETED = "exchange_account_deleted"
 
 
 class AuditService:
