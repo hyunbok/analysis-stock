@@ -25,7 +25,7 @@ def upgrade() -> None:
     # coins: GIN trgm index for symbol fuzzy/prefix search
     # -------------------------------------------------------------------------
     op.execute(
-        "CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_coins_symbol_trgm "
+        "CREATE INDEX IF NOT EXISTS ix_coins_symbol_trgm "
         "ON coins USING gin (symbol gin_trgm_ops)"
     )
 
@@ -33,7 +33,7 @@ def upgrade() -> None:
     # watchlist_coins: Covering index (user_id) INCLUDE (coin_id, sort_order)
     # -------------------------------------------------------------------------
     op.execute(
-        "CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_watchlist_coins_user_id_covering "
+        "CREATE INDEX IF NOT EXISTS ix_watchlist_coins_user_id_covering "
         "ON watchlist_coins (user_id) INCLUDE (coin_id, sort_order)"
     )
 
@@ -41,11 +41,11 @@ def upgrade() -> None:
     # ai_trading_configs: Partial index (is_enabled=true) + GIN on strategy_params
     # -------------------------------------------------------------------------
     op.execute(
-        "CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_ai_trading_configs_is_enabled_partial "
+        "CREATE INDEX IF NOT EXISTS ix_ai_trading_configs_is_enabled_partial "
         "ON ai_trading_configs (watchlist_coin_id) WHERE is_enabled = true"
     )
     op.execute(
-        "CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_ai_trading_configs_strategy_params_gin "
+        "CREATE INDEX IF NOT EXISTS ix_ai_trading_configs_strategy_params_gin "
         "ON ai_trading_configs USING gin (strategy_params)"
     )
 
@@ -75,15 +75,15 @@ def upgrade() -> None:
     # trade_orders: composite indexes + partial index + CHECK constraints
     # -------------------------------------------------------------------------
     op.execute(
-        "CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_trade_orders_user_status_created "
+        "CREATE INDEX IF NOT EXISTS ix_trade_orders_user_status_created "
         "ON trade_orders (user_id, status, created_at DESC)"
     )
     op.execute(
-        "CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_trade_orders_user_ai_created "
+        "CREATE INDEX IF NOT EXISTS ix_trade_orders_user_ai_created "
         "ON trade_orders (user_id, is_ai_order, created_at DESC)"
     )
     op.execute(
-        "CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_trade_orders_pending "
+        "CREATE INDEX IF NOT EXISTS ix_trade_orders_pending "
         "ON trade_orders (user_id, created_at DESC) WHERE status = 'pending'"
     )
 
@@ -107,7 +107,7 @@ def upgrade() -> None:
     # price_alerts: partial index (active + untriggered) + CHECK constraint
     # -------------------------------------------------------------------------
     op.execute(
-        "CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_price_alerts_active_untriggered "
+        "CREATE INDEX IF NOT EXISTS ix_price_alerts_active_untriggered "
         "ON price_alerts (user_id, coin_id) WHERE is_active = true AND is_triggered = false"
     )
     op.create_check_constraint(

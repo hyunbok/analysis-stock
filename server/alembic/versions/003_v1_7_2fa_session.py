@@ -44,7 +44,7 @@ def upgrade() -> None:
     #    CONCURRENTLY: 운영 중 잠금 없이 생성 가능
     # -------------------------------------------------------------------------
     op.execute(
-        "CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_clients_user_fingerprint "
+        "CREATE INDEX IF NOT EXISTS ix_clients_user_fingerprint "
         "ON clients (user_id, device_fingerprint)"
     )
 
