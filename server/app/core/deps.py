@@ -3,7 +3,10 @@ from typing import TYPE_CHECKING, Annotated
 
 if TYPE_CHECKING:
     from app.providers.factory import ExchangeProviderFactory
+    from app.repositories.coin_repository import CoinRepository
     from app.repositories.exchange_account_repository import ExchangeAccountRepository
+    from app.repositories.watchlist_repository import WatchlistRepository
+    from app.services.coin_service import CoinService
     from app.services.exchange_account_service import ExchangeAccountService
 
 from fastapi import Depends, Request
@@ -284,3 +287,37 @@ ExchangeAccountRepoDep = Annotated[
 ExchangeAccountServiceDep = Annotated[
     "ExchangeAccountService", Depends(get_exchange_account_service)
 ]
+
+
+# ── Coin ───────────────────────────────────────────────────────────────────────
+
+def get_coin_repository(db: AsyncSession = Depends(get_db)) -> "CoinRepository":
+    from app.repositories.coin_repository import CoinRepository
+
+    return CoinRepository(db)
+
+
+def get_watchlist_repository(
+    db: AsyncSession = Depends(get_db),
+) -> "WatchlistRepository":
+    from app.repositories.watchlist_repository import WatchlistRepository
+
+    return WatchlistRepository(db)
+
+
+def get_coin_service(
+    coin_repo: "CoinRepository" = Depends(get_coin_repository),
+    watchlist_repo: "WatchlistRepository" = Depends(get_watchlist_repository),
+    exchange_account_repo: "ExchangeAccountRepository" = Depends(
+        get_exchange_account_repository
+    ),
+    redis: Redis = Depends(get_redis),
+) -> "CoinService":
+    from app.services.coin_service import CoinService
+
+    return CoinService(coin_repo, watchlist_repo, exchange_account_repo, redis)
+
+
+CoinRepoDep = Annotated["CoinRepository", Depends(get_coin_repository)]
+WatchlistRepoDep = Annotated["WatchlistRepository", Depends(get_watchlist_repository)]
+CoinServiceDep = Annotated["CoinService", Depends(get_coin_service)]

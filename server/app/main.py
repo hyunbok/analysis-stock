@@ -73,7 +73,7 @@ async def lifespan(app: FastAPI):
     from app.ws.bridge import ExchangeStreamBridge
 
     publisher = RedisPublisher(get_redis())
-    bridge = ExchangeStreamBridge(factory, publisher)
+    bridge = ExchangeStreamBridge(factory, publisher, redis=get_redis())
 
     # 시스템 채널 구독 (서버 상태 브로드캐스트용)
     await subscriber.subscribe_system()
