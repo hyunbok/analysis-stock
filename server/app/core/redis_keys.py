@@ -32,6 +32,9 @@ class RedisTTL:
     # Circuit Breaker
     CB_STATE = 300  # 5분 (Circuit Breaker 상태 TTL — 멀티 인스턴스 확장 시 사용)
 
+    # Trading Fee
+    TRADING_FEE = 3600  # 1시간
+
     # Notifications
     UNREAD_COUNT = 3600             # 1시간
 
@@ -141,6 +144,12 @@ class RedisKey:
     def circuit_breaker(exchange: str) -> str:
         """Circuit Breaker 상태 (향후 Redis 기반 멀티 인스턴스 확장 시 사용)."""
         return f"cb:{exchange}"
+
+    # ── Trading Fee ────────────────────────────────────────────────────────────
+
+    @staticmethod
+    def trading_fee(exchange: str, tier: int = 0) -> str:
+        return f"fee:{exchange}:{tier}"
 
     # ── Notifications ─────────────────────────────────────────────────────────
 

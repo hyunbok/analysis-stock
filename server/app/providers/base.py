@@ -85,6 +85,24 @@ class ExchangeRestProvider(ABC):
         """
 
     @abstractmethod
+    async def get_order(self, market: str, exchange_order_id: str) -> OrderResult:
+        """주문 상태 조회 (거래소 실시간 동기화용).
+
+        Args:
+            market: 거래소 내부 마켓 코드
+            exchange_order_id: 거래소 주문 ID
+
+        Returns:
+            OrderResult: 현재 주문 상태 (OPEN/FILLED/PARTIAL/CANCELLED)
+
+        Raises:
+            ExchangeAuthError: API 키 인증 실패
+            ExchangePermissionError: VIEW_ORDERS 권한 없음
+            ExchangeOrderError: 주문 ID 미존재
+            ExchangeNetworkError, ExchangeUnavailableError
+        """
+
+    @abstractmethod
     async def get_balance(self) -> list[Balance]:
         """전체 잔고 조회.
 

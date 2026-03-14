@@ -5,9 +5,11 @@ if TYPE_CHECKING:
     from app.providers.factory import ExchangeProviderFactory
     from app.repositories.coin_repository import CoinRepository
     from app.repositories.exchange_account_repository import ExchangeAccountRepository
+    from app.repositories.order_repository import OrderRepository
     from app.repositories.watchlist_repository import WatchlistRepository
     from app.services.coin_service import CoinService
     from app.services.exchange_account_service import ExchangeAccountService
+    from app.services.order_service import OrderService
 
 from fastapi import Depends, Request
 from fastapi.security import OAuth2PasswordBearer
@@ -321,3 +323,28 @@ def get_coin_service(
 CoinRepoDep = Annotated["CoinRepository", Depends(get_coin_repository)]
 WatchlistRepoDep = Annotated["WatchlistRepository", Depends(get_watchlist_repository)]
 CoinServiceDep = Annotated["CoinService", Depends(get_coin_service)]
+
+
+# ── Order ─────────────────────────────────────────────────────────────────────
+
+def get_order_repository(db: AsyncSession = Depends(get_db)) -> "OrderRepository":
+    from app.repositories.order_repository import OrderRepository
+
+    return OrderRepository(db)
+
+
+def get_order_service(
+    order_repo: "OrderRepository" = Depends(get_order_repository),
+    exchange_account_repo: "ExchangeAccountRepository" = Depends(
+        get_exchange_account_repository
+    ),
+    factory: "ExchangeProviderFactory" = Depends(get_exchange_factory),
+    settings: Settings = Depends(get_settings),
+) -> "OrderService":
+    from app.services.order_service import OrderService
+
+    return OrderService(order_repo, exchange_account_repo, factory, settings)
+
+
+OrderRepoDep = Annotated["OrderRepository", Depends(get_order_repository)]
+OrderServiceDep = Annotated["OrderService", Depends(get_order_service)]

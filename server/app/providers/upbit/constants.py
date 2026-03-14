@@ -68,9 +68,13 @@ HTTP_STATUS_ERROR_MAP: dict[int, type[ExchangeError]] = {
 
 # ── Upbit → 공통 OrderStatus 매핑 ────────────────────────────────────────────
 # Upbit 주문 상태: wait | watch | done | cancel
+# "wait"  → OPEN   (거래소 접수 완료, 체결 대기)
+# "watch" → OPEN   (예약 지정가 대기)
+# "done"  → FILLED (완전 체결)
+# "cancel"→ CANCELLED
 UPBIT_ORDER_STATUS_MAP: dict[str, OrderStatus] = {
-    "wait":   OrderStatus.PENDING,
-    "watch":  OrderStatus.PENDING,
+    "wait":   OrderStatus.OPEN,
+    "watch":  OrderStatus.OPEN,
     "done":   OrderStatus.FILLED,
     "cancel": OrderStatus.CANCELLED,
 }

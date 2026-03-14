@@ -6,9 +6,11 @@ import uuid
 from collections.abc import Awaitable, Callable
 from datetime import datetime, timezone
 from decimal import Decimal
+from enum import StrEnum
 
 from .base_impl import BaseExchangeProvider
 from .enums import ApiKeyPermission, ExchangeType, OrderMethod, OrderSide, OrderStatus
+from .exceptions import ExchangeOrderError
 from .types import (
     ApiKeyInfo,
     Balance,
@@ -22,6 +24,15 @@ from .types import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class MockOrderScenario(StrEnum):
+    """MockExchangeProvider 주문 시뮬레이션 시나리오."""
+
+    IMMEDIATE_FILL = "immediate_fill"  # 시장가처럼 즉시 완전 체결 (기본값)
+    OPEN = "open"                      # 지정가처럼 OPEN 상태 유지
+    PARTIAL_FILL = "partial_fill"      # 50% 부분 체결 후 PARTIAL 상태
+    FAIL = "fail"                      # 거래소 거부 (잔고 부족 시뮬레이션)
 
 # ── 시뮬레이션용 정적 데이터 ──────────────────────────────────────────────────
 
@@ -46,7 +57,20 @@ class MockExchangeProvider(BaseExchangeProvider):
     - 실제 네트워크 호출 없이 시뮬레이션 데이터 반환
     - Factory.register_defaults()에 의해 모든 거래소에 기본 등록
     - 테스트/개발 환경에서 전체 Provider 흐름 검증 가능
+
+    시나리오 변경:
+        provider.set_scenario(MockOrderScenario.PARTIAL_FILL)
     """
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._scenario: MockOrderScenario = MockOrderScenario.IMMEDIATE_FILL
+        # 주문 저장소: exchange_order_id → OrderResult (get_order 조회용)
+        self._orders: dict[str, OrderResult] = {}
+
+    def set_scenario(self, scenario: MockOrderScenario) -> None:
+        """테스트용 주문 시나리오 설정."""
+        self._scenario = scenario
 
     def _now(self) -> datetime:
         return datetime.now(tz=timezone.utc)
@@ -129,26 +153,100 @@ class MockExchangeProvider(BaseExchangeProvider):
     # ── REST: 주문 ───────────────────────────────────────────────────────────
 
     async def place_order(self, order: Order) -> OrderResult:
+        """시나리오별 주문 결과 반환.
+
+        - IMMEDIATE_FILL: 시장가처럼 즉시 완전 체결 (FILLED)
+        - OPEN: 지정가처럼 거래소 접수 완료, 체결 대기 (OPEN)
+        - PARTIAL_FILL: 주문 수량의 50% 부분 체결 (PARTIAL)
+        - FAIL: ExchangeOrderError raise (잔고 부족 시뮬레이션)
+        """
+        if self._scenario == MockOrderScenario.FAIL:
+            raise ExchangeOrderError(
+                self._exchange_type.value,
+                "Mock: insufficient balance (scenario=FAIL)",
+            )
+
         price = self._price(order.market)
         exec_price = order.price if order.price else price
-        return OrderResult(
-            exchange_order_id=str(uuid.uuid4()),
-            market=order.market,
-            side=order.side,
-            method=order.method,
-            status=OrderStatus.FILLED,
-            quantity=order.quantity,
-            executed_quantity=order.quantity,
-            price=order.price,
-            avg_executed_price=exec_price,
-            fee=exec_price * order.quantity * Decimal("0.001"),
-            fee_currency="KRW" if "KRW" in order.market else "USDT",
-            created_at=self._now(),
-            executed_at=self._now(),
-        )
+        fee_currency = "KRW" if "KRW" in order.market else "USDT"
+        now = self._now()
+
+        if self._scenario == MockOrderScenario.OPEN:
+            result = OrderResult(
+                exchange_order_id=str(uuid.uuid4()),
+                market=order.market,
+                side=order.side,
+                method=order.method,
+                status=OrderStatus.OPEN,
+                quantity=order.quantity,
+                executed_quantity=Decimal("0"),
+                price=order.price,
+                avg_executed_price=None,
+                fee=Decimal("0"),
+                fee_currency=fee_currency,
+                created_at=now,
+                executed_at=None,
+            )
+        elif self._scenario == MockOrderScenario.PARTIAL_FILL:
+            partial_qty = order.quantity * Decimal("0.5")
+            result = OrderResult(
+                exchange_order_id=str(uuid.uuid4()),
+                market=order.market,
+                side=order.side,
+                method=order.method,
+                status=OrderStatus.PARTIAL,
+                quantity=order.quantity,
+                executed_quantity=partial_qty,
+                price=order.price,
+                avg_executed_price=exec_price,
+                fee=exec_price * partial_qty * Decimal("0.001"),
+                fee_currency=fee_currency,
+                created_at=now,
+                executed_at=now,
+            )
+        else:
+            # IMMEDIATE_FILL (기본값)
+            result = OrderResult(
+                exchange_order_id=str(uuid.uuid4()),
+                market=order.market,
+                side=order.side,
+                method=order.method,
+                status=OrderStatus.FILLED,
+                quantity=order.quantity,
+                executed_quantity=order.quantity,
+                price=order.price,
+                avg_executed_price=exec_price,
+                fee=exec_price * order.quantity * Decimal("0.001"),
+                fee_currency=fee_currency,
+                created_at=now,
+                executed_at=now,
+            )
+
+        # 주문 저장 (get_order 조회용)
+        self._orders[result.exchange_order_id] = result
+        return result
 
     async def cancel_order(self, market: str, exchange_order_id: str) -> bool:
+        """주문 취소 — 저장된 주문 상태를 CANCELLED로 변경."""
+        if exchange_order_id in self._orders:
+            order = self._orders[exchange_order_id]
+            # 이미 체결된 주문은 취소 불가 → False 반환
+            if order.status == OrderStatus.FILLED:
+                return False
+            cancelled = order.model_copy(
+                update={"status": OrderStatus.CANCELLED}
+            )
+            self._orders[exchange_order_id] = cancelled
         return True
+
+    async def get_order(self, market: str, exchange_order_id: str) -> OrderResult:
+        """저장된 주문 상태 반환."""
+        if exchange_order_id not in self._orders:
+            raise ExchangeOrderError(
+                self._exchange_type.value,
+                f"Mock: order not found: {exchange_order_id}",
+            )
+        return self._orders[exchange_order_id]
 
     # ── REST: 잔고 / 수수료 / API 키 ────────────────────────────────────────
 

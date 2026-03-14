@@ -180,7 +180,7 @@ def test_parse_order_result_limit() -> None:
     assert result.market == "KRW-BTC"
     assert result.side == OrderSide.BUY
     assert result.method == OrderMethod.LIMIT
-    assert result.status == OrderStatus.PENDING
+    assert result.status == OrderStatus.OPEN  # "wait" → OPEN (거래소 접수 완료, 체결 대기)
     assert result.price == Decimal("95000000")
 
 

@@ -31,9 +31,11 @@ class OrderStatus(StrEnum):
     """주문 상태 (TradeOrder.status와 동일한 값)."""
 
     PENDING = "pending"
+    OPEN = "open"
     FILLED = "filled"
     CANCELLED = "cancelled"
     PARTIAL = "partial"
+    FAILED = "failed"
 
 
 class ApiKeyPermission(StrEnum):

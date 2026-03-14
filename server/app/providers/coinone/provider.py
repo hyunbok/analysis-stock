@@ -44,6 +44,7 @@ from .mappers import (
     parse_balance,
     parse_cancel_result,
     parse_candle,
+    parse_get_order_result,
     parse_order_result,
     parse_orderbook,
     parse_ticker,
@@ -455,6 +456,31 @@ class CoinOneProvider(BaseExchangeProvider):
             False: 취소 실패
         """
         return await self._execute_rest(self._do_cancel_order, market, exchange_order_id)
+
+    async def get_order(self, market: str, exchange_order_id: str) -> OrderResult:
+        """주문 상태 조회.
+
+        POST /v2.1/order/query_orders — 거래소 실시간 동기화용.
+        """
+        return await self._execute_rest(self._do_get_order, market, exchange_order_id)
+
+    async def _do_get_order(self, market: str, exchange_order_id: str) -> OrderResult:
+        """POST /v2.1/order/query_orders 실행."""
+        quote, target = _parse_currencies(market)
+        body: dict[str, Any] = {
+            "order_id": exchange_order_id,
+            "quote_currency": quote,
+            "target_currency": target,
+        }
+        data = await self._request("POST", "/v2.1/order/query_orders", json_body=body, auth=True)
+        if not isinstance(data, dict):
+            raise ExchangeDataError("coinone", "Unexpected get_order response format")
+
+        # 응답에 currency 정보 주입
+        data.setdefault("target_currency", target)
+        data.setdefault("quote_currency", quote)
+
+        return parse_get_order_result(data)
 
     async def _do_cancel_order(self, market: str, exchange_order_id: str) -> bool:
         """POST /v2.1/order/cancel 실행."""

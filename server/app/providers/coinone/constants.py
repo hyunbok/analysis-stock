@@ -90,12 +90,16 @@ HTTP_STATUS_ERROR_MAP: dict[int, type[ExchangeError]] = {
 }
 
 # ── CoinOne → 공통 OrderStatus 매핑 ──────────────────────────────────────────
-# cancel_order 응답에서 주문 상태 추론 (remain_qty, traded_qty 기반)
+# get_order 응답의 status 필드 직접 매핑
+# "live"            → OPEN   (거래소 접수 완료, 체결 대기)
+# "partially_filled"→ PARTIAL (부분 체결)
+# "filled"          → FILLED  (완전 체결)
+# "canceled"        → CANCELLED
 COINONE_ORDER_STATUS_MAP: dict[str, OrderStatus] = {
-    "live":      OrderStatus.PENDING,
+    "live":             OrderStatus.OPEN,
     "partially_filled": OrderStatus.PARTIAL,
-    "filled":    OrderStatus.FILLED,
-    "canceled":  OrderStatus.CANCELLED,
+    "filled":           OrderStatus.FILLED,
+    "canceled":         OrderStatus.CANCELLED,
 }
 
 # ── 수수료 기본값 ─────────────────────────────────────────────────────────────
