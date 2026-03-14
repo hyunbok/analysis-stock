@@ -1,13 +1,17 @@
 """거래소 WebSocket → Redis Pub/Sub 브리지 — 참조 카운팅 스트림 관리."""
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from app.core.pubsub import RedisPublisher
+from app.core.redis_keys import RedisTTL, RedisKey
 
 if TYPE_CHECKING:
+    from redis.asyncio import Redis
+
     from app.providers.base import ExchangeProvider
     from app.providers.factory import ExchangeProviderFactory
     from app.providers.types import OrderBook, Ticker
@@ -37,9 +41,11 @@ class ExchangeStreamBridge:
         self,
         factory: ExchangeProviderFactory,
         publisher: RedisPublisher,
+        redis: "Redis | None" = None,
     ) -> None:
         self._factory = factory
         self._publisher = publisher
+        self._redis = redis
         # exchange name → provider (public stream용, API 키 불필요)
         self._providers: dict[str, ExchangeProvider] = {}
         # "exchange:channel_type:market" → StreamState
@@ -180,9 +186,26 @@ class ExchangeStreamBridge:
                 "change_rate": float(ticker.change_rate),
                 "timestamp": ticker.timestamp.isoformat(),
             }
+            # WS 클라이언트용 Pub/Sub 발행
             await self._publisher.publish_ticker(
                 ticker.exchange.value, ticker.market, data
             )
+            # REST API용 스냅샷 저장 (coin_service._enrich_with_prices에서 읽음)
+            if self._redis is not None:
+                snapshot = {
+                    "current_price": float(ticker.price),
+                    "open_price": float(ticker.open_price),
+                    "high_price": float(ticker.high_price),
+                    "low_price": float(ticker.low_price),
+                    "volume_24h": float(ticker.volume),
+                    "change_rate_24h": float(ticker.change_rate),
+                    "price_updated_at": ticker.timestamp.isoformat(),
+                }
+                await self._redis.setex(
+                    RedisKey.ticker(ticker.exchange.value, ticker.market),
+                    RedisTTL.TICKER,
+                    json.dumps(snapshot),
+                )
         except Exception:
             logger.exception(
                 "ExchangeStreamBridge _on_ticker publish failed exchange=%s market=%s",

@@ -117,6 +117,34 @@ class AuthErrors:
         return AppError("SESSION_NOT_FOUND", "세션을 찾을 수 없습니다.", 404)
 
 
+class CoinErrors:
+    """코인/관심 코인 도메인 에러 팩토리."""
+
+    @staticmethod
+    def not_found() -> AppError:
+        return AppError("COIN_NOT_FOUND", "코인을 찾을 수 없습니다.", 404)
+
+    @staticmethod
+    def watchlist_not_found() -> AppError:
+        return AppError("WATCHLIST_NOT_FOUND", "관심 코인을 찾을 수 없습니다.", 404)
+
+    @staticmethod
+    def watchlist_duplicate() -> AppError:
+        return AppError("WATCHLIST_DUPLICATE", "이미 관심 코인에 추가되어 있습니다.", 409)
+
+    @staticmethod
+    def watchlist_access_denied() -> AppError:
+        return AppError("WATCHLIST_ACCESS_DENIED", "접근 권한이 없습니다.", 403)
+
+    @staticmethod
+    def watchlist_reorder_invalid() -> AppError:
+        return AppError("WATCHLIST_REORDER_INVALID", "정렬 변경 대상이 올바르지 않습니다.", 400)
+
+    @staticmethod
+    def exchange_account_mismatch() -> AppError:
+        return AppError("EXCHANGE_ACCOUNT_MISMATCH", "본인 소유 거래소 계정이 아닙니다.", 403)
+
+
 class ExchangeErrors:
     """거래소 도메인 AppError 팩토리 (HTTP 응답용)."""
 
