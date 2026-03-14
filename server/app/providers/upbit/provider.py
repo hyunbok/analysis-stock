@@ -386,6 +386,21 @@ class UpbitProvider(BaseExchangeProvider):
         """
         return await self._execute_rest(self._do_cancel_order, market, exchange_order_id)
 
+    async def get_order(self, market: str, exchange_order_id: str) -> OrderResult:
+        """주문 상태 조회.
+
+        GET /v1/order?uuid={order_id} — 거래소 실시간 동기화용.
+        """
+        return await self._execute_rest(self._do_get_order, market, exchange_order_id)
+
+    async def _do_get_order(self, market: str, exchange_order_id: str) -> OrderResult:
+        """GET /v1/order?uuid={order_id} 실행."""
+        params = {"uuid": exchange_order_id}
+        data = await self._request("GET", "/v1/order", params=params, auth=True)
+        if not isinstance(data, dict):
+            raise ExchangeDataError("upbit", "Unexpected get_order response format")
+        return parse_order_result(data)
+
     async def _do_cancel_order(self, market: str, exchange_order_id: str) -> bool:
         """DELETE /v1/order?uuid={order_id} 실행."""
         params = {"uuid": exchange_order_id}

@@ -15,6 +15,7 @@ from typing import Any
 from ..enums import ExchangeType, OrderMethod, OrderSide, OrderStatus
 from ..exceptions import ExchangeDataError
 from ..types import Balance, Candle, OrderBook, OrderBookEntry, OrderResult, Ticker, TradingFee
+from .constants import COINONE_ORDER_STATUS_MAP
 
 # v1 범위에서 KRW 마켓 고정
 QUOTE_CURRENCY = "KRW"
@@ -367,6 +368,91 @@ def parse_cancel_result(data: dict[str, Any]) -> OrderResult:
         raise
     except (KeyError, TypeError, ValueError) as exc:
         raise ExchangeDataError("coinone", f"Failed to parse cancel result: {exc}") from exc
+
+
+def parse_get_order_result(data: dict[str, Any]) -> OrderResult:
+    """CoinOne REST /v2.1/order/query_orders 응답 → OrderResult 변환.
+
+    CoinOne 필드 매핑:
+      order_id               → exchange_order_id
+      status (live/partially_filled/filled/canceled) → status (COINONE_ORDER_STATUS_MAP)
+      side (BUY/SELL)        → side
+      type (LIMIT/MARKET)    → method
+      qty                    → quantity
+      remain_qty             → (used to infer executed_quantity)
+      traded_qty             → executed_quantity
+      price                  → price
+      avg_price              → avg_executed_price
+      fee                    → fee
+      created_at (ms)        → created_at
+
+    Args:
+        data: CoinOne query_orders 응답 dict
+
+    Returns:
+        OrderResult 모델
+
+    Raises:
+        ExchangeDataError: 필드 누락 또는 타입 오류
+    """
+    try:
+        order_id = data["order_id"]
+
+        side_raw = data.get("side", "BUY").upper()
+        side = OrderSide.BUY if side_raw == "BUY" else OrderSide.SELL
+
+        type_raw = data.get("type", "LIMIT").upper()
+        method = OrderMethod.LIMIT if type_raw == "LIMIT" else OrderMethod.MARKET
+
+        status_raw = data.get("status", "live").lower()
+        status = COINONE_ORDER_STATUS_MAP.get(status_raw, OrderStatus.OPEN)
+
+        qty_raw = data.get("qty", "0")
+        quantity = Decimal(str(qty_raw)) if qty_raw else Decimal("0")
+
+        traded_raw = data.get("traded_qty", "0")
+        executed_quantity = Decimal(str(traded_raw)) if traded_raw else Decimal("0")
+
+        price_raw = data.get("price")
+        price = Decimal(str(price_raw)) if price_raw else None
+
+        avg_raw = data.get("avg_price")
+        avg_price = Decimal(str(avg_raw)) if avg_raw and avg_raw != "0" else None
+
+        fee_raw = data.get("fee", "0")
+        fee = Decimal(str(fee_raw)) if fee_raw else Decimal("0")
+
+        target = data.get("target_currency", "")
+        quote = data.get("quote_currency", QUOTE_CURRENCY)
+        market = target.upper() if target else ""
+
+        created_at_ms = data.get("created_at", 0)
+        created_at = dt.datetime.fromtimestamp(int(created_at_ms) / 1000, tz=dt.UTC)
+
+        executed_at: dt.datetime | None = None
+        if status == OrderStatus.FILLED:
+            executed_at_ms = data.get("executed_at") or data.get("created_at", 0)
+            executed_at = dt.datetime.fromtimestamp(int(executed_at_ms) / 1000, tz=dt.UTC)
+
+        return OrderResult(
+            exchange_order_id=order_id,
+            market=market,
+            side=side,
+            method=method,
+            status=status,
+            quantity=quantity,
+            executed_quantity=executed_quantity,
+            price=price,
+            avg_executed_price=avg_price,
+            fee=fee,
+            fee_currency=quote,
+            created_at=created_at,
+            executed_at=executed_at,
+        )
+    except ExchangeDataError:
+        raise
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ExchangeDataError("coinone", f"Failed to parse get_order result: {exc}") from exc
 
 
 def parse_balance(data: dict[str, Any]) -> Balance:

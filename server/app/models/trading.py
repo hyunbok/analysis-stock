@@ -126,15 +126,33 @@ class TradeOrder(Base):
         # Composite indexes for common query patterns
         Index("ix_trade_orders_user_status_created", "user_id", "status", "created_at"),
         Index("ix_trade_orders_user_ai_created", "user_id", "is_ai_order", "created_at"),
-        # Partial index: pending orders only (미체결 주문 조회 최적화)
+        # Partial index: 미체결 주문 조회 최적화 (pending/open/partial)
         Index(
             "ix_trade_orders_pending",
             "user_id",
             "created_at",
-            postgresql_where=text("status = 'pending'"),
+            postgresql_where=text("status IN ('pending', 'open', 'partial')"),
+        ),
+        # Composite: 계정별 주문 목록 (exchange_account_id 필터 커버)
+        Index(
+            "ix_trade_orders_user_account_status_created",
+            "user_id", "exchange_account_id", "status", "created_at",
+        ),
+        # 거래소 주문 ID 유니크 (상태 동기화 + 중복 방지)
+        Index(
+            "ix_trade_orders_exchange_order_id_unique",
+            "exchange_account_id", "exchange_order_id",
+            unique=True,
+            postgresql_where=text("exchange_order_id IS NOT NULL"),
+        ),
+        # 계정별 미체결(active) 주문 (PARTIAL INDEX)
+        Index(
+            "ix_trade_orders_active",
+            "user_id", "exchange_account_id",
+            postgresql_where=text("status IN ('pending', 'open', 'partial')"),
         ),
         # CHECK constraints
-        CheckConstraint("status IN ('pending', 'filled', 'cancelled', 'partial')", name="ck_trade_orders_status"),
+        CheckConstraint("status IN ('pending', 'open', 'filled', 'cancelled', 'partial', 'failed')", name="ck_trade_orders_status"),
         CheckConstraint("order_type IN ('buy', 'sell')", name="ck_trade_orders_order_type"),
         CheckConstraint("order_method IN ('market', 'limit')", name="ck_trade_orders_order_method"),
     )
@@ -163,13 +181,17 @@ class TradeOrder(Base):
     order_type: Mapped[str] = mapped_column(String(10), nullable=False)
     order_method: Mapped[str] = mapped_column(String(10), nullable=False)
     price: Mapped[Decimal | None] = mapped_column(Numeric(20, 8), nullable=True)
-    quantity: Mapped[Decimal] = mapped_column(Numeric(20, 8), nullable=False)
+    quantity: Mapped[Decimal | None] = mapped_column(Numeric(20, 8), nullable=True)
+    amount: Mapped[Decimal | None] = mapped_column(Numeric(20, 8), nullable=True)
     executed_quantity: Mapped[Decimal] = mapped_column(
         Numeric(20, 8), default=Decimal("0"), server_default=text("0")
     )
+    executed_price: Mapped[Decimal | None] = mapped_column(Numeric(20, 8), nullable=True)
     fee: Mapped[Decimal] = mapped_column(
         Numeric(20, 8), default=Decimal("0"), server_default=text("0")
     )
+    fee_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 6), nullable=True)
+    fee_currency: Mapped[str | None] = mapped_column(String(10), nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False)
     is_ai_order: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default=text("false")
@@ -187,6 +209,10 @@ class TradeOrder(Base):
     coin: Mapped["Coin"] = relationship("Coin", back_populates="trade_orders")
     exchange_account: Mapped["UserExchangeAccount"] = relationship(
         "UserExchangeAccount", back_populates="trade_orders"
+    )
+    events: Mapped[list["TradeOrderEvent"]] = relationship(  # noqa: F821
+        "TradeOrderEvent", back_populates="trade_order",
+        cascade="all, delete-orphan",
     )
 
 

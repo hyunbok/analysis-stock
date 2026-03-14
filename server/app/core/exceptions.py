@@ -240,3 +240,48 @@ class ExchangeErrors:
             "API 키와 시크릿은 함께 변경해야 합니다.",
             400,
         )
+
+
+class OrderErrors:
+    """주문 도메인 에러 팩토리."""
+
+    @staticmethod
+    def not_found() -> AppError:
+        return AppError("ORDER_NOT_FOUND", "주문을 찾을 수 없습니다.", 404)
+
+    @staticmethod
+    def invalid_status_transition(current: str, target: str) -> AppError:
+        return AppError(
+            "INVALID_ORDER_TRANSITION",
+            f"주문 상태 전이 불가: {current} → {target}",
+            409,
+        )
+
+    @staticmethod
+    def cannot_cancel(status: str) -> AppError:
+        return AppError(
+            "ORDER_CANNOT_CANCEL",
+            f"취소할 수 없는 상태입니다: {status}",
+            422,
+        )
+
+    @staticmethod
+    def insufficient_balance() -> AppError:
+        return AppError("INSUFFICIENT_BALANCE", "잔고가 부족합니다.", 422)
+
+    @staticmethod
+    def exchange_order_failed(detail: str = "") -> AppError:
+        """거래소 주문 처리 실패. detail은 로그에만 기록하고 클라이언트에 노출하지 않는다."""
+        return AppError(
+            "EXCHANGE_ORDER_FAILED",
+            "거래소 주문 처리에 실패했습니다. 잠시 후 재시도해주세요.",
+            502,
+        )
+
+    @staticmethod
+    def exchange_unavailable() -> AppError:
+        return AppError(
+            "EXCHANGE_UNAVAILABLE",
+            "거래소에 일시적으로 연결할 수 없습니다. 잠시 후 재시도해주세요.",
+            503,
+        )

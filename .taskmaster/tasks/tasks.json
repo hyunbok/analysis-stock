@@ -1730,7 +1730,7 @@
         "dependencies": [
           "11"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1738,7 +1738,7 @@
             "description": "POST /api/v1/orders 엔드포인트의 요청/응답 Pydantic 스키마 정의 및 입력 검증 로직 구현",
             "dependencies": [],
             "details": "CreateOrderRequest 스키마 정의 (exchange_account_id, symbol, side, order_method, quantity, price), OrderResponse 스키마 작성, Pydantic validators를 사용한 입력 검증 (최소 주문량, 가격 범위, 잔고 확인 로직), 거래소별 제약조건 검증",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Pydantic 스키마 검증 단위 테스트, 유효한/무효한 입력에 대한 검증 테스트, 거래소별 제약조건 테스트"
           },
           {
@@ -1749,7 +1749,7 @@
               1
             ],
             "details": "BaseExchangeProvider 추상 클래스 정의, 각 거래소별 구현체 (UpbitProvider, CoinOneProvider, CoinbaseProvider) 구조 설계, place_order() 호출 시 거래소별 응답 매핑 (exchange_order_id, 수수료율), 거래소별 에러 코드 처리 전략 (30초 간격 최대 2회 재시도)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Mock Exchange를 사용한 단위 테스트, 거래소별 응답 매핑 검증, 에러 코드 처리 테스트"
           },
           {
@@ -1760,7 +1760,7 @@
               2
             ],
             "details": "TradeOrderStatusMachine 클래스 정의, 각 상태 전이 규칙 구현 (PENDING→FILLED: 전량 체결, PENDING→PARTIAL: 부분 체결 후 60초 대기, PENDING→OPEN: 120초 대기), 부분 체결 후 잔량 처리 (시장가 전환 또는 취소), 상태 전이 시 타임스탬프 기록",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "상태 머신 전이 로직 단위 테스트, 60초/120초 대기 후 상태 전이 검증, 부분 체결 시나리오 테스트"
           },
           {
@@ -1773,7 +1773,7 @@
               3
             ],
             "details": "FastAPI 라우트 정의, 요청 검증 (exchange_account_id 존재 확인, 잔고 확인), ExchangeProvider.place_order() 호출, trade_orders 테이블에 status='pending' 상태로 저장, exchange_order_id 기록, 거래소 폴링 또는 WebSocket 구독 트리거, 에러 발생 시 상태='failed' 저장",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Mock Exchange로 주문 생성 및 응답 확인, 잔고 부족 에러 처리, 유효하지 않은 symbol 처리, 응답 스키마 검증"
           },
           {
@@ -1784,7 +1784,7 @@
               4
             ],
             "details": "GET /api/v1/orders: 쿼리 파라미터 (status, exchange_account_id, 기간 필터), 정렬 (최신순), 페이지네이션. GET /api/v1/orders/{id}: 단일 주문 상세 조회. 데이터베이스 쿼리 최적화 (composite index 활용: ix_trade_orders_user_status_created)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "다양한 status 필터링 테스트, 기간 필터 검증, 정렬 순서 확인, 단일 주문 조회 검증, 권한 검증 (사용자가 자신의 주문만 조회 가능)"
           },
           {
@@ -1796,7 +1796,7 @@
               5
             ],
             "details": "DELETE /api/v1/orders/{id}: 거래소에서 주문 취소 호출, trade_orders.status='cancelled' 업데이트. POST /api/v1/orders/batch-cancel: 요청에서 exchange_account_id와 [order_ids] 또는 상태 필터 받음, 조건에 맞는 미체결 주문 일괄 취소, 각 주문별 취소 결과 반환",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "이미 체결된 주문 취소 시도 에러 처리, 미체결 주문 취소 검증, 일괄 취소 부분 실패 처리, 취소 확인 응답 스키마 검증"
           },
           {
@@ -1808,7 +1808,7 @@
               4
             ],
             "details": "trading_fee 테이블 조회 (exchange_type, coin_id 기준), maker/taker 수수료율 결정 (주문 방식에 따라), 수수료 계산 (quantity × price × rate), 응답에 fee 포함, UI에 원화 단위로 표시되도록 포맷팅. 캐싱 전략 (Redis): 수수료율은 자주 변경되지 않으므로 1시간 TTL로 캐싱",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "maker/taker 수수료 계산 검증, 다양한 거래소별 수수료율 테스트, 캐싱 동작 검증, 계산 오류 시 정확성 확인"
           },
           {
@@ -1820,7 +1820,7 @@
               4
             ],
             "details": "거래소별 WebSocket 연결 (있을 경우) 또는 HTTP 폴링 (30초 간격, 최대 2회 재시도), exchange_order_id를 기준으로 주문 상태 조회, 응답 데이터 매핑 (filled_quantity, status), trade_orders 테이블 업데이트, 상태 머신 전이 로직 실행, Circuit Breaker 패턴 적용 (거래소 API 오류 시 해당 거래소 일시 중지)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "WebSocket 모의 데이터로 상태 동기화 검증, 폴링 메커니즘 테스트, 부분 체결 후 상태 전이 검증, Circuit Breaker 작동 확인"
           },
           {
@@ -1833,7 +1833,7 @@
               6
             ],
             "details": "전량 체결: 정상 완료 (status='filled'). 부분 체결: 60초 대기 후 잔량 시장가 전환 또는 취소. 잔고 부족: AI 주문만 1회 스킵, 다음 주기 재시도. 네트워크 오류: 30초 간격 최대 2회 재시도. Circuit Breaker Open: 해당 거래소 일시 중지 및 알림. 각 에러별 명확한 에러 코드 및 메시지 정의 (OrderErrorCode Enum)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Mock을 사용한 각 에러 시나리오 테스트, 네트워크 타임아웃 시뮬레이션, 재시도 로직 검증, Circuit Breaker 작동 확인, 에러 응답 스키마 검증"
           },
           {
@@ -1849,7 +1849,7 @@
               9
             ],
             "details": "pytest 환경에서 Mock Exchange 사용, 테스트 데이터베이스 설정 (trade_orders 테이블 초기화), 주문 생성 및 상태 변화 시나리오 (pending→filled, pending→partial→filled, pending→cancelled), 부분 체결 후 잔량 처리 검증, 잔고 부족 에러 처리 확인, 일괄 취소 검증, 수수료 계산 정확성 확인, 거래소별 에러 코드 처리 테스트, conftest.py에서 fixture 정의 (test_db, mock_exchange)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Mock Exchange로 다양한 주문 시나리오 테스트, 상태 전이 전체 흐름 검증, 에러 처리 시나리오별 테스트, API 응답 스키마 검증, 데이터 정합성 검증 (DB와 응답 데이터 일치)"
           }
         ]

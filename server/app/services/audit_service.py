@@ -28,6 +28,9 @@ class AuditAction:
     SESSION_REVOKED = "session_revoked"
     EXCHANGE_ACCOUNT_REGISTERED = "exchange_account_registered"
     EXCHANGE_ACCOUNT_DELETED = "exchange_account_deleted"
+    ORDER_CREATED = "order_created"
+    ORDER_CANCELLED = "order_cancelled"
+    ORDER_BATCH_CANCELLED = "order_batch_cancelled"
 
 
 class AuditService:
