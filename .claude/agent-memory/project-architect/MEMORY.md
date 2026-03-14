@@ -96,6 +96,55 @@
 - 테스트: 42건 예상 (단위 38 + 통합 4)
 - ST7/ST8 (Rate Limit/Circuit Breaker): 기존 인프라 100% 재사용, 별도 구현 없음
 
+## v1-13 결정 사항 (코인 마스터 및 관심 코인 관리 API)
+- 단일 CoinService (coin 검색 + watchlist CRUD 통합), Repository만 분리 (coin_repository + watchlist_repository)
+- Flat ticker 필드 (Decimal) — CoinResponse에 직접 포함 (nested TickerSummary 기각)
+- ON CONFLICT DO NOTHING — 관심 코인 중복 방지 (race condition 안전, IntegrityError catch 기각)
+- CurrentUserOptional — 코인 검색은 공개 데이터 (미인증 허용)
+- Redis 직접 주입 — pipeline 일괄 조회용 (MarketCacheService 래퍼 미사용)
+- CoinErrors 팩토리: not_found, watchlist_not_found, watchlist_duplicate, watchlist_access_denied, watchlist_reorder_invalid, exchange_account_mismatch
+- DI: ExchangeAccountRepository 주입 (exchange_account 소유권 검증)
+- 라우터 등록 순서: PUT /watchlist/reorder를 DELETE /watchlist/{id}보다 먼저 (path 캡처 방지)
+- bridge.py SETEX 추가: WS ticker → Redis 스냅샷 저장 → REST API에서 읽기
+- 인덱스 4개 추가: name_ko/name_en GIN trgm, exchange_active partial, watchlist_user_account_sort 복합
+- CASE WHEN 배치 UPDATE (SQLAlchemy case() + update(), bulk_update_mappings 기각)
+- Seed 스크립트: scripts/seed/seed_coins.py (Alembic 분리), pg_insert ON CONFLICT DO UPDATE, --exchange 옵션
+- ReorderWatchlistRequest: sort_order 유니크 validator (model_validator)
+- 오프셋 기반 페이지네이션 (page + size), PaginatedCoins 스키마
+
+## v1-14 결정 사항 (주문 실행 및 거래 API)
+- 단일 OrderService (생성/조회/취소 통합), OrderRepository 분리
+- OrderStateMachine: order_service.py 내 모듈 레벨 클래스 (별도 trading/ 패키지 미생성)
+- 주문 상태 6개: pending, open, filled, partial, cancelled, failed (CHECK 제약 변경)
+- 시장가 매수: `amount` 필드 신규 (KRW 총액), `quantity` nullable 변경, `price` 재활용 대신 명시적 분리
+- Provider.place_order() 호출 전 PENDING INSERT → 성공 시 상태 전이 → 실패 시 FAILED
+- 주문 생성 재시도 금지 (시장가/지정가 모두, 이중 주문 위험), 취소만 3회 지수 백오프 (멱등)
+- 에러 매핑: OrderService._map_exchange_error() 정적 메서드, match/case 패턴
+- batch-cancel: asyncio.gather 병렬 + BatchCancelResponse (부분 성공 허용)
+- DB 컬럼 추가: amount, executed_price, fee_rate(감사/이상탐지용), fee_currency
+- trading_fees 테이블 신규: 거래소별 tier별 maker/taker rate + Redis 캐시(1h TTL)
+- trade_order_events 테이블 신규: 상태 변경 이력 (전자금융거래법 5년 보존)
+- 인덱스 3개 추가 + 기존 pending partial 인덱스 → active로 확장 (pending, open, partial)
+- exchange_order_id UNIQUE PARTIAL 인덱스 (exchange_account_id 포함, NULL 허용)
+- OrderErrors 팩토리: not_found, invalid_status_transition, cannot_cancel, insufficient_balance, exchange_order_failed, exchange_unavailable
+- DI: OrderRepository + ExchangeAccountRepository + ExchangeProviderFactory + Settings
+- AuditService: 주문 생성/취소/일괄 취소 시 기록 (거래소 응답 성공 후만)
+- v1-14 범위: 요청 시점 동기화(Passive Sync)만, WS 능동 동기화는 v2
+
+## v1-15 결정 사항 (기술적 지표 계산 엔진)
+- 순수 함수 패키지: `trading/indicators/` (FastAPI/DB import 금지, pandas/numpy만 허용)
+- 파일 구조: types.py, trend.py, oscillator.py, volatility.py (OBV 포함), calculator.py
+- 타입: TypedDict (Pydantic 아닌 stdlib), CandleInput(float), IndicatorResult
+- EMA: 20/50/200 (PRD §7.3.1 준수, 9/21 제외)
+- VWAP: VWAPResult(vwap + upper_band + lower_band), k=1.5, KST 00:00 리셋
+- Bollinger: percent_b 포함 (전략 D "%B < 0.05" 필수)
+- 과매수/과매도 플래그: indicators/ 미포함, regime/strategy 레이어에서 판별
+- 데이터 부족: None 반환 (ValueError는 빈 리스트만), NaN 자연 전파
+- 캐싱: MarketCacheService 기존 set/get_indicators 재사용 (신규 캐시 서비스 불필요)
+- IndicatorService: services/indicator_service.py 신규, MarketCacheService + Motor DI
+- IndicatorErrors: core/exceptions.py (insufficient_candles, calculation_failed)
+- 성능 기준: 200행 <50ms, 576행 <100ms, 캐시 HIT <5ms
+
 ## 협업 패턴
 - code-architect와 이견 시 먼저 합의 후 설계서 반영 (동시 편집 충돌 주의)
 - 설계서 초안을 먼저 작성하고 상대에게 수정/보강 요청하는 방식이 효율적

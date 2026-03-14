@@ -1862,7 +1862,7 @@
         "testStrategy": "각 지표별 수작업 계산 vs 구현 결과 비교 검증 (Pandas/numpy 활용), 결측값/이상치 처리 테스트, 성능 벤치마크 (200개 캔들 1ms 이내), 캐싱 동작 검증",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1870,7 +1870,7 @@
             "description": "trading/indicators/ 패키지의 기본 디렉토리 구조와 공유 타입, 베이스 클래스를 정의합니다.",
             "dependencies": [],
             "details": "server/trading/indicators/__init__.py, base.py 생성. Candle(TypedDict 또는 Pydantic BaseModel - open, high, low, close, volume, timestamp 필드), IndicatorResult(TypedDict - 지표 계산 결과), IndicatorBase(ABC - calculate 메서드 추상화) 정의. pandas DataFrame 변환 유틸리티 함수(candles_to_dataframe) 포함. 모든 지표는 list[Candle] → dict[str, float | None] 시그니처 준수.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "타입 힌트 검증 (mypy), Candle 데이터 변환 유틸리티 유닛 테스트, 빈 캔들 리스트 입력 시 예외 처리 검증",
             "parentId": "undefined"
           },
@@ -1882,7 +1882,7 @@
               1
             ],
             "details": "calculate_ema(candles, period) → float | None 함수 구현. EMA 공식: EMA(t) = P(t) × k + EMA(t-1) × (1 - k), k = 2/(n+1). pandas ewm 메서드 활용. calculate_ema_set(candles, periods=[20, 50, 200]) → dict 추가 구현. EMA 정배열/역배열 판별 헬퍼 함수(check_ema_alignment) 포함. 캔들 수 부족 시 None 반환.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "수작업 계산 vs 구현 결과 비교 (10개 캔들 샘플), pandas ewm 결과와 일치 검증, 경계 조건 테스트 (period보다 적은 캔들)",
             "parentId": "undefined"
           },
@@ -1895,7 +1895,7 @@
               2
             ],
             "details": "calculate_vwap(candles, reset_daily=True, timezone='Asia/Seoul') → dict. VWAP = Σ(TP×Vol)/Σ(Vol), TP = (H+L+C)/3. 밴드 계산: vwap_upper/lower = VWAP ± (k × σ), k=1.5. calculate_macd(candles, fast=12, slow=26, signal=9) → dict(macd_line, signal_line, histogram). MACD Line = EMA12 - EMA26, Signal = EMA9(MACD). 히스토그램 연속 증가/감소 감지 헬퍼 추가.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "VWAP 당일 KST 00:00 리셋 로직 검증, MACD 골든/데드 크로스 감지 테스트, TradingView 차트 값과 비교 검증",
             "parentId": "undefined"
           },
@@ -1907,7 +1907,7 @@
               1
             ],
             "details": "calculate_rsi(candles, period=14, overbought=70, oversold=30) → dict(rsi, is_overbought, is_oversold). RSI = 100 - (100 / (1 + RS)), RS = Avg Gain / Avg Loss (EMA 방식). detect_rsi_divergence(candles, lookback=50, min_gap=5) → dict(bullish_divergence, bearish_divergence, divergence_strength). 가격-RSI 저점/고점 비교하여 다이버전스 탐지. pandas diff + rolling 활용.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "알려진 RSI 값과 비교 검증, 과매수/과매도 경계 조건 테스트, Bullish/Bearish 다이버전스 샘플 데이터 검증",
             "parentId": "undefined"
           },
@@ -1920,7 +1920,7 @@
               4
             ],
             "details": "calculate_stochastic(candles, period=14, signal=3, overbought=80, oversold=20) → dict(k, d, is_overbought, is_oversold). %K = (Close-LowestLow)/(HighestHigh-LowestLow)×100, Slow %D = SMA(3) of %K. calculate_williams_r(candles, period=14, overbought=-20, oversold=-80) → dict. Williams %R = -100 × (HH-Close)/(HH-LL). calculate_cci(candles, period=20, upper=100, lower=-100) → dict. CCI = (TP - SMA(TP)) / (0.015 × Mean Deviation).",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "각 지표별 수작업 계산 검증, 극단값(±200 CCI) 처리 테스트, Williams %R과 Stochastic 상관관계 확인",
             "parentId": "undefined"
           },
@@ -1932,7 +1932,7 @@
               1
             ],
             "details": "calculate_bollinger_bands(candles, period=20, std_dev=2.0) → dict(middle, upper, lower, percent_b, bandwidth). Middle = SMA(20), Upper/Lower = SMA ± (2×σ), %B = (Price-Lower)/(Upper-Lower). calculate_bandwidth_squeeze(candles, lookback=120) → bool. calculate_atr(candles, period=14) → float. TR = max(H-L, |H-Close_prev|, |L-Close_prev|), ATR = EMA(14) of TR. 동적 손절/익절 계산 헬퍼 함수 포함.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "BB 스퀴즈 탐지 정확도 검증, ATR 기반 손절/익절 값 계산 테스트, 표준편차 계산 정확도 확인",
             "parentId": "undefined"
           },
@@ -1945,7 +1945,7 @@
               6
             ],
             "details": "calculate_adx(candles, period=14) → dict(adx, di_plus, di_minus, trend_strength). +DM/-DM 계산 → +DI/-DI → DX → ADX = EMA(14) of DX. trend_strength: 'strong'(>40), 'moderate'(>25), 'weak'(<20), 'transition'(20-25). DI 크로스오버 감지 헬퍼 함수(detect_di_crossover) 포함. 장세 분류 기준 지원: ADX > 25 = Trend, ADX < 20 = Range.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "+DI/-DI 크로스 감지 테스트, ADX 값 범위 검증(0-100), 장세 분류 조건과 일치 여부 확인",
             "parentId": "undefined"
           },
@@ -1958,7 +1958,7 @@
               2
             ],
             "details": "calculate_obv(candles, ema_period=20) → dict(obv, obv_ema, obv_trend). 양봉 시 +Volume, 음봉 시 -Volume 누적. obv_trend: 'bullish'(OBV > OBV_EMA), 'bearish'(OBV < OBV_EMA), 'neutral'. 거래량 급증 감지 헬퍼(detect_volume_spike(candles, threshold=1.5)) → bool. 최근 20봉 평균 대비 1.5배 이상 시 급증 판정. OBV 다이버전스 감지 선택적 구현.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "양봉/음봉 판별 정확도 검증, OBV 누적 계산 테스트, 거래량 급증 임계값 경계 테스트",
             "parentId": "undefined"
           },
@@ -1976,7 +1976,7 @@
               8
             ],
             "details": "__init__.py에 calculate_all_indicators(candles: list[Candle]) → IndicatorResult 구현. 출력: {ema_20, ema_50, ema_200, vwap, vwap_upper, vwap_lower, rsi, macd, signal, histogram, bb_upper, bb_middle, bb_lower, percent_b, bandwidth, adx, di_plus, di_minus, atr, stochastic_k, stochastic_d, obv, obv_ema, williams_r, cci, ema_alignment, rsi_divergence, ...}. 결측값 처리: NaN → None (JSON 직렬화 호환). 최소 캔들 수 검증(200개 권장, 최소 26개). 예외 발생 시 부분 결과 반환 옵션.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "200개 캔들 샘플로 전체 지표 계산 검증, 성능 벤치마크 (1ms 이내 목표), 결측값/이상치 처리 테스트, JSON 직렬화 호환성 확인",
             "parentId": "undefined"
           },
@@ -1988,7 +1988,7 @@
               9
             ],
             "details": "cache.py 모듈 생성. get_cached_indicators(exchange, market, timeframe) → IndicatorResult | None. set_cached_indicators(exchange, market, timeframe, result, ttl) → None. Redis 키 패턴: indicators:{exchange}:{market}:{timeframe}. TTL 차등: 1m=60s, 5m=300s, 15m=600s, 1h+=600s. 캔들 해시 기반 캐시 무효화 로직. pandas 벡터화 연산 최적화 검토. 선택적: numpy 기반 고성능 계산 함수 분리.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "캐시 적중/미적중 시나리오 테스트, TTL 만료 후 재계산 검증, 동일 캔들 재계산 방지 확인, 벤치마크: 캐시 적중 시 < 5ms",
             "parentId": "undefined"
           }

@@ -157,6 +157,36 @@ ws/hub.py -> Redis Pub/Sub (services 직접 호출 금지)
 - TwoFactorServiceDep, SessionServiceDep, AuditServiceDep, ClientRepositoryDep
 - SessionService 별도 분리 (AuthService 비대화 방지)
 
+## v1-13 코인 마스터/관심 코인 API 설계 확정사항
+
+- 설계서: `docs/tasks/v1-13-coin-master-watchlist-api-plan.md` (project-architect 작성)
+- **신규 파일**: `schemas/coin.py`, `api/v1/coins.py`, `api/v1/watchlist.py`, `services/coin_service.py`, `repositories/coin_repository.py`, `repositories/watchlist_repository.py`, `seed/seed_coins.py`
+- **기존 수정**: `api/v1/__init__.py`, `core/deps.py`, `core/exceptions.py`, `ws/bridge.py`(ST9)
+
+### API 엔드포인트
+- `GET /api/v1/coins` — 코인 검색 (`q`, `exchange`, `page`, `size`), **CurrentUserOptional** (공개 데이터)
+- `GET /api/v1/coins/{coin_id}` — 코인 상세, CurrentUserOptional
+- `GET /api/v1/watchlist` — 관심 코인 목록 (`exchange_account_id` 필터), CurrentUser
+- `POST /api/v1/watchlist` — 관심 코인 추가, 201
+- `DELETE /api/v1/watchlist/{watchlist_id}` — 관심 코인 제거
+- `PUT /api/v1/watchlist/reorder` — 정렬 순서 변경 (**PUT /reorder를 DELETE /{id}보다 먼저 등록**)
+
+### 핵심 설계 결정
+- **단일 CoinService** (coin 검색 + watchlist CRUD 통합, Repository는 coin/watchlist 분리)
+- **Redis 직접 주입** (MarketCacheService 미분리 — pipeline MGET 일괄 조회)
+- **Flat ticker 필드** (CoinResponse에 optional Decimal 필드로 통합, CoinWithPrice 별도 스키마 불필요)
+- **중복 방지**: `ON CONFLICT DO NOTHING` (exists() 사전 체크 대신 — race condition 방지)
+- **페이지네이션**: 오프셋 기반 (`page` + `size`, `pages` 포함)
+- **실시간 시세**: bridge.py `_on_ticker()`에서 `SETEX ticker:{exchange}:{market}` 스냅샷 저장 (ST9)
+
+### CoinErrors 추가
+- COIN_NOT_FOUND(404), WATCHLIST_DUPLICATE(409), WATCHLIST_NOT_FOUND(404)
+- WATCHLIST_ACCESS_DENIED(403), EXCHANGE_ACCOUNT_MISMATCH(403)
+
+### seed/seed_coins.py
+- 각 거래소 공개 REST API 호출 → `upsert(ON CONFLICT DO UPDATE)` 방식
+- `--exchange upbit|coinone|coinbase|binance|all` 옵션
+
 ## 상세 참조
 
 - architecture.md: 디렉토리 구조 전체 최종안
