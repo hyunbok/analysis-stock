@@ -35,6 +35,10 @@ class RedisTTL:
     # Trading Fee
     TRADING_FEE = 3600  # 1시간
 
+    # Celery
+    AI_CYCLE_LOCK = 280      # 4분 40초 (5분 주기 - 20초 여유)
+    AI_SINGLE_LOCK = 270     # 4분 30초 (개별 config 중복 방지)
+
     # Trading / Risk Management
     DRAWDOWN = 48 * 3600     # 48시간 (드로다운 Hash)
     POSITIONS = 24 * 3600    # 24시간 (열린 포지션 Set)
@@ -141,6 +145,25 @@ class RedisKey:
     @staticmethod
     def ai_last_run(user_id: str, coin: str) -> str:
         return f"ai:last_run:{user_id}:{coin}"
+
+    # ── Circuit Breaker ───────────────────────────────────────────────────────
+
+    # ── Celery ────────────────────────────────────────────────────────────────
+
+    @staticmethod
+    def celery_lock(task_name: str) -> str:
+        """Celery 태스크 중복 실행 방지 Lock."""
+        return f"celery:lock:{task_name}"
+
+    @staticmethod
+    def ai_config_lock(config_id: str) -> str:
+        """개별 AI config 중복 실행 방지 Lock."""
+        return f"celery:lock:ai_trading:{config_id}"
+
+    @staticmethod
+    def ai_kill_switch() -> str:
+        """AI 매매 글로벌 긴급 중지 키 (값 있으면 전체 중지)."""
+        return "system:ai_trading:kill"
 
     # ── Circuit Breaker ───────────────────────────────────────────────────────
 

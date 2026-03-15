@@ -2341,7 +2341,7 @@
           "3",
           "18"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -2349,7 +2349,7 @@
             "description": "tasks/celery_app.py에 Celery 앱 인스턴스를 생성하고 Redis를 브로커 및 결과 백엔드로 설정합니다. 큐 정의(ai, scraper, default)와 기본 설정을 포함합니다.",
             "dependencies": [],
             "details": "tasks/celery_app.py 파일 생성:\n- Celery 앱 인스턴스 초기화 (앱 이름: 'cointrader')\n- Redis 브로커 URL: 환경변수 CELERY_BROKER_URL (기본: redis://localhost:6379/0)\n- 결과 백엔드: 환경변수 CELERY_RESULT_BACKEND (기본: redis://localhost:6379/1)\n- 큐 정의:\n  * 'ai': AI 매매 전용 (높은 우선순위)\n  * 'scraper': 뉴스 스크랩\n  * 'default': 리포트, 정리 등 기타\n- 기본 설정:\n  * task_serializer='json', result_serializer='json'\n  * accept_content=['json']\n  * timezone='UTC'\n  * enable_utc=True\n  * task_track_started=True\n  * task_acks_late=True (재시작 시 미완료 작업 재처리)\n  * worker_prefetch_multiplier=1 (공정한 큐 분배)\n- 태스크 자동 검색 설정 (autodiscover_tasks)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "pytest로 Celery 앱 인스턴스 생성 확인, Redis 연결 테스트 (CELERY_ALWAYS_EAGER=true 모드), 큐 라우팅 설정 검증",
             "parentId": "undefined"
           },
@@ -2361,7 +2361,7 @@
               1
             ],
             "details": "celery_app.py의 beat_schedule 설정:\n- 'run-ai-trading-every-5-minutes':\n  * task: 'tasks.ai_trading.run_all_active_configs'\n  * schedule: crontab(minute='*/5') (0, 5, 10, ..., 55분)\n  * options: {'queue': 'ai'}\n- 'scrape-news-hourly':\n  * task: 'tasks.news_scraper.scrape_news'\n  * schedule: crontab(minute=0) (매 정시)\n  * options: {'queue': 'scraper'}\n- 'generate-daily-pnl-reports':\n  * task: 'tasks.reports.generate_daily_pnl_reports'\n  * schedule: crontab(hour=0, minute=0) (00:00 UTC)\n  * options: {'queue': 'default'}\n- 'cleanup-expired-tokens':\n  * task: 'tasks.cleanup.cleanup_expired_tokens'\n  * schedule: crontab(hour=3, minute=0) (03:00 UTC)\n  * options: {'queue': 'default'}\n- celery.conf.beat_schedule_filename 설정 (영속화)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Beat 스케줄 설정 파싱 검증, crontab 표현식 정확성 테스트, 각 태스크가 올바른 큐에 라우팅되는지 확인",
             "parentId": "undefined"
           },
@@ -2373,7 +2373,7 @@
               1
             ],
             "details": "tasks/ai_trading.py 구현:\n\n1. run_all_active_configs():\n- @app.task 데코레이터: bind=True, queue='ai', soft_time_limit=240, time_limit=300\n- ai_trading_enabled=True인 사용자의 활성 ai_trading_configs 조회\n- 마스터 스위치(users.ai_trading_enabled) 확인\n- disabled_at이 None 또는 미래인 config만 필터링\n- group().apply_async로 run_single_config 병렬 호출\n- 결과 집계: 성공/실패 수, 실패 사유 로깅\n\n2. run_single_config(user_id, coin_symbol, config_id):\n- @app.task: bind=True, queue='ai', max_retries=2, soft_time_limit=90, time_limit=120\n- retry_backoff=30, retry_backoff_max=60\n- Stage 1~5 파이프라인 실행 (trading/ 패키지 호출)\n- 예외 처리: GPT 타임아웃→규칙 기반 폴백, 기타 오류→DLQ+Sentry\n- 결과 발행: Redis Pub/Sub (ai:signal:{user_id})\n- 데이터 저장: MongoDB trade_logs, ai_decisions\n- FCM 푸시 알림: 매매 신호 발생 시\n\n3. run_backtest(user_id, coin_symbol, ...):\n- @app.task: bind=True, queue='ai'\n- 백테스팅 실행, Redis 진행 상태 업데이트",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "CELERY_ALWAYS_EAGER=true로 태스크 동기 실행 테스트, Mock trading 패키지로 파이프라인 호출 검증, 타임아웃/재시도 로직 테스트, Redis pub/sub 메시지 발행 확인, DLQ 동작 검증",
             "parentId": "undefined"
           },
@@ -2385,7 +2385,7 @@
               1
             ],
             "details": "tasks/news_scraper.py 구현:\n\n1. scrape_news():\n- @app.task 데코레이터: bind=True, queue='scraper', soft_time_limit=180, time_limit=240\n- 뉴스 소스 목록 (환경변수 또는 설정)에서 HTTP 요청\n- 각 코인별 최근 뉴스 수집 (제목, 본문 요약, 발행 시간, URL)\n- GPT 감성 분석 (선택적):\n  * Redis 캐시 확인: ai:news_sentiment:{coin} (TTL 30분)\n  * 캐시 미스 시 GPT API 호출\n  * 결과: positive/negative/neutral + score(-1.0~1.0)\n- MongoDB news_data 컬렉션 저장:\n  * coin_symbol, title, summary, sentiment_score, source, published_at\n  * 각 코인별 최신 5건만 유지 (오래된 것 삭제)\n- 에러 처리: 개별 소스 실패 시 계속 진행, Sentry 알림\n- 감성 결과 Redis 캐싱: ai:news_sentiment:{coin}",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Mock HTTP 응답으로 뉴스 수집 로직 테스트, GPT 감성 분석 Mock 테스트, MongoDB 저장 및 5건 제한 검증, Redis 캐시 TTL 동작 확인",
             "parentId": "undefined"
           },
@@ -2397,7 +2397,7 @@
               1
             ],
             "details": "tasks/reports.py 구현:\n\n1. generate_daily_pnl_reports():\n- @app.task: bind=True, queue='default', soft_time_limit=300, time_limit=360\n- 어제 날짜(UTC 기준) 손익 계산\n- 모든 활성 사용자 조회\n- 각 사용자별:\n  * PostgreSQL trade_orders: 어제 체결된 주문 조회\n  * MongoDB trade_logs: 상세 매매 로그 조회\n  * AI vs 수동(is_ai_order) 분리 계산\n  * 전략별(strategy_stats), 장세별(regime_stats) 성과 집계\n- MongoDB daily_pnl_reports upsert (report_date + user_id 키, 멱등성)\n- 필드: total_pnl, trade_count, win_rate, ai_pnl, ai_trade_count, ai_win_count, manual_pnl, manual_trade_count, cumulative_pnl\n\ntasks/cleanup.py 구현:\n\n2. cleanup_expired_tokens():\n- @app.task: bind=True, queue='default'\n- Redis auth:refresh:* 패턴의 만료된 키 삭제\n- SCAN 명령으로 키 조회 (blocking 방지)\n- TTL 확인 후 만료된 키만 삭제\n- MongoDB TTL 인덱스는 자동 정리 (별도 처리 불필요)\n- 삭제 건수 로깅",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Mock 데이터로 PnL 계산 정확성 검증 (수익/손실 케이스), upsert 멱등성 테스트 (동일 날짜 중복 실행), 전략별/장세별 집계 검증, Redis 키 삭제 동작 테스트",
             "parentId": "undefined"
           },
@@ -2413,7 +2413,7 @@
               5
             ],
             "details": "celery_app.py에 추가 설정:\n\n1. Worker 설정:\n- worker_concurrency=4 (또는 환경변수 CELERY_CONCURRENCY)\n- task_soft_time_limit, task_time_limit: 태스크별 차등\n- task_reject_on_worker_lost=True\n- task_default_queue='default'\n- task_routes: 큐별 라우팅 규칙\n\n2. 에러 처리:\n- Sentry 연동: sentry_sdk.init() + CeleryIntegration()\n- DLQ 구현: 실패 태스크를 'dlq' 큐로 라우팅\n- task_failure 시그널 핸들러: 실패 로깅, DLQ 전송\n- on_failure 콜백: Sentry 추가 컨텍스트\n\n3. Prometheus 메트릭:\n- celery-exporter 또는 커스텀 메트릭\n- 메트릭: celery_task_total{task, status}, celery_task_duration_seconds, celery_worker_up\n- task_prerun, task_postrun 시그널로 메트릭 수집\n\n4. Flow 제어:\n- run_all_active_configs에서 마스터 스위치 확인: users.ai_trading_enabled=False → 전체 스킵\n- ai_trading_configs.disabled_at 확인: 지정 날짜 이후 비활성화\n- 개별 config 비활성 시 해당 코인만 스킵\n\n5. Docker Compose 설정 (참고용):\n- celery worker 서비스: celery -A tasks.celery_app worker -Q ai,scraper,default --concurrency=4 -l info\n- celery beat 서비스: celery -A tasks.celery_app beat -l info",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Worker 동시성 설정 검증, Sentry 에러 전송 테스트 (Mock), DLQ 라우팅 테스트, Prometheus 메트릭 엔드포인트 확인, 마스터 스위치 OFF 시 태스크 스킵 검증, disabled_at 날짜 기반 비활성화 테스트",
             "parentId": "undefined"
           }

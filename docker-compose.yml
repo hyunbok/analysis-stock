@@ -73,6 +73,44 @@ services:
       - cointrader-network
     restart: unless-stopped
 
+  celery-worker:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    command: >
+      celery -A tasks.celery_app.celery_app worker
+      -l info
+      -c 4
+      -Q ai,scraper,default
+    env_file:
+      - server/.env.dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - cointrader-network
+    restart: unless-stopped
+
+  celery-beat:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    command: >
+      celery -A tasks.celery_app.celery_app beat
+      -l info
+      --scheduler celery.beat.PersistentScheduler
+    env_file:
+      - server/.env.dev
+    depends_on:
+      - redis
+    networks:
+      - cointrader-network
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   mongodb_data:
