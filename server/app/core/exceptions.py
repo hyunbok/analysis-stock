@@ -242,6 +242,26 @@ class ExchangeErrors:
         )
 
 
+class IndicatorErrors:
+    """기술적 지표 도메인 에러 팩토리."""
+
+    @staticmethod
+    def insufficient_candles(required: int, actual: int) -> AppError:
+        return AppError(
+            "INSUFFICIENT_CANDLES",
+            f"지표 계산에 필요한 캔들이 부족합니다. 필요: {required}, 현재: {actual}",
+            422,
+        )
+
+    @staticmethod
+    def calculation_failed() -> AppError:
+        return AppError(
+            "INDICATOR_CALCULATION_FAILED",
+            "지표 계산에 실패했습니다. 잠시 후 재시도해주세요.",
+            500,
+        )
+
+
 class OrderErrors:
     """주문 도메인 에러 팩토리."""
 

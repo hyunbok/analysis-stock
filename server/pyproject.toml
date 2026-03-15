@@ -26,6 +26,8 @@ dependencies = [
     "aiosmtplib>=5.1.0",
     "pyotp>=2.9.0",
     "qrcode>=8.2",
+    "pandas>=2.2",
+    "numpy>=1.26",
 ]
 
 [project.optional-dependencies]
