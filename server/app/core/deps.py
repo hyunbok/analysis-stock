@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from app.services.coin_service import CoinService
     from app.services.exchange_account_service import ExchangeAccountService
     from app.services.order_service import OrderService
+    from app.services.regime_service import RegimeService
 
 from fastapi import Depends, Request
 from fastapi.security import OAuth2PasswordBearer
@@ -30,11 +31,13 @@ from app.models.user import User
 from app.repositories.client_repository import ClientRepository
 from app.repositories.social_account_repository import SocialAccountRepository
 from app.repositories.user_repository import UserRepository
+from app.services.ai_cache_service import AICacheService
 from app.services.audit_service import AuditService
 from app.services.auth_cache_service import AuthCacheService
 from app.services.auth_service import AuthService
 from app.services.email_service import EmailService
 from app.services.jwks_cache_service import JwksCacheService
+from app.services.market_cache_service import MarketCacheService
 from app.services.oauth_verification_service import OAuthVerificationService
 from app.services.session_service import SessionService
 from app.services.social_auth_service import SocialAuthService
@@ -348,3 +351,34 @@ def get_order_service(
 
 OrderRepoDep = Annotated["OrderRepository", Depends(get_order_repository)]
 OrderServiceDep = Annotated["OrderService", Depends(get_order_service)]
+
+
+# ── Market Cache / AI Cache / Regime ──────────────────────────────────────────
+
+def get_market_cache_service(redis: Redis = Depends(get_redis)) -> MarketCacheService:
+    return MarketCacheService(redis)
+
+
+def get_ai_cache_service(
+    redis: Redis = Depends(get_redis),
+    pub_redis: Redis = Depends(get_pubsub_redis),
+) -> AICacheService:
+    from app.core.pubsub import RedisPublisher
+
+    publisher = RedisPublisher(pub_redis)
+    return AICacheService(redis, publisher)
+
+
+def get_regime_service(
+    market_cache: MarketCacheService = Depends(get_market_cache_service),
+    ai_cache: AICacheService = Depends(get_ai_cache_service),
+    settings: Settings = Depends(get_settings),
+) -> "RegimeService":
+    from app.services.regime_service import RegimeService
+
+    return RegimeService(market_cache, ai_cache, settings)
+
+
+MarketCacheServiceDep = Annotated[MarketCacheService, Depends(get_market_cache_service)]
+AICacheServiceDep = Annotated[AICacheService, Depends(get_ai_cache_service)]
+RegimeServiceDep = Annotated["RegimeService", Depends(get_regime_service)]
