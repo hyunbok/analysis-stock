@@ -55,6 +55,15 @@ class Settings(BaseSettings):
     OPENAI_MODEL: str = "gpt-4o-mini"
     OPENAI_TIMEOUT: float = 10.0  # GPT 호출 타임아웃 (초), v1-16 신규
 
+    # Celery
+    CELERY_BROKER_URL: str = ""          # 비어있으면 REDIS_URL 기반 DB 1
+    CELERY_RESULT_BACKEND: str = ""      # 비어있으면 REDIS_URL 기반 DB 2
+    CELERY_WORKER_CONCURRENCY: int = 4   # Worker 동시성
+
+    # Feature Switches
+    AI_TRADING_ENABLED: bool = True      # AI 매매 시스템 마스터 스위치
+    NEWS_SCRAPER_ENABLED: bool = True    # 뉴스 스크랩 마스터 스위치
+
     # Monitoring
     SENTRY_DSN: str = ""
 
@@ -109,6 +118,22 @@ class Settings(BaseSettings):
                 except ValueError:
                     raise ValueError(f"{key_name} must be a valid hex string.")
         return self
+
+    @property
+    def celery_broker_url(self) -> str:
+        """Celery broker URL (Redis DB 1)."""
+        if self.CELERY_BROKER_URL:
+            return self.CELERY_BROKER_URL
+        base = self.REDIS_URL.rstrip("/").rsplit("/", 1)[0]
+        return f"{base}/1"
+
+    @property
+    def celery_result_backend(self) -> str:
+        """Celery result backend URL (Redis DB 2)."""
+        if self.CELERY_RESULT_BACKEND:
+            return self.CELERY_RESULT_BACKEND
+        base = self.REDIS_URL.rstrip("/").rsplit("/", 1)[0]
+        return f"{base}/2"
 
     @property
     def google_allowed_audiences(self) -> list[str]:
