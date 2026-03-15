@@ -53,6 +53,7 @@ class Settings(BaseSettings):
     # OpenAI
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o-mini"
+    OPENAI_TIMEOUT: float = 10.0  # GPT 호출 타임아웃 (초), v1-16 신규
 
     # Monitoring
     SENTRY_DSN: str = ""

@@ -242,6 +242,37 @@ class ExchangeErrors:
         )
 
 
+class RegimeErrors:
+    """장세 분석 도메인 에러 팩토리."""
+
+    @staticmethod
+    def insufficient_indicators() -> AppError:
+        """장세 분류에 필요한 지표 데이터 부족 (활성 규칙 < 2개)."""
+        return AppError(
+            "REGIME_INSUFFICIENT_INDICATORS",
+            "장세 분석에 필요한 지표 데이터가 부족합니다.",
+            422,
+        )
+
+    @staticmethod
+    def gpt_validation_failed() -> AppError:
+        """GPT 검증 API 호출 실패 (로깅용, 실제로는 graceful fallback)."""
+        return AppError(
+            "REGIME_GPT_VALIDATION_FAILED",
+            "AI 보조 검증에 실패했습니다. 규칙 기반 결과를 사용합니다.",
+            200,
+        )
+
+    @staticmethod
+    def analysis_failed() -> AppError:
+        """장세 분석 전체 실패."""
+        return AppError(
+            "REGIME_ANALYSIS_FAILED",
+            "장세 분석에 실패했습니다. 잠시 후 재시도해주세요.",
+            500,
+        )
+
+
 class IndicatorErrors:
     """기술적 지표 도메인 에러 팩토리."""
 

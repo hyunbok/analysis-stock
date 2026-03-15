@@ -89,18 +89,18 @@ class TradeLog(Document):
 class AiDecision(Document):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
-    user_id: UUID
+    user_id: Optional[UUID] = None
     coin_symbol: str
     market_regime: str
     regime_confidence: dict  # e.g. {"trend": 0.7, "range": 0.2, "transition": 0.1}
-    selected_strategy: str
-    action: str  # buy/sell/hold
-    action_confidence: Decimal128
+    selected_strategy: Optional[str] = None
+    action: Optional[str] = None  # buy/sell/hold
+    action_confidence: Optional[Decimal128] = None
     indicators_snapshot: Optional[IndicatorsSnapshot] = None
     # GPT metadata
-    gpt_model: str
-    gpt_prompt_tokens: int
-    gpt_completion_tokens: int
+    gpt_model: Optional[str] = None
+    gpt_prompt_tokens: Optional[int] = None
+    gpt_completion_tokens: Optional[int] = None
     gpt_raw_response: Optional[str] = None
     gpt_parsed_result: Optional[dict] = None
     # Context

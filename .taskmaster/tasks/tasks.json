@@ -2004,7 +2004,7 @@
         "dependencies": [
           "15"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -2012,7 +2012,7 @@
             "description": "trading/regime/ 패키지 구조 생성 및 MarketRegimeDetector ABC와 RegimeResult, RegimeType 등 핵심 타입 정의",
             "dependencies": [],
             "details": "trading/regime/ 디렉토리 생성 및 __init__.py, base.py, types.py 파일 구성. RegimeType Enum (Trend, Range, Transition), RegimeResult dataclass (regime, confidence, regime_scores: dict[RegimeType, float], details: dict, analysis_duration_ms: int), RegimeDetector ABC (detect(candles, indicators, news_context) -> RegimeResult) 정의. trading/types.py에 Candle, IndicatorsSnapshot 타입이 Task 15에서 정의되어 있으므로 import하여 활용. 순수 Python 패키지로 FastAPI/DB 의존성 없이 구현.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "pytest로 타입 정의 검증 (RegimeType 멤버 확인, RegimeResult 필수 필드 검증, ABC 상속 구조 확인)",
             "parentId": "undefined"
           },
@@ -2024,7 +2024,7 @@
               1
             ],
             "details": "trading/regime/detector.py에 MarketRegimeDetector 클래스 구현. classify_regime_rule_based() 메서드: (1) Trend 조건 - ADX > 25 AND (EMA20 > EMA50 > EMA200 정배열 OR MACD 히스토그램 연속 증가/감소 3봉), (2) Range 조건 - ADX < 20 AND BB Bandwidth < 임계값 AND RSI 40~60, (3) Transition 조건 - RSI 다이버전스 감지 OR MACD 크로스오버 임박 OR ADX 20~25 급변. 각 조건 판별을 위한 헬퍼 함수 분리 (_is_ema_aligned, _is_macd_histogram_trending, _detect_rsi_divergence, _is_macd_crossover_imminent). 임계값은 클래스 상수로 관리.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "mock candles + indicators로 각 장세별 조건 만족/불만족 테스트. Trend/Range/Transition 각각에 대해 경계값 테스트 (ADX 24.9 vs 25.1 등)",
             "parentId": "undefined"
           },
@@ -2036,7 +2036,7 @@
               2
             ],
             "details": "trading/regime/detector.py에 calculate_confidence_scores() 메서드 추가. 각 지표별 정규화 점수 계산: (1) ADX 강도 - (ADX - 20) / 20 클램프(0~1), (2) EMA 배열 - 정배열/역배열 여부 + 이격도 기반 0~1 점수, (3) MACD 크로스 - 크로스 거리/강도 기반 0~1 점수, (4) RSI 다이버전스 - 다이버전스 신뢰도 0~1, (5) BB Bandwidth - 수축도 기반 0~1. 각 장세(Trend/Range/Transition)별로 해당 지표 점수를 가중 합산 후 softmax 정규화하여 regime_scores dict 반환. 최고 점수 장세 선택 및 해당 confidence 반환.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "가중치 합계 1.0 확인, softmax 출력 합계 1.0 확인, 극단적 지표값에서 confidence 경계값 검증 (100% 초과 방지, 0% 미만 방지)",
             "parentId": "undefined"
           },
@@ -2048,7 +2048,7 @@
               3
             ],
             "details": "trading/regime/gpt_validator.py 신규 생성. GPTRegimeValidator 클래스: (1) validate(regime_result, indicators_summary, news_context) -> GPTValidationResult 메서드, (2) _build_prompt() - 지표 요약 + 뉴스 5건 + 규칙 기반 결과를 JSON 프롬프트로 구성, (3) _parse_response() - GPT JSON 응답 파싱 (regime, reasoning, final_confidence), (4) _apply_gpt_adjustment() - GPT 동의 시 confidence +10%(최대100), 불일치 시 -15%(50 미만 시 HOLD 권고). trading/gpt/client.py 활용 (타임아웃 30초, 실패 시 규칙 기반만 사용). GPTValidationResult dataclass 정의 (gpt_regime, gpt_reasoning, adjusted_confidence, gpt_raw_response).",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "mock GPT 응답으로 파싱 검증, confidence 보정 로직 테스트 (동의 시 +10%, 불일치 시 -15%), GPT 실패 시 fallback 동작 확인, JSON 파싱 오류 시 예외 처리 검증",
             "parentId": "undefined"
           },
@@ -2060,7 +2060,7 @@
               4
             ],
             "details": "app/documents/ai_decision.py에 AIDecisionDocument Beanie 도큐먼트 정의 (user_id, coin_symbol, market_regime, regime_confidence: dict, indicators_snapshot, gpt_model, gpt_raw_response, analysis_duration_ms, created_at, TTL 6개월). app/repositories/ai_decision_repo.py에 AIDecisionRepository 클래스 (save_decision, get_latest_decision). app/services/ai_trading_service.py에서 MarketRegimeDetector 호출 후 결과 저장 로직 추가. Redis 캐싱: regime:{exchange}:{market} 키 패턴, TTL 300초, 분석 완료 시 갱신. app/core/cache.py에 RegimeCacheService 추가.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "MongoDB 저장 검증 (필수 필드 존재, TTL 인덱스 동작), Redis 캐싱 동작 확인 (set/get/TTL 만료), 동일 market 재분석 시 캐시 갱신 확인",
             "parentId": "undefined"
           },
@@ -2073,7 +2073,7 @@
               5
             ],
             "details": "trading/regime/detector.py의 MarketRegimeDetector.detect() 메서드 통합 구현: (1) 규칙 기반 1차 분류 호출, (2) confidence score 계산, (3) confidence < 70% 또는 Transition 시 GPT 검증 호출 (선택적), (4) 최종 RegimeResult 반환 (분석 소요시간 포함). trading/__init__.py에서 MarketRegimeDetector, RegimeResult, RegimeType 공개 export. ai_trading_service.py에서 사용 예제 docstring 추가. 에러 핸들링: 지표 부족 시 InsufficientDataError, GPT 실패 시 graceful degradation.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "전체 파이프라인 통합 테스트 (mock candles → 장세 분류 → GPT 검증 → 결과 반환), 각 장세 케이스 E2E 테스트, 에러 시나리오 테스트 (지표 부족, GPT 타임아웃), 성능 측정 (분석 소요시간 기록 확인)",
             "parentId": "undefined"
           }
