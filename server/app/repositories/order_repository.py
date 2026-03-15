@@ -218,6 +218,24 @@ class OrderRepository:
         )
         return list(result.scalars().all())
 
+    async def count_active_ai_orders(self, user_id: uuid.UUID) -> int:
+        """사용자의 미체결 AI 주문 수 (전 계정 합산).
+
+        RiskManager.check()에서 최대 포지션 수 검증용.
+        WHERE is_ai_order=True AND status IN ('open', 'partial')
+        인덱스: ix_trade_orders_active (PARTIAL) 활용.
+        """
+        result = await self._db.execute(
+            select(func.count())
+            .select_from(TradeOrder)
+            .where(
+                TradeOrder.user_id == user_id,
+                TradeOrder.is_ai_order.is_(True),
+                TradeOrder.status.in_(["open", "partial"]),
+            )
+        )
+        return result.scalar_one()
+
     async def create_event(
         self,
         *,

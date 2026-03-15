@@ -183,6 +183,27 @@
 - 신규 라이브러리: 없음
 - 테스트: ~70건 (단위 65 + 통합 5)
 
+## v1-18 결정 사항 (주문 실행 및 리스크 관리 엔진)
+- 패키지: `trading/execution/` (순수 계산이 아닌 통합 패키지 — Redis, MongoDB, Provider 의존)
+- 파일 구조: types.py, constants.py, exceptions.py, risk_manager.py, position_sizing.py, sl_tp.py, drawdown_manager.py, order_tracker.py, trade_logger.py, engine.py
+- 순수/비순수 분리: risk_manager.py, position_sizing.py, sl_tp.py (순수) | drawdown_manager.py (Redis), order_tracker.py (OrderRepository+Provider), trade_logger.py (Beanie), engine.py (오케스트레이터)
+- **의존 방향**: OrderService import 금지 → OrderRepository 직접 주입 (trading/ → repositories/ 허용)
+- **OrderRepository.create(is_ai_order=True)** 직접 호출 — update_ai_flag() 불필요
+- **count_active_ai_orders()**: OrderRepository 신규 메서드 (AI 미체결 주문 수 조회)
+- **RiskManager 순수화**: Redis 의존 없음, DrawdownState + RiskParams 입력만
+- **PositionSizer ABC 미사용**: FixedFractionalSizer + HalfKellySizer 독립 클래스 (@staticmethod)
+- engine.py에서 둘 다 실행 후 min(보수적) 선택
+- **TradeLogger**: AsyncIOMotorDatabase 주입 없음, Beanie Document 직접 (생성자 없음)
+- Redis Hash: 단일 `trading:drawdown:{user_id}:{ea_id}` (TTL=48h), positions Set (TTL=24h)
+- 내부 예외: trading/execution/exceptions.py (TradeExecutionError → RiskLimitExceeded, PositionSizingError, OrderExecutionError)
+- **DI**: Celery task에서 직접 인스턴스화 (FastAPI deps.py 변경 없음)
+- RiskParams: win_rate_estimate(0.5), avg_rr_ratio(1.5) 포함
+- Trailing Stop: polling 방식 (v1-18), WS 기반은 v2
+- 부분 체결: 60초 대기(10초 폴링) → 잔량 취소
+- 재시도: 네트워크/가용성만 30초 간격 2회, 사용자 오류 즉시 실패
+- 신규 라이브러리: 없음
+- 테스트: ~50건 (단위 45 + 통합 5)
+
 ## 협업 패턴
 - code-architect와 이견 시 먼저 합의 후 설계서 반영 (동시 편집 충돌 주의)
 - 설계서 초안을 먼저 작성하고 상대에게 수정/보강 요청하는 방식이 효율적
