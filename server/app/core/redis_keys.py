@@ -35,6 +35,10 @@ class RedisTTL:
     # Trading Fee
     TRADING_FEE = 3600  # 1시간
 
+    # Trading / Risk Management
+    DRAWDOWN = 48 * 3600     # 48시간 (드로다운 Hash)
+    POSITIONS = 24 * 3600    # 24시간 (열린 포지션 Set)
+
     # Notifications
     UNREAD_COUNT = 3600             # 1시간
 
@@ -156,6 +160,18 @@ class RedisKey:
     @staticmethod
     def unread_count(user_id: str) -> str:
         return f"notifications:unread_count:{user_id}"
+
+    # ── Trading / Risk Management ─────────────────────────────────────────────
+
+    @staticmethod
+    def drawdown(user_id: str, exchange_account_id: str) -> str:
+        """드로다운 상태 Hash."""
+        return f"trading:drawdown:{user_id}:{exchange_account_id}"
+
+    @staticmethod
+    def positions(user_id: str, exchange_account_id: str) -> str:
+        """열린 포지션 Set."""
+        return f"trading:positions:{user_id}:{exchange_account_id}"
 
 
 class PubSubChannel:

@@ -2201,7 +2201,7 @@
         "dependencies": [
           "17"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -2209,7 +2209,7 @@
             "description": "리스크 파라미터 관리 및 검증 로직 구현. 단일 손실, 일일 손실, MDD, 포지션 한도, 연속 손실 등의 기본 리스크 파라미터를 저장하고 관리하는 클래스 구현",
             "dependencies": [],
             "details": "trading/execution/risk_manager.py에서 RiskManager 클래스 구현: __init__에서 리스크 파라미터 설정(단일 손실 2%, 일일 손실 5%, MDD 15%, 최대 포지션 3개, 단일 투자비율 10%, 연속 손실 3회), 파라미터 범위 검증(Decimal 사용), 현재 드로다운 상태 추적 메서드(get_current_drawdown, get_daily_loss), 포지션 카운팅 메서드(get_open_positions_count), 연속 손실 추적 메서드 구현",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "리스크 파라미터 초기화 검증, 범위 검증(0.5%~5% 등), 드로다운 상태 추적 정확성, 포지션 카운팅 정확성 테스트"
           },
           {
@@ -2220,7 +2220,7 @@
               1
             ],
             "details": "trading/execution/position_sizing.py에서 FixedFractionalSizer 클래스 구현: calculate_position_size(total_balance, risk_ratio, stop_loss_ratio) 메서드로 Decimal 기반 계산, 결과값에 최대 10% 캡 적용, 신호 강도 조정 미포함(Half-Kelly에서 처리), 예: (1000만 × 0.02) / 0.03 = 666만 계산 검증",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "다양한 자산/리스크비율 조합에서 계산 정확성, 10% 캡 적용 검증, Decimal 정밀도 확인"
           },
           {
@@ -2232,7 +2232,7 @@
               2
             ],
             "details": "trading/execution/position_sizing.py에서 HalfKellySizer 클래스 구현: calculate_position_size(total_balance, win_rate, profit_loss_ratio, signal_strength) 메서드 구현, Kelly 계산 로직(W - (1-W)/R), Half-Kelly 계산(×0.5), FixedFractionalSizer와 비교하여 더 작은 값 선택, 신호 강도별 조정(Strong: ×1.0, Medium: ×0.75, Weak: ×0.5), None 값 처리 로직",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "다양한 승률/수익비율 조합 검증, Half-Kelly 공식 정확성, Fixed와 비교 로직, 신호 강도별 조정 계산 확인"
           },
           {
@@ -2243,7 +2243,7 @@
               1
             ],
             "details": "trading/execution/stop_levels.py에서 StopLevelCalculator 클래스 구현: calculate_stops(entry_price, atr, multiplier_range) 메서드로 손절/익절 가격 계산(Decimal 기반), loss_multiplier와 profit_multiplier 파라미터, Trailing Stop 구현(익절 50% 도달 시 ATR×1.0으로 추적), update_trailing_stop(current_price, atr) 메서드, 현재 가격 기반 Trailing Stop 활성화 로직",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "ATR 기반 손절/익절 계산 정확성, 배수 범위별 계산, Trailing Stop 활성화 조건 검증, 가격 업데이트 시 Trailing Stop 업데이트 확인"
           },
           {
@@ -2254,7 +2254,7 @@
               1
             ],
             "details": "trading/execution/drawdown_manager.py에서 DrawdownManager 클래스 구현: track_loss(loss_amount, total_balance) 메서드로 일일/누적 손실 추적, is_daily_limit_exceeded() 메서드, is_mdd_limit_exceeded() 메서드, track_consecutive_loss(loss_count) 메서드로 연속 손실 추적, get_cooldown_end_time() 메서드로 쿨다운 시간 계산(4시간), reset_daily_loss(timestamp) 메서드로 매일 자정 리셋, Redis 기반 상태 저장",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "일일 손실 5% 초과 시 중지 플래그 설정 검증, MDD 15% 초과 시 일시정지 플래그, 연속 손실 3회 시 4시간 쿨다운 계산, 매일 자정 리셋 로직 검증"
           },
           {
@@ -2268,7 +2268,7 @@
               5
             ],
             "details": "trading/execution/execution_engine.py에서 ExecutionEngine 클래스 구현: execute_trade(trading_signal, account_balance, open_positions, exchange_account) 메서드, validate_sufficient_balance(balance_needed, account_balance) 메서드, validate_position_limit(open_count, max_positions) 메서드, validate_drawdown_limits(drawdown_manager, limits) 메서드, 입력값 검증(None 체크, 타입 검증), 리스크 검증 실패 시 TradeExecutionException 발생",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "충분 자산 검증 실패 케이스, 포지션 한도 초과 케이스, 드로다운 한도 초과 케이스, 모든 검증 통과 케이스 테스트"
           },
           {
@@ -2282,7 +2282,7 @@
               6
             ],
             "details": "ExecutionEngine.execute_trade() 메서드에서 포지션 사이징 메서드 선택(signal.signal_strength 기반 Half-Kelly 선택), calculate_position_size() 호출, StopLevelCalculator로 손절/익절 계산, TradeOrder 모델에 데이터 저장 직전 주문 생성, exchange_provider.place_order(order_data) 호출, 반환된 exchange_order_id 저장, 주문 상태를 'pending'으로 설정",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "다양한 신호 강도 조건에서 포지션 사이징 검증, 손절/익절 계산 적용 확인, ExchangeProvider 모의 객체로 place_order 호출 검증, 반환된 order_id 저장 확인"
           },
           {
@@ -2294,7 +2294,7 @@
               7
             ],
             "details": "trading/execution/order_tracker.py에서 OrderTracker 클래스 구현: track_order(order_id, exchange_provider) 메서드, check_order_status(exchange_order_id) 메서드로 거래소 상태 조회, state machine(pending→filled/partial/failed) 구현, 부분 체결 시 60초 대기 후 재시도 로직, 실패 시 30초 간격 최대 2회 재시도, TradeOrder.status 업데이트(filled/partial/cancelled), executed_quantity, executed_at 업데이트, 최종 상태 저장 시 MongoDB trade_logs 기록",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "pending→filled 상태 전환, 부분 체결 처리 및 60초 대기, 실패 후 재시도 로직(30초 간격, 최대 2회), 최종 상태 저장 검증"
           },
           {
@@ -2306,7 +2306,7 @@
               8
             ],
             "details": "trading/execution/logging.py에서 TradeLogger 클래스 구현: log_trade_execution(trade_order, signal, risk_params, atr_snapshot) 메서드로 TradeLog 문서 생성 및 저장, TradeLog 스키마 활용(user_id, trade_order_id, coin_symbol, exchange_type, order_type, price, quantity, is_ai_order, market_regime, strategy_name, entry_price, signal_confidence), execution_timestamp 기록, risk_params 스냅샷 저장, 예외 처리(거래소 API 오류, 네트워크 오류, 부분 체결 등)를 TradeLog.reasoning_summary에 기록, status='open'으로 저장",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "TradeLog 생성 및 필드 저장 검증, execution_timestamp 기록, risk_params 스냅샷 정확성, 예외 상황 로깅 확인, MongoDB 저장 검증"
           },
           {
@@ -2325,7 +2325,7 @@
               9
             ],
             "details": "tests/trading/test_execution.py 작성: test_fixed_fractional_position_sizing (다양한 시나리오), test_half_kelly_vs_fixed (비교 검증), test_atr_based_stops (손절/익절 정확성), test_drawdown_daily_limit_exceeded (일일 손실 5% 초과 시 중지), test_drawdown_mdd_exceeded (MDD 15% 초과 시 일시정지), test_consecutive_loss_cooldown (3회 연속 손실 후 4시간 쿨다운), test_order_state_machine (pending→filled), test_partial_fill_handling (60초 대기), test_retry_logic (30초 간격 최대 2회), test_trade_log_creation (MongoDB 기록), test_execution_with_insufficient_balance (실패 케이스), conftest.py에서 mock_exchange_provider, mock_risk_manager, test_db 픽스처 구성",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "모든 계산 정확성 검증, 상태 머신 전환 검증, 예외 처리 흐름 검증, 부분 체결 및 재시도 로직, MongoDB 로깅 검증, 통합 흐름 E2E 테스트(신호 생성→검증→포지션 사이징→주문 생성→상태 추적→로깅)"
           }
         ]
