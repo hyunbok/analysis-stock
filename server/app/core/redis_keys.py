@@ -43,6 +43,11 @@ class RedisTTL:
     DRAWDOWN = 48 * 3600     # 48시간 (드로다운 Hash)
     POSITIONS = 24 * 3600    # 24시간 (열린 포지션 Set)
 
+    # Portfolio
+    PORTFOLIO_SUMMARY = 300         # 5분
+    PORTFOLIO_EXCHANGE = 60         # 1분
+    PORTFOLIO_AVG_PRICE = 600       # 10분
+
     # Notifications
     UNREAD_COUNT = 3600             # 1시간
 
@@ -177,6 +182,23 @@ class RedisKey:
     @staticmethod
     def trading_fee(exchange: str, tier: int = 0) -> str:
         return f"fee:{exchange}:{tier}"
+
+    # ── Portfolio ─────────────────────────────────────────────────────────────
+
+    @staticmethod
+    def portfolio_summary(user_id: str) -> str:
+        """전체 포트폴리오 요약 캐시 (5분 TTL)."""
+        return f"portfolio:summary:{user_id}"
+
+    @staticmethod
+    def portfolio_exchange(user_id: str, exchange_account_id: str) -> str:
+        """거래소별 상세 포트폴리오 캐시 (1분 TTL)."""
+        return f"portfolio:exchange:{user_id}:{exchange_account_id}"
+
+    @staticmethod
+    def portfolio_avg_price(user_id: str, exchange_account_id: str) -> str:
+        """코인별 평균 매입가 캐시 (10분 TTL, 주문 체결 시 무효화)."""
+        return f"portfolio:avg_price:{user_id}:{exchange_account_id}"
 
     # ── Notifications ─────────────────────────────────────────────────────────
 

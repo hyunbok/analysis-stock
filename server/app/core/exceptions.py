@@ -293,6 +293,46 @@ class IndicatorErrors:
         )
 
 
+class PortfolioErrors:
+    """포트폴리오 관련 에러 팩토리."""
+
+    @staticmethod
+    def exchange_account_not_owned() -> AppError:
+        """본인 소유가 아닌 거래소 계정 접근 시."""
+        return AppError(
+            code="PORTFOLIO_EXCHANGE_ACCOUNT_NOT_OWNED",
+            message="본인 소유 거래소 계정이 아닙니다.",
+            http_status=403,
+        )
+
+    @staticmethod
+    def no_exchange_accounts() -> AppError:
+        """등록된 거래소 계정이 없을 때."""
+        return AppError(
+            code="PORTFOLIO_NO_EXCHANGE_ACCOUNTS",
+            message="등록된 거래소 계정이 없습니다.",
+            http_status=404,
+        )
+
+    @staticmethod
+    def balance_fetch_failed(exchange: str) -> AppError:
+        """거래소 잔고 API 호출 실패."""
+        return AppError(
+            code="PORTFOLIO_BALANCE_FETCH_FAILED",
+            message=f"{exchange} 잔고 조회에 실패했습니다.",
+            http_status=503,
+        )
+
+    @staticmethod
+    def exchange_unavailable(exchange: str) -> AppError:
+        """거래소 연결 불가 (Circuit Breaker open 등)."""
+        return AppError(
+            code="PORTFOLIO_EXCHANGE_UNAVAILABLE",
+            message=f"{exchange} 거래소에 연결할 수 없습니다.",
+            http_status=503,
+        )
+
+
 class OrderErrors:
     """주문 도메인 에러 팩토리."""
 

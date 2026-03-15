@@ -6,10 +6,12 @@ if TYPE_CHECKING:
     from app.repositories.coin_repository import CoinRepository
     from app.repositories.exchange_account_repository import ExchangeAccountRepository
     from app.repositories.order_repository import OrderRepository
+    from app.repositories.portfolio_repository import PortfolioRepository
     from app.repositories.watchlist_repository import WatchlistRepository
     from app.services.coin_service import CoinService
     from app.services.exchange_account_service import ExchangeAccountService
     from app.services.order_service import OrderService
+    from app.services.portfolio_service import PortfolioService
     from app.services.regime_service import RegimeService
 
 from fastapi import Depends, Request
@@ -382,3 +384,34 @@ def get_regime_service(
 MarketCacheServiceDep = Annotated[MarketCacheService, Depends(get_market_cache_service)]
 AICacheServiceDep = Annotated[AICacheService, Depends(get_ai_cache_service)]
 RegimeServiceDep = Annotated["RegimeService", Depends(get_regime_service)]
+
+
+# ── Portfolio ─────────────────────────────────────────────────────────────────
+
+def get_portfolio_repository(
+    db: AsyncSession = Depends(get_db),
+) -> "PortfolioRepository":
+    from app.repositories.portfolio_repository import PortfolioRepository
+
+    return PortfolioRepository(db)
+
+
+def get_portfolio_service(
+    portfolio_repo: "PortfolioRepository" = Depends(get_portfolio_repository),
+    exchange_account_repo: "ExchangeAccountRepository" = Depends(
+        get_exchange_account_repository
+    ),
+    factory: "ExchangeProviderFactory" = Depends(get_exchange_factory),
+    market_cache: MarketCacheService = Depends(get_market_cache_service),
+    redis: Redis = Depends(get_redis),
+    settings: Settings = Depends(get_settings),
+) -> "PortfolioService":
+    from app.services.portfolio_service import PortfolioService
+
+    return PortfolioService(
+        portfolio_repo, exchange_account_repo, factory, market_cache, redis, settings
+    )
+
+
+PortfolioRepoDep = Annotated["PortfolioRepository", Depends(get_portfolio_repository)]
+PortfolioServiceDep = Annotated["PortfolioService", Depends(get_portfolio_service)]
