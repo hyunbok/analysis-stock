@@ -2089,7 +2089,7 @@
         "dependencies": [
           "16"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -2097,7 +2097,7 @@
             "description": "모든 매매 전략이 구현해야 할 추상 기본 클래스(ABC)와 공통 타입 정의. trading/strategy/base.py에 TradingStrategy ABC 구현, trading/types.py에 TradingSignal, SignalStrength, EntryCondition, ExitCondition 등 공통 타입 정의",
             "dependencies": [],
             "details": "trading/strategy/base.py 파일에 TradingStrategy ABC 생성:\n- evaluate_entry(candles, indicators, regime) -> Optional[TradingSignal] 추상 메서드\n- evaluate_exit(position, candles, indicators) -> Optional[ExitSignal] 추상 메서드\n- get_strategy_name() -> str 추상 메서드\n- calculate_signal_strength(indicators) -> SignalStrength 추상 메서드\n\ntrading/types.py에 추가 타입 정의:\n- TradingSignal(action: BUY|SELL|HOLD, confidence: float, strength: SignalStrength, entry_price: Decimal, stop_loss: Decimal, take_profit: Decimal, strategy_name: str, indicators_snapshot: dict)\n- SignalStrength(enum: STRONG, MEDIUM, WEAK)\n- EntryCondition, ExitCondition dataclass\n- 반전 캔들 패턴 enum: CandlePattern(HAMMER, BULLISH_ENGULFING, SHOOTING_STAR, BEARISH_ENGULFING, DOJI)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "ABC 인스턴스화 시 TypeError 발생 확인, 타입 정의 Pydantic 검증 테스트, dataclass 직렬화/역직렬화 테스트",
             "parentId": "undefined"
           },
@@ -2109,7 +2109,7 @@
               1
             ],
             "details": "trading/strategy/trend_ma.py 파일 생성:\n\n진입 조건 구현:\n1. EMA20 > EMA50 > EMA200 (정배열) 확인\n2. ADX > 25 AND +DI > -DI 확인\n3. |가격 - EMA20| / EMA20 < 0.5% 근접 확인\n4. EMA20에서 반등 양봉 (현재봉 종가 > 시가, 저점이 EMA20 근처)\n5. 거래량 >= 최근 20봉 평균 × 1.2\n6. RSI 40~65 범위 확인\n\n청산 조건:\n- 익절: entry_price + ATR × 2.0\n- 손절: EMA50 이탈 또는 entry_price - ATR × 1.5 (둘 중 먼저 도달)\n- RR 비율 1:2\n\n신호 강도 계산: 6가지 조건 중 만족 개수와 ADX 강도, RSI 위치 기반 Strong/Medium/Weak 판정",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "mock 캔들로 6가지 진입 조건 개별 만족/불만족 테스트, ATR 기반 손절/익절 계산 정확성 검증, 신호 강도 계산 테스트",
             "parentId": "undefined"
           },
@@ -2121,7 +2121,7 @@
               1
             ],
             "details": "trading/strategy/vwap_bounce.py 파일 생성:\n\n진입 조건 구현:\n1. 현재 가격 > VWAP 확인\n2. ADX > 20 확인\n3. 가격이 VWAP ± 0.3% 범위 터치 확인\n4. 반전 캔들 패턴 (해머, Bullish Engulfing) 감지 - CandlePatternDetector 유틸 사용\n5. RSI 40~65 범위\n6. OBV 상승 추세 유지 (OBV > OBV의 EMA20)\n\n청산 조건:\n- 익절: VWAP 상단밴드(k=1.5) 또는 entry_price + ATR × 2.0 중 먼저 도달\n- 손절: VWAP - ATR × 0.5\n- RR 비율 1:2\n\n반전 캔들 패턴 판별 로직 공통 유틸로 분리: _detect_reversal_candle(candles, direction) 함수 구현",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "VWAP 터치 + 반전 캔들 조합 시나리오 테스트, OBV 상승/하락 판정 테스트, 반전 캔들 패턴 개별 검증 (해머, Engulfing 등)",
             "parentId": "undefined"
           },
@@ -2133,7 +2133,7 @@
               1
             ],
             "details": "trading/strategy/vwap_band_reversal.py 파일 생성:\n\n진입 조건 구현:\n1. ADX < 20 (횡보 장세 확인)\n2. BB Bandwidth 수축 상태 (Bandwidth < 최근 6개월 최저의 120%)\n3. 가격이 VWAP 하단밴드(k=1.5) 터치\n4. 반전 캔들 패턴 감지\n5. RSI < 40 (과매도 근접)\n6. Bollinger %B < 0.1\n\n청산 조건:\n- 익절: VWAP 중심선 도달\n- 손절: 밴드 이탈 + ATR × 0.5\n- RR 비율 1:1.5\n\n매도 시그널도 대칭적으로 구현 (상단밴드 터치 + RSI > 60 + %B > 0.9)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "횡보 장세(ADX<20) 조건 테스트, BB Bandwidth 수축 판정 테스트, %B 계산 정확성 검증, 익절/손절 가격 계산 검증",
             "parentId": "undefined"
           },
@@ -2145,7 +2145,7 @@
               1
             ],
             "details": "trading/strategy/rsi_bb_reversal.py 파일 생성:\n\n진입 조건 (3조건 모두 동시 충족 필수):\n[조건 1] RSI(14) < 30 AND Stochastic %K < 20\n[조건 2] 가격이 BB Lower Band 터치 AND %B < 0.05\n[조건 3] 반전 캔들 (해머 / Bullish Engulfing / 도지 중 하나)\n\n청산 조건:\n- 익절: BB Middle Band (SMA20) 도달\n- 손절: BB 이탈 + ATR × 1.0\n- RR 비율 1:1.5 ~ 2.0\n\n3중 조건 동시 만족 검증 로직: _check_triple_condition() 메서드로 분리하여 모든 조건 AND 연산 후 시그널 생성. 부분 만족 시 HOLD 반환",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "3중 조건 개별/동시 만족 시나리오 테스트, 2개 조건만 만족 시 HOLD 반환 확인, Stochastic %K 계산 검증, 도지 패턴 판별 테스트",
             "parentId": "undefined"
           },
@@ -2157,7 +2157,7 @@
               1
             ],
             "details": "trading/strategy/rsi_divergence.py 파일 생성:\n\n진입 조건 (Bullish):\n1. RSI Bullish Divergence 탐지: 최근 50캔들 내 가격 저점 하락 BUT RSI 저점 상승, 저점 간격 5캔들 이상\n2. MACD Golden Cross (MACD Line > Signal Line) + 히스토그램 음→양 전환\n3. ADX < 25 또는 ADX 감소 추세\n4. OBV 상승 전환 시작\n\n다이버전스 탐지 알고리즘:\n- _find_divergence(candles, rsi_values, lookback=50, min_gap=5) 메서드\n- 로컬 최저점/최고점 탐지 (scipy.signal 또는 직접 구현)\n- 가격-RSI 방향 비교\n\n청산 조건:\n- 익절: entry_price + ATR × 2.5\n- 손절: 다이버전스 발생 저점 이탈\n- RR 비율 1:2.5",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Bullish/Bearish 다이버전스 탐지 정확성 테스트, 저점 간격 5캔들 미만 시 무시 확인, MACD 크로스 타이밍 검증, 다이버전스 저점 기반 손절가 계산 테스트",
             "parentId": "undefined"
           },
@@ -2173,7 +2173,7 @@
               6
             ],
             "details": "trading/strategy/selector.py 파일 생성:\n\nStrategySelector 클래스:\n- select_strategy(regime: RegimeResult, indicators: dict, candles: list) -> Tuple[TradingStrategy, StrategyParams]\n\n장세별 전략 선택 규칙:\n\n[Trend 장세 (ADX > 25)]:\n- EMA20-EMA50 정배열 + 가격 EMA20 근처 → TrendMA 눌림목\n- VWAP 위 가격 + 거래량 평균 이상 → VWAP 눌림목\n- 둘 다 충족 → TrendMA 우선 (더 보수적)\n\n[Range 장세 (ADX < 20)]:\n- BB 상/하단 터치 + RSI 과매수/과매도 → RSI+볼밴+반전캔들\n- VWAP 밴드 상/하단 근접 → VWAP 밴드 반전\n- 둘 다 충족 → RSI+볼밴+반전캔들 우선 (신호 더 강함)\n\n[Transition 장세 (ADX 20~25)]:\n- RSI 다이버전스 + MACD 전략 선택\n\nConfidence 기반 필터링:\n- confidence >= 70% → 풀 포지션\n- 50% <= confidence < 70% → 포지션 50% 축소\n- confidence < 50% → HOLD 반환, 매매 보류",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "장세별(Trend/Range/Transition) 올바른 전략 선택 검증, confidence 임계값별 포지션 조정 테스트, 경계 조건(ADX=20, 25) 테스트, 복수 조건 충족 시 우선순위 검증",
             "parentId": "undefined"
           },
@@ -2185,7 +2185,7 @@
               7
             ],
             "details": "trading/strategy/signal_generator.py 파일 생성:\n\nSignalGenerator 클래스:\n- generate_signal(strategy, candles_by_tf, indicators_by_tf) -> TradingSignal\n\n신호 강도 계산 로직:\n- Strong (> +0.6): 주요 지표 3개 이상 매수 일치\n- Medium (+0.3 ~ +0.6): 주요 지표 2개 매수 + 보조 확인\n- Weak (+0.1 ~ +0.3): 단일 강한 지표 또는 복수 약한 지표\n\n멀티 타임프레임(MTF) 검증:\n- _validate_mtf(signal_5m, trend_1h, trend_4h) -> Tuple[bool, float]\n\nMTF 규칙:\n1. 1h + 4h 같은 방향 → 허용 (가중치 1.0)\n2. 한 타임프레임만 일치 → 허용 (가중치 0.75)\n3. 둘 다 반대 방향 → 차단 (Counter-Trend 금지, return False)\n4. 둘 다 neutral → 허용 (가중치 0.5, 포지션 축소)\n\n최종 출력:\n- {strategy_name, action, action_confidence, indicators_snapshot, signal_strength, mtf_weight}",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "신호 강도 점수 계산 검증 (Strong/Medium/Weak 경계값 테스트), MTF 검증 다양한 조합 테스트 (같은 방향, 반대 방향, neutral 등), Counter-Trend 차단 확인, 최종 출력 스키마 검증",
             "parentId": "undefined"
           }

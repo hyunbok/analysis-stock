@@ -145,6 +145,44 @@
 - IndicatorErrors: core/exceptions.py (insufficient_candles, calculation_failed)
 - 성능 기준: 200행 <50ms, 576행 <100ms, 캐시 HIT <5ms
 
+## v1-16 결정 사항 (AI 장세 분석 엔진)
+- 패키지: `trading/regime/` (types.py, rules.py, classifier.py, detector.py, gpt_validator.py)
+- 순수 함수 패턴 (indicators/와 동일) + MarketRegimeDetector 클래스 래퍼 (태스크 스펙)
+- 규칙 5개: check_adx_strength, check_ema_alignment, check_macd_momentum, check_rsi_regime, check_bollinger_regime
+- 가중치: ADX 30%, EMA 20%, RSI 20%, MACD 15%, BB 15% → softmax 정규화
+- None 규칙 가중치 재정규화, 활성 규칙 < 2 시 confidence 0.3 강제
+- GPT 검증: confidence < 0.7 OR transition 시 호출, openai SDK AsyncOpenAI
+- GPT api_key/model 파라미터 주입 (Config import 금지), 실패 시 non-blocking
+- gpt_validator.py는 trading/regime/ 내 유지 (openai는 인프라 결합 없는 허용 예외)
+- RegimeService: MarketCacheService + AICacheService + MongoDB + Settings DI
+- AiDecision 도큐먼트 재사용 (신규 컬렉션 생성 안 함)
+- AiDecision 6개 필드 Optional화: selected_strategy, action, action_confidence, gpt_model, gpt_prompt_tokens, gpt_completion_tokens
+- 기존 RedisKey.regime() / RedisTTL.REGIME=300 재사용 (변경 없음)
+- 기존 OPENAI_API_KEY, OPENAI_MODEL 재사용 + OPENAI_TIMEOUT 신규 추가 제안
+- RegimeErrors 팩토리: insufficient_indicators, gpt_validation_failed, analysis_failed
+- RegimeType 소문자 통일: "trend" | "range" | "transition"
+- 신규 라이브러리: openai>=1.0
+- 테스트: ~44건 (규칙 20, 분류기 10, GPT mock 6, 서비스 8)
+
+## v1-17 결정 사항 (AI 매매 전략 선택 및 신호 생성 엔진)
+- 순수 계산 패키지: `trading/strategy/` (FastAPI/DB/Redis import 금지)
+- 파일 구조: types.py, base.py, candle_patterns.py, 5개 전략, selector.py, signal_generator.py
+- 타입: StrategyName Literal (str 아님), ConditionResult(name+passed+detail), StrategySignal, TradingSignal
+- SignalStrength: "strong" | "moderate" | "weak" (medium 아닌 moderate)
+- ABC: TradingStrategy(name, compatible_regimes, stop_loss/take_profit_atr_mult, risk_reward_ratio, evaluate)
+- evaluate() 시그니처: (candles, indicators) → StrategySignal | None (regime 파라미터 없음, SRP)
+- candle_patterns.py: strategy/ 내 배치 (indicators/ 아님), 5패턴 순수 함수
+- StrategySelector: REGIME_STRATEGY_MAP 상수, select()가 evaluate()까지 호출 (우선순위 기반)
+- REGIME_STRATEGY_MAP: trend→[trend_ma, vwap_bounce], range→[rsi_bb_reversal, vwap_band_reversal], transition→[rsi_divergence]
+- SignalGenerator: 5분봉 기준 전략 평가 + 1h/4h MTF 방향 검증 (EMA20 vs EMA50 + RSI 50)
+- MTF 차단: 매수 시 bearish 타임프레임 존재 → 차단, weight: 1.0/0.75/0.5
+- ExitParams: 전략별 ATR 배수 내장 (A/B: SL 1.5 TP 3.0 RR 1:2, C/D: SL 1.0 TP 1.5 RR 1:1.5, E: SL 1.5 TP 3.75 RR 1:2.5)
+- OBV 추세: 최근 5봉 close 방향 간이 판별 (OBV 시계열 범위 밖)
+- RSI 다이버전스: rsi_divergence.py 내부 _calculate_rsi_series() 헬퍼 (50봉 탐색)
+- 청산 조건 평가: v1-17 범위 밖, 진입 시점 ExitParams만 포함
+- 신규 라이브러리: 없음
+- 테스트: ~70건 (단위 65 + 통합 5)
+
 ## 협업 패턴
 - code-architect와 이견 시 먼저 합의 후 설계서 반영 (동시 편집 충돌 주의)
 - 설계서 초안을 먼저 작성하고 상대에게 수정/보강 요청하는 방식이 효율적
