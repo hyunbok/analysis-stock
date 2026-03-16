@@ -3,5 +3,92 @@
   "appTitle": "CoinTrader",
   "@appTitle": {
     "description": "The title of the application"
-  }
+  },
+
+  "navHome": "Home",
+  "@navHome": { "description": "Bottom nav: Home tab" },
+
+  "navTrading": "Trading",
+  "@navTrading": { "description": "Bottom nav: Trading tab" },
+
+  "navAiTrading": "AI Trading",
+  "@navAiTrading": { "description": "Bottom nav: AI Trading tab" },
+
+  "navPortfolio": "Portfolio",
+  "@navPortfolio": { "description": "Bottom nav: Portfolio tab" },
+
+  "navMore": "More",
+  "@navMore": { "description": "Bottom nav: More tab" },
+
+  "loginTitle": "Login",
+  "@loginTitle": { "description": "Login screen title" },
+
+  "registerTitle": "Sign Up",
+  "@registerTitle": { "description": "Register screen title" },
+
+  "emailLabel": "Email",
+  "@emailLabel": { "description": "Email input label" },
+
+  "passwordLabel": "Password",
+  "@passwordLabel": { "description": "Password input label" },
+
+  "loginButton": "Login",
+  "@loginButton": { "description": "Login button text" },
+
+  "registerButton": "Sign Up",
+  "@registerButton": { "description": "Register button text" },
+
+  "forgotPassword": "Forgot Password?",
+  "@forgotPassword": { "description": "Forgot password link text" },
+
+  "orLoginWith": "Or login with",
+  "@orLoginWith": { "description": "Social login divider text" },
+
+  "loading": "Loading...",
+  "@loading": { "description": "Generic loading text" },
+
+  "retry": "Retry",
+  "@retry": { "description": "Retry button text" },
+
+  "cancel": "Cancel",
+  "@cancel": { "description": "Cancel button text" },
+
+  "confirm": "Confirm",
+  "@confirm": { "description": "Confirm button text" },
+
+  "save": "Save",
+  "@save": { "description": "Save button text" },
+
+  "delete": "Delete",
+  "@delete": { "description": "Delete button text" },
+
+  "search": "Search",
+  "@search": { "description": "Search hint text" },
+
+  "noData": "No data available",
+  "@noData": { "description": "Empty state message" },
+
+  "errorGeneric": "Something went wrong. Please try again.",
+  "@errorGeneric": { "description": "Generic error message" },
+
+  "connectionLost": "Connection lost. Reconnecting...",
+  "@connectionLost": { "description": "WebSocket connection lost banner" },
+
+  "moreExchanges": "Exchange Settings",
+  "@moreExchanges": { "description": "More menu: Exchange Settings" },
+
+  "moreHistory": "Trade History",
+  "@moreHistory": { "description": "More menu: Trade History" },
+
+  "moreNotifications": "Notifications",
+  "@moreNotifications": { "description": "More menu: Notifications" },
+
+  "moreSettings": "Settings",
+  "@moreSettings": { "description": "More menu: Settings" },
+
+  "moreProfile": "Profile",
+  "@moreProfile": { "description": "More menu: Profile" },
+
+  "moreTerms": "Terms of Service",
+  "@moreTerms": { "description": "More menu: Terms of Service" }
 }
