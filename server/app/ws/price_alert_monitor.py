@@ -122,6 +122,7 @@ class PriceAlertMonitor:
         from app.services.fcm_service import FCMService
         from app.services.notification_service import NotificationService
         from app.services.price_alert_service import PriceAlertService
+        from app.services.push_service import PushService
 
         async with self._session_factory() as db:
             try:
@@ -135,14 +136,16 @@ class PriceAlertMonitor:
                 notification_svc = NotificationService(
                     notification_repo, self._main_redis, publisher
                 )
+                push_svc = PushService(
+                    fcm_svc, notification_svc, client_repo, self._main_redis, self._settings
+                )
 
                 svc = PriceAlertService(
                     alert_repo,
                     coin_repo,
                     exchange_account_repo,
                     notification_svc,
-                    fcm_svc,
-                    client_repo,
+                    push_svc,
                     self._main_redis,
                 )
                 await svc.process_ticker(exchange, market, current_price)

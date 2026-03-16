@@ -158,6 +158,20 @@ class OrderService:
                 },
             )
 
+            # TODO(v1-22): 주문 체결 알림 — PushService 주입 후 아래 코드 활성화
+            # if new_status in ("filled", "partial") and self._push_service:
+            #     try:
+            #         await self._push_service.send_order_execution(
+            #             user_id=user_id,
+            #             order_id=str(order.id),
+            #             coin_symbol=coin.symbol,
+            #             side=request.side.value,
+            #             filled_qty=result.executed_quantity or Decimal("0"),
+            #             price=result.avg_executed_price or request.price or Decimal("0"),
+            #         )
+            #     except Exception:
+            #         logger.warning("Order execution push failed: order=%s", order.id)
+
         except ExchangeError as exc:
             # 6. 실패: FAILED로 전이
             await self._order_repo.update_status(order.id, "failed")

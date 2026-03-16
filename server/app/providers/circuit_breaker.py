@@ -155,6 +155,16 @@ class CircuitBreaker:
                         self._name,
                         self._consecutive_failures,
                     )
+                    # TODO(v1-22): 시스템 알림 — PushService 주입 후 아래 코드 활성화
+                    # 거래소 Circuit Breaker OPEN 시 해당 거래소를 사용 중인 사용자에게 알림
+                    # push_service.send_system_alert()은 user_id가 필요하므로
+                    # ExchangeAccountRepository를 통해 활성 사용자 목록 조회 후 발송 권장
+                    # 예시:
+                    # await push_service.send_system_alert(
+                    #     user_id=user_id,
+                    #     message=f"{self._name} 거래소 연결이 불안정합니다.",
+                    #     severity="warning",
+                    # )
 
     def _should_open(self) -> bool:
         """연속 실패 OR 실패율 초과 시 True."""

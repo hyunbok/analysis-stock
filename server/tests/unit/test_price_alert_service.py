@@ -87,24 +87,21 @@ def _make_service(
     coin_repo: MagicMock | None = None,
     exchange_account_repo: MagicMock | None = None,
     notification_service: MagicMock | None = None,
-    fcm_service: MagicMock | None = None,
-    client_repo: MagicMock | None = None,
+    push_service: MagicMock | None = None,
     redis: MagicMock | None = None,
 ) -> PriceAlertService:
     alert_repo = alert_repo or AsyncMock()
     coin_repo = coin_repo or AsyncMock()
     exchange_account_repo = exchange_account_repo or AsyncMock()
     notification_service = notification_service or AsyncMock()
-    fcm_service = fcm_service or AsyncMock()
-    client_repo = client_repo or AsyncMock()
+    push_service = push_service or AsyncMock()
     redis = redis or AsyncMock()
     return PriceAlertService(
         alert_repo=alert_repo,
         coin_repo=coin_repo,
         exchange_account_repo=exchange_account_repo,
         notification_service=notification_service,
-        fcm_service=fcm_service,
-        client_repo=client_repo,
+        push_service=push_service,
         redis=redis,
     )
 
@@ -351,26 +348,22 @@ async def test_process_ticker_above_condition_triggers_alert() -> None:
     alert_repo.get_active_untriggered_by_market.return_value = [alert]
     alert_repo.mark_triggered.return_value = True
 
-    notification_service = AsyncMock()
-    notification_service.create_notification.return_value = MagicMock()
+    push_service = AsyncMock()
+    push_service.send_price_alert_notification.return_value = True
 
     redis = AsyncMock()
     redis.set.return_value = True  # SETNX 성공
 
-    client_repo = AsyncMock()
-    client_repo.get_by_user.return_value = []
-
     svc = _make_service(
         alert_repo=alert_repo,
-        notification_service=notification_service,
+        push_service=push_service,
         redis=redis,
-        client_repo=client_repo,
     )
 
     await svc.process_ticker("upbit", "KRW-BTC", current_price)
 
     alert_repo.mark_triggered.assert_called_once()
-    notification_service.create_notification.assert_called_once()
+    push_service.send_price_alert_notification.assert_called_once()
 
 
 @pytest.mark.anyio
@@ -384,20 +377,16 @@ async def test_process_ticker_below_condition_triggers_alert() -> None:
     alert_repo.get_active_untriggered_by_market.return_value = [alert]
     alert_repo.mark_triggered.return_value = True
 
-    notification_service = AsyncMock()
-    notification_service.create_notification.return_value = MagicMock()
+    push_service = AsyncMock()
+    push_service.send_price_alert_notification.return_value = True
 
     redis = AsyncMock()
     redis.set.return_value = True
 
-    client_repo = AsyncMock()
-    client_repo.get_by_user.return_value = []
-
     svc = _make_service(
         alert_repo=alert_repo,
-        notification_service=notification_service,
+        push_service=push_service,
         redis=redis,
-        client_repo=client_repo,
     )
 
     await svc.process_ticker("upbit", "KRW-BTC", current_price)
@@ -456,14 +445,14 @@ async def test_trigger_alert_db_race_condition_skips() -> None:
     redis = AsyncMock()
     redis.set.return_value = True  # SETNX 성공
 
-    notification_service = AsyncMock()
+    push_service = AsyncMock()
 
     svc = _make_service(
         alert_repo=alert_repo,
         redis=redis,
-        notification_service=notification_service,
+        push_service=push_service,
     )
 
     await svc.process_ticker("upbit", "KRW-BTC", current_price)
 
-    notification_service.create_notification.assert_not_called()
+    push_service.send_price_alert_notification.assert_not_called()

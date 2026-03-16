@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.v1.auth import router as auth_router
+from app.api.v1.clients import router as clients_router
 from app.api.v1.coins import router as coins_router
 from app.api.v1.exchanges import router as exchanges_router
 from app.api.v1.health import router as health_router
@@ -25,6 +26,7 @@ router.include_router(orders_router, prefix="/orders", tags=["orders"])
 router.include_router(portfolio_router)
 router.include_router(price_alerts_router, prefix="/price-alerts", tags=["price-alerts"])
 router.include_router(notifications_router, prefix="/notifications", tags=["notifications"])
+router.include_router(clients_router, prefix="/clients", tags=["clients"])
 
 # Routers will be included here as they are implemented:
 # from app.api.v1 import wallets, auto_trading, market

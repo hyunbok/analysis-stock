@@ -55,6 +55,10 @@ class RedisTTL:
     PRICE_ALERT_UNREAD_COUNT = 30 * 24 * 3600  # 30일
     PRICE_ALERT_TRIGGERING = 30                 # 30초 (중복 트리거 방지 Lock)
 
+    # FCM Push Notifications
+    FCM_RATE_WINDOW = 60    # 1분 (Rate Limiting 윈도우)
+    FCM_DEDUP = 3600        # 1시간 (중복 알림 방지)
+
 
 class RedisKey:
     """Redis 키 생성 헬퍼 — 타입 안전 키 생성"""
@@ -219,6 +223,18 @@ class RedisKey:
     def price_alert_triggering(alert_id: str) -> str:
         """중복 트리거 방지 Lock (SETNX, 30초 TTL — 분산 환경 멀티 워커 대비)."""
         return f"price_alert:triggering:{alert_id}"
+
+    # ── FCM Push Notifications ─────────────────────────────────────────────────
+
+    @staticmethod
+    def fcm_rate(user_id: str) -> str:
+        """FCM 발송 분당 제한 카운터."""
+        return f"fcm:rate:{user_id}"
+
+    @staticmethod
+    def fcm_dedup(user_id: str, dedup_hash: str) -> str:
+        """FCM 중복 알림 방지 (SETNX, 1시간 TTL)."""
+        return f"fcm:dedup:{user_id}:{dedup_hash}"
 
     # ── Trading / Risk Management ─────────────────────────────────────────────
 

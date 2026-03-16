@@ -86,7 +86,11 @@ class Settings(BaseSettings):
     TOTP_FAIL_MAX: int = 5          # TOTP 최대 실패 횟수 (15분 윈도우)
 
     # FCM Push Notifications
-    FCM_SERVER_KEY: str | None = None
+    FCM_SERVER_KEY: str | None = None          # deprecated (v1-21 하위 호환)
+    FIREBASE_CREDENTIALS_JSON: str = ""        # 서비스 계정 JSON 문자열 (빈 문자열=비활성)
+
+    # FCM Rate Limiting
+    FCM_RATE_LIMIT_PER_MINUTE: int = 10        # 사용자별 분당 최대 발송 건수
 
     # WebSocket Hub
     WS_MAX_CONNECTIONS: int = 1000

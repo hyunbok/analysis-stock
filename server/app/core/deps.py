@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from app.services.order_service import OrderService
     from app.services.portfolio_service import PortfolioService
     from app.services.price_alert_service import PriceAlertService
+    from app.services.push_service import PushService
     from app.services.regime_service import RegimeService
 
 from fastapi import Depends, Request
@@ -454,24 +455,35 @@ def get_notification_service(
     return NotificationService(notification_repo, redis, publisher)
 
 
+def get_push_service(
+    fcm_service: "FCMService" = Depends(get_fcm_service),
+    notification_service: "NotificationService" = Depends(get_notification_service),
+    client_repo: ClientRepository = Depends(get_client_repository),
+    redis: Redis = Depends(get_redis),
+    settings: Settings = Depends(get_settings),
+) -> "PushService":
+    from app.services.push_service import PushService
+    return PushService(fcm_service, notification_service, client_repo, redis, settings)
+
+
 def get_price_alert_service(
     alert_repo: "PriceAlertRepository" = Depends(get_price_alert_repository),
     coin_repo: "CoinRepository" = Depends(get_coin_repository),
     exchange_account_repo: "ExchangeAccountRepository" = Depends(get_exchange_account_repository),
     notification_service: "NotificationService" = Depends(get_notification_service),
-    fcm_service: "FCMService" = Depends(get_fcm_service),
-    client_repo: ClientRepository = Depends(get_client_repository),
+    push_service: "PushService" = Depends(get_push_service),
     redis: Redis = Depends(get_redis),
 ) -> "PriceAlertService":
     from app.services.price_alert_service import PriceAlertService
     return PriceAlertService(
         alert_repo, coin_repo, exchange_account_repo,
-        notification_service, fcm_service, client_repo, redis,
+        notification_service, push_service, redis,
     )
 
 
 PriceAlertRepoDep = Annotated["PriceAlertRepository", Depends(get_price_alert_repository)]
 NotificationRepoDep = Annotated["NotificationRepository", Depends(get_notification_repository)]
 FCMServiceDep = Annotated["FCMService", Depends(get_fcm_service)]
+PushServiceDep = Annotated["PushService", Depends(get_push_service)]
 PriceAlertServiceDep = Annotated["PriceAlertService", Depends(get_price_alert_service)]
 NotificationServiceDep = Annotated["NotificationService", Depends(get_notification_service)]

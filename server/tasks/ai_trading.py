@@ -358,6 +358,18 @@ async def _run_single_config_async(task, config_id: str) -> dict:
             ai_decision.execution_skipped_reason = exec_result.get("skipped_reason")
             await ai_decision.save()
 
+        # TODO(v1-22): AI 매매 신호 알림 — PushService를 TaskContext에 주입 후 아래 코드 활성화
+        # if exec_result["status"] not in ("skipped",) and push_service:
+        #     try:
+        #         await push_service.send_ai_trading_signal(
+        #             user_id=UUID(user_id),
+        #             signal_type=signal["action"].upper(),
+        #             coin_symbol=symbol,
+        #             reason=signal.get("reason", "AI 매매 신호 발생"),
+        #         )
+        #     except Exception:
+        #         logger.warning("AI trading signal push failed: user=%s", user_id)
+
         total_duration_ms = int((time.monotonic() - start_time) * 1000)
         return {
             "config_id": config_id,

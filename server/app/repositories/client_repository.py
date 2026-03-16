@@ -1,8 +1,9 @@
 """Client 엔티티 DB 접근 계층 — 디바이스 세션 관리."""
+
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import and_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -49,7 +50,7 @@ class ClientRepository:
             ip_address=ip_address,
             device_fingerprint=device_fingerprint,
             fcm_token=fcm_token,
-            last_active_at=datetime.now(timezone.utc),
+            last_active_at=datetime.now(UTC),
         )
         self._db.add(client)
         await self._db.flush()
@@ -65,9 +66,7 @@ class ClientRepository:
         Returns:
             Client 또는 None.
         """
-        result = await self._db.execute(
-            select(Client).where(Client.id == client_id)
-        )
+        result = await self._db.execute(select(Client).where(Client.id == client_id))
         return result.scalar_one_or_none()
 
     async def get_by_user_and_fingerprint(
@@ -114,9 +113,7 @@ class ClientRepository:
         Args:
             client_id: Client UUID.
         """
-        await self._db.execute(
-            update(Client).where(Client.id == client_id).values(is_active=False)
-        )
+        await self._db.execute(update(Client).where(Client.id == client_id).values(is_active=False))
         await self._db.flush()
 
     async def deactivate_all(
@@ -145,16 +142,61 @@ class ClientRepository:
         await self._db.flush()
         return result.rowcount
 
+    async def update_fcm_token(
+        self,
+        client_id: uuid.UUID,
+        fcm_token: str | None,
+        *,
+        device_name: str | None = None,
+        user_agent: str | None = None,
+        ip_address: str | None = None,
+    ) -> Client | None:
+        """FCM 토큰 및 메타데이터 업데이트 + last_active_at 갱신."""
+        values: dict = {
+            "fcm_token": fcm_token,
+            "last_active_at": datetime.now(UTC),
+        }
+        if device_name is not None:
+            values["device_name"] = device_name
+        if user_agent is not None:
+            values["user_agent"] = user_agent
+        if ip_address is not None:
+            values["ip_address"] = ip_address
+
+        await self._db.execute(update(Client).where(Client.id == client_id).values(**values))
+        await self._db.flush()
+        return await self.get_by_id(client_id)
+
+    async def get_active_fcm_tokens(self, user_id: uuid.UUID) -> list[tuple[uuid.UUID, str]]:
+        """사용자의 활성 기기 FCM 토큰 목록 조회.
+
+        Returns:
+            [(client_id, fcm_token), ...] — fcm_token이 NULL인 기기 제외.
+        """
+        result = await self._db.execute(
+            select(Client.id, Client.fcm_token).where(
+                Client.user_id == user_id,
+                Client.is_active.is_(True),
+                Client.fcm_token.isnot(None),
+            )
+        )
+        return [(row[0], row[1]) for row in result.all()]
+
+    async def clear_fcm_token_by_value(self, fcm_token: str) -> None:
+        """실패한 FCM 토큰 NULL 처리 (ix_clients_fcm_token 인덱스 활용)."""
+        await self._db.execute(
+            update(Client).where(Client.fcm_token == fcm_token).values(fcm_token=None)
+        )
+        await self._db.flush()
+
     async def update_last_active(self, client_id: uuid.UUID) -> None:
         """last_active_at을 현재 시각으로 갱신.
 
         Args:
             client_id: Client UUID.
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         await self._db.execute(
-            update(Client)
-            .where(Client.id == client_id)
-            .values(last_active_at=now)
+            update(Client).where(Client.id == client_id).values(last_active_at=now)
         )
         await self._db.flush()

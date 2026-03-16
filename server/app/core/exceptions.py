@@ -363,6 +363,18 @@ class PriceAlertErrors:
         return AppError("PRICE_ALERT_MAX_EXCEEDED", "사용자당 최대 50개의 가격 알림만 생성 가능합니다.", 400)
 
 
+class ClientErrors:
+    """클라이언트(기기 세션) 도메인 에러 팩토리."""
+
+    @staticmethod
+    def not_found() -> AppError:
+        return AppError("CLIENT_NOT_FOUND", "클라이언트를 찾을 수 없습니다.", 404)
+
+    @staticmethod
+    def access_denied() -> AppError:
+        return AppError("CLIENT_ACCESS_DENIED", "접근 권한이 없습니다.", 403)
+
+
 class NotificationErrors:
     """알림 도메인 에러 팩토리."""
 

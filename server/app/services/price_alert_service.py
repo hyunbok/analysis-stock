@@ -9,7 +9,6 @@ from redis.asyncio import Redis
 
 from app.core.exceptions import PriceAlertErrors
 from app.core.redis_keys import RedisKey, RedisTTL
-from app.repositories.client_repository import ClientRepository
 from app.repositories.coin_repository import CoinRepository
 from app.repositories.exchange_account_repository import ExchangeAccountRepository
 from app.repositories.price_alert_repository import PriceAlertRepository
@@ -19,8 +18,8 @@ from app.schemas.price_alert import (
     PriceAlertResponse,
     UpdatePriceAlertRequest,
 )
-from app.services.fcm_service import FCMService
 from app.services.notification_service import NotificationService
+from app.services.push_service import PushService
 
 logger = logging.getLogger(__name__)
 
@@ -32,16 +31,14 @@ class PriceAlertService:
         coin_repo: CoinRepository,
         exchange_account_repo: ExchangeAccountRepository,
         notification_service: NotificationService,
-        fcm_service: FCMService,
-        client_repo: ClientRepository,
+        push_service: PushService,
         redis: Redis,
     ) -> None:
         self._alert_repo = alert_repo
         self._coin_repo = coin_repo
         self._exchange_account_repo = exchange_account_repo
         self._notification_service = notification_service
-        self._fcm_service = fcm_service
-        self._client_repo = client_repo
+        self._push_service = push_service
         self._redis = redis
 
     async def create_alert(
@@ -162,44 +159,23 @@ class PriceAlertService:
             logger.debug("Alert %s already triggered (DB), skip", alert.id)
             return
 
-        # c. 알림 기록 생성
-        title = f"{coin_symbol} 목표가 도달"
-        body = f"{coin_symbol}이(가) {alert.target_price:,}원에 도달했습니다."
-        data = {
-            "alert_id": str(alert.id),
-            "coin_symbol": coin_symbol,
-            "exchange_type": exchange_type,
-            "condition": alert.condition,
-            "target_price": str(alert.target_price),
-            "current_price": str(current_price),
-        }
-        await self._notification_service.create_notification(
-            user_id=alert.user_id,
-            type="price_alert",
-            title=title,
-            body=body,
-            data=data,
-        )
-
-        # Redis 가격 알림 전용 미읽 카운트 INCR
+        # c. Redis 가격 알림 전용 미읽 카운트 INCR
         pa_unread_key = RedisKey.price_alert_unread_count(str(alert.user_id))
         await self._redis.incr(pa_unread_key)
         await self._redis.expire(pa_unread_key, RedisTTL.PRICE_ALERT_UNREAD_COUNT, nx=True)
 
-        # d. FCM 발송 (복수 기기, fire-and-forget)
+        # d. FCM 발송 (PushService가 알림 저장 + FCM 발송 통합, fire-and-forget)
         try:
-            clients = await self._client_repo.get_by_user(alert.user_id)
-            for client in clients:
-                if client.fcm_token:
-                    await self._fcm_service.send_price_alert(
-                        fcm_token=client.fcm_token,
-                        coin_symbol=coin_symbol,
-                        condition=alert.condition,
-                        target_price=alert.target_price,
-                        current_price=current_price,
-                    )
+            await self._push_service.send_price_alert_notification(
+                user_id=alert.user_id,
+                alert_id=str(alert.id),
+                coin_symbol=coin_symbol,
+                condition=alert.condition,
+                target_price=alert.target_price,
+                current_price=current_price,
+            )
         except Exception:
-            logger.exception("FCM send failed for alert %s", alert.id)
+            logger.exception("Push send failed for alert %s", alert.id)
 
 
 def _to_response(alert) -> PriceAlertResponse:
