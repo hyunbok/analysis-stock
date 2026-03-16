@@ -9,6 +9,7 @@ class AppError(Exception):
         self.code = code
         self.message = message
         self.http_status = http_status
+        self.status_code = http_status  # 테스트 호환성 별칭
         super().__init__(message)
 
 
@@ -331,6 +332,47 @@ class PortfolioErrors:
             message=f"{exchange} 거래소에 연결할 수 없습니다.",
             http_status=503,
         )
+
+
+class PriceAlertErrors:
+    """가격 알림 도메인 에러 팩토리."""
+
+    @staticmethod
+    def not_found() -> AppError:
+        return AppError("PRICE_ALERT_NOT_FOUND", "가격 알림을 찾을 수 없습니다.", 404)
+
+    @staticmethod
+    def access_denied() -> AppError:
+        return AppError("PRICE_ALERT_ACCESS_DENIED", "접근 권한이 없습니다.", 403)
+
+    @staticmethod
+    def coin_not_found() -> AppError:
+        return AppError("PRICE_ALERT_COIN_NOT_FOUND", "등록된 코인을 찾을 수 없습니다.", 404)
+
+    @staticmethod
+    def exchange_account_not_owned() -> AppError:
+        return AppError("PRICE_ALERT_ACCOUNT_NOT_OWNED", "본인 소유 거래소 계정이 아닙니다.", 403)
+
+    @staticmethod
+    def already_triggered() -> AppError:
+        """이미 트리거된 알림은 재활성화 불가."""
+        return AppError("PRICE_ALERT_ALREADY_TRIGGERED", "이미 발동된 알림은 재활성화할 수 없습니다.", 409)
+
+    @staticmethod
+    def max_exceeded() -> AppError:
+        return AppError("PRICE_ALERT_MAX_EXCEEDED", "사용자당 최대 50개의 가격 알림만 생성 가능합니다.", 400)
+
+
+class NotificationErrors:
+    """알림 도메인 에러 팩토리."""
+
+    @staticmethod
+    def not_found() -> AppError:
+        return AppError("NOTIFICATION_NOT_FOUND", "알림을 찾을 수 없습니다.", 404)
+
+    @staticmethod
+    def access_denied() -> AppError:
+        return AppError("NOTIFICATION_ACCESS_DENIED", "접근 권한이 없습니다.", 403)
 
 
 class OrderErrors:

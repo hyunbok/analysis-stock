@@ -85,6 +85,9 @@ class Settings(BaseSettings):
     TOTP_TEMP_TOKEN_TTL: int = 300  # 5분 (2FA 로그인 임시 토큰 TTL)
     TOTP_FAIL_MAX: int = 5          # TOTP 최대 실패 횟수 (15분 윈도우)
 
+    # FCM Push Notifications
+    FCM_SERVER_KEY: str | None = None
+
     # WebSocket Hub
     WS_MAX_CONNECTIONS: int = 1000
     WS_MAX_CONNECTIONS_PER_USER: int = 5

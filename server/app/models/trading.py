@@ -222,10 +222,16 @@ class PriceAlert(Base):
         Index("ix_price_alerts_user_id", "user_id"),
         Index("ix_price_alerts_is_active", "is_active"),
         Index("ix_price_alerts_coin_id", "coin_id"),
-        # Partial index: active untriggered alerts only (알림 체크 최적화)
+        # Partial index: active untriggered alerts only — 사용자별 조회 (수정/삭제 API)
         Index(
             "ix_price_alerts_active_untriggered",
             "user_id",
+            "coin_id",
+            postgresql_where=text("is_active = true AND is_triggered = false"),
+        ),
+        # Partial index: coin_id 기준 — 백그라운드 감지 루프 전용
+        Index(
+            "ix_price_alerts_coin_active_untriggered",
             "coin_id",
             postgresql_where=text("is_active = true AND is_triggered = false"),
         ),
@@ -265,6 +271,9 @@ class PriceAlert(Base):
     triggered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
     user: Mapped["User"] = relationship("User", back_populates="price_alerts")

@@ -5,13 +5,18 @@ if TYPE_CHECKING:
     from app.providers.factory import ExchangeProviderFactory
     from app.repositories.coin_repository import CoinRepository
     from app.repositories.exchange_account_repository import ExchangeAccountRepository
+    from app.repositories.notification_repository import NotificationRepository
     from app.repositories.order_repository import OrderRepository
     from app.repositories.portfolio_repository import PortfolioRepository
+    from app.repositories.price_alert_repository import PriceAlertRepository
     from app.repositories.watchlist_repository import WatchlistRepository
     from app.services.coin_service import CoinService
     from app.services.exchange_account_service import ExchangeAccountService
+    from app.services.fcm_service import FCMService
+    from app.services.notification_service import NotificationService
     from app.services.order_service import OrderService
     from app.services.portfolio_service import PortfolioService
+    from app.services.price_alert_service import PriceAlertService
     from app.services.regime_service import RegimeService
 
 from fastapi import Depends, Request
@@ -415,3 +420,58 @@ def get_portfolio_service(
 
 PortfolioRepoDep = Annotated["PortfolioRepository", Depends(get_portfolio_repository)]
 PortfolioServiceDep = Annotated["PortfolioService", Depends(get_portfolio_service)]
+
+
+# ── Price Alert / Notification ────────────────────────────────────────────────
+
+def get_price_alert_repository(
+    db: AsyncSession = Depends(get_db),
+) -> "PriceAlertRepository":
+    from app.repositories.price_alert_repository import PriceAlertRepository
+    return PriceAlertRepository(db)
+
+
+def get_notification_repository() -> "NotificationRepository":
+    from app.repositories.notification_repository import NotificationRepository
+    return NotificationRepository()
+
+
+def get_fcm_service(
+    settings: Settings = Depends(get_settings),
+) -> "FCMService":
+    from app.services.fcm_service import FCMService
+    return FCMService(settings)
+
+
+def get_notification_service(
+    notification_repo: "NotificationRepository" = Depends(get_notification_repository),
+    redis: Redis = Depends(get_redis),
+    pubsub_redis: Redis = Depends(get_pubsub_redis),
+) -> "NotificationService":
+    from app.core.pubsub import RedisPublisher
+    from app.services.notification_service import NotificationService
+    publisher = RedisPublisher(pubsub_redis)
+    return NotificationService(notification_repo, redis, publisher)
+
+
+def get_price_alert_service(
+    alert_repo: "PriceAlertRepository" = Depends(get_price_alert_repository),
+    coin_repo: "CoinRepository" = Depends(get_coin_repository),
+    exchange_account_repo: "ExchangeAccountRepository" = Depends(get_exchange_account_repository),
+    notification_service: "NotificationService" = Depends(get_notification_service),
+    fcm_service: "FCMService" = Depends(get_fcm_service),
+    client_repo: ClientRepository = Depends(get_client_repository),
+    redis: Redis = Depends(get_redis),
+) -> "PriceAlertService":
+    from app.services.price_alert_service import PriceAlertService
+    return PriceAlertService(
+        alert_repo, coin_repo, exchange_account_repo,
+        notification_service, fcm_service, client_repo, redis,
+    )
+
+
+PriceAlertRepoDep = Annotated["PriceAlertRepository", Depends(get_price_alert_repository)]
+NotificationRepoDep = Annotated["NotificationRepository", Depends(get_notification_repository)]
+FCMServiceDep = Annotated["FCMService", Depends(get_fcm_service)]
+PriceAlertServiceDep = Annotated["PriceAlertService", Depends(get_price_alert_service)]
+NotificationServiceDep = Annotated["NotificationService", Depends(get_notification_service)]

@@ -2675,7 +2675,7 @@
         "dependencies": [
           "13"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -2683,7 +2683,7 @@
             "description": "가격 알림 시스템의 REST API 엔드포인트 구현을 위한 라우터 모듈과 요청/응답 스키마 정의",
             "dependencies": [],
             "details": "server/app/api/v1/price_alerts.py 라우터 파일 생성 및 다음 엔드포인트 정의:\n- POST /api/v1/price-alerts (생성)\n- GET /api/v1/price-alerts (조회)\n- PUT /api/v1/price-alerts/{id} (수정)\n- DELETE /api/v1/price-alerts/{id} (삭제)\n\nserver/app/schemas/price_alerts.py에 다음 스키마 정의:\n- PriceAlertCreate: coin_id, exchange_account_id, condition, target_price, is_active\n- PriceAlertUpdate: target_price, condition\n- PriceAlertResponse: id, coin_id, condition, target_price, is_active, is_triggered, triggered_at, created_at\n- PriceAlertListResponse: 알림 목록 및 미읽 카운트",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "pytest를 이용한 API 엔드포인트 단위 테스트 작성: 정상 요청, 유효성 검사 실패, 미인증 요청 등을 검증",
             "parentId": "undefined"
           },
@@ -2695,7 +2695,7 @@
               1
             ],
             "details": "server/app/repositories/price_alert_repository.py 생성:\n- create(user_id, coin_id, exchange_account_id, condition, target_price) → PriceAlert\n- get_by_id(id) → PriceAlert\n- list_by_user(user_id, active_only=False) → List[PriceAlert]\n- update_target_price(id, target_price)\n- update_condition(id, condition)\n- mark_triggered(id) → is_triggered=True, triggered_at=now()\n- deactivate(id) → is_active=False\n- delete(id)\n- get_active_untriggered_alerts() → 백그라운드 감지용 활성 미발동 알림 조회\n\n부분 인덱스 활용: ix_price_alerts_active_untriggered 인덱스를 통한 성능 최적화",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "단위 테스트: 각 CRUD 메서드 동작 검증, 쿼리 성능 테스트 (벤치마크), 트랜잭션 롤백 처리",
             "parentId": "undefined"
           },
@@ -2707,7 +2707,7 @@
               2
             ],
             "details": "server/app/services/price_alert_service.py 생성:\n- create_alert(user_id, coin_id, exchange_account_id, condition, target_price): 중복 검사, 가격 유효성 검증\n- update_alert(user_id, alert_id, target_price, condition): 소유권 검증, 활성 상태만 수정 가능\n- delete_alert(user_id, alert_id): 소유권 검증\n- get_user_alerts(user_id, active_only=False): 활성 필터 적용\n- check_and_trigger_alerts(current_price, coin_id): 실시간 시세 수신 시 조건 판단\n\n비즈니스 규칙:\n- condition: 'above' 또는 'below' 검증\n- target_price: 양수, 8자리 소수점 검증\n- 같은 코인/조건에 대한 중복 알림 방지\n- 도달한 알림은 자동 비활성화 (is_active=False)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "단위 테스트: 유효성 검사, 중복 검사, 조건 판단 로직 (above/below), 서비스 예외 처리",
             "parentId": "undefined"
           },
@@ -2720,7 +2720,7 @@
               2
             ],
             "details": "server/app/core/cache.py 또는 별도 cache_service.py에 다음 함수 구현:\n- get_unread_price_alert_count(user_id) → int: Redis에서 조회\n- increment_unread_count(user_id): 알림 발동 시 카운트 증가\n- decrement_unread_count(user_id): 알림 읽기 시 카운트 감소\n- reset_unread_count(user_id): 모두 읽음 처리\n\nRedis 키 패턴: price_alert:unread:{user_id}\nTTL: 30일 (만료된 알림과 동기화)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Redis 연동 통합 테스트: 카운트 증감 정확성, TTL 검증, 동시 접근 안전성",
             "parentId": "undefined"
           },
@@ -2733,7 +2733,7 @@
               3
             ],
             "details": "server/app/documents/notifications.py의 Notification 문서 확장 (이미 정의됨):\n- 기존: user_id, type, title, body, data, is_read, created_at\n- type='price_alert'일 경우 data에 다음 필드: {coin_symbol, current_price, target_price}\n\nserver/app/repositories/notification_repository.py 생성:\n- create_price_alert_notification(user_id, coin_symbol, current_price, target_price) → Notification\n- mark_as_read(notification_id)\n- list_user_notifications(user_id, skip=0, limit=50) → List[Notification]\n- count_unread(user_id) → int\n\n90일 TTL 인덱스 자동 삭제 (이미 설정됨)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "MongoDB CRUD 테스트, TTL 인덱스 동작 검증, 비동기 저장소 성능 테스트",
             "parentId": "undefined"
           },
@@ -2747,7 +2747,7 @@
               5
             ],
             "details": "server/app/tasks/price_alert_monitor.py 생성:\n- background task: monitor_price_alerts()\n- WebSocket으로부터 실시간 시세 수신 (coin_id, current_price)\n- get_active_untriggered_alerts(coin_id)로 해당 코인 활성 알림 조회\n- 각 알림에 대해 condition 판단:\n  * condition='above': current_price >= target_price\n  * condition='below': current_price <= target_price\n- 조건 만족 시:\n  * price_alert_repository.mark_triggered(alert_id)\n  * MongoDB notification 생성\n  * Redis 미읽 카운트 증가\n  * FCM 푸시 알림 발송 준비\n  * is_active=False로 자동 비활성화\n\n예외 처리: 데이터베이스 오류 시 로깅하되 시세 처리 중단 방지",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "단위 테스트 (모의 시세 데이터), 통합 테스트 (WebSocket + DB + Redis), 조건 판단 검증 (above/below 경계값)",
             "parentId": "undefined"
           },
@@ -2759,7 +2759,7 @@
               6
             ],
             "details": "server/app/services/fcm_service.py 확장 (필요시 생성):\n- send_price_alert_notification(user_id, coin_symbol, current_price, target_price):\n  * user의 모든 활성 Client 기기의 FCM 토큰 조회\n  * 멀티캐스트 메시지 생성:\n    - title: f\"⚠️ {coin_symbol} {current_price} 도달\"\n    - body: f\"목표 가격 {target_price}에 도달했습니다.\"\n    - data: {price_alert_id, coin_symbol, current_price, target_price, triggered_at}\n  * FCM API로 멀티캐스트 발송 (최대 500개 토큰)\n  * 실패한 토큰 로깅 및 무효한 토큰 정리\n\n에러 처리: FCM 발송 실패 시 로깅하되, DB 트랜잭션은 성공으로 처리",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "FCM 에뮬레이터 또는 모의 발송 테스트, 멀티캐스트 페이징 테스트, 토큰 무효화 처리",
             "parentId": "undefined"
           },
@@ -2772,7 +2772,7 @@
               5
             ],
             "details": "server/app/api/v1/price_alerts.py 확장:\n- GET /api/v1/price-alerts 응답에 unread_count 필드 추가\n- PATCH /api/v1/price-alerts/{id}/mark-read: 개별 알림 읽음 처리\n  * notification_repository.mark_as_read(alert_id)\n  * Redis 미읽 카운트 감소\n- PATCH /api/v1/price-alerts/mark-all-read: 모든 알림 일괄 읽음\n  * 모든 미읽 notification 업데이트\n  * Redis 미읽 카운트 초기화\n\nPriceAlertListResponse 확장:\n- alerts: List[PriceAlert]\n- unread_count: int\n- total_count: int",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "API 엔드포인트 통합 테스트, 미읽 카운트 정확성 검증, 읽음/미읽 상태 전환",
             "parentId": "undefined"
           },
@@ -2789,7 +2789,7 @@
               8
             ],
             "details": "server/tests/e2e/test_price_alerts.py 생성:\n\n테스트 케이스:\n1. 가격 알림 생성 및 조회\n   - POST /api/v1/price-alerts 요청 → 성공 (price_alert_id 반환)\n   - GET /api/v1/price-alerts → 생성된 알림 포함\n   \n2. 조건 판단 검증 (above/below)\n   - \"above\" 조건: 현재가 >= 목표가 시 발동\n   - \"below\" 조건: 현재가 <= 목표가 시 발동\n   \n3. 실시간 시세 수신 시 자동 발동\n   - WebSocket 시세 수신 모의\n   - is_triggered=true, is_active=false 확인\n   - MongoDB notification 생성 확인\n   - Redis 미읽 카운트 증가 확인\n   \n4. FCM 푸시 발송 확인\n   - FCM 모의 발송 검증\n   - 메시지 내용 정확성\n   \n5. 미읽 카운트 정확성\n   - unread_count 조회\n   - mark-read 처리 후 감소 확인\n   \n6. 알림 수정 및 삭제\n   - PUT /api/v1/price-alerts/{id}: target_price, condition 수정\n   - DELETE /api/v1/price-alerts/{id}: 삭제 후 미존재 확인",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "pytest + httpx로 API 통합 테스트, 모의 WebSocket 데이터, 모의 FCM, DB 상태 검증, Redis 상태 검증",
             "parentId": "undefined"
           },
@@ -2809,7 +2809,7 @@
               9
             ],
             "details": "리뷰 항목:\n\n1. 보안 검토\n   - 입력 유효성 검사 (SQL injection, XSS 방지)\n   - 사용자 소유권 검증 (다른 사용자 알림 조회/수정 방지)\n   - FCM 토큰 보안\n   \n2. 성능 최적화\n   - 데이터베이스 쿼리 인덱스 활용 (부분 인덱스 활용 확인)\n   - N+1 쿼리 문제 점검\n   - Redis 캐시 hit ratio 검증\n   - 대량 알림 처리 성능 (1000개 이상)\n   \n3. 코드 품질\n   - Ruff 린팅 통과\n   - 타입 어노테이션 완성도\n   - 에러 처리 및 예외 전략\n   - 로깅 적절성\n   \n4. 테스트 커버리지\n   - 라인 커버리지 80% 이상\n   - 중요 경로 테스트\n   - 에지 케이스 테스트\n   \n5. 문서화\n   - API 문서 (Swagger/OpenAPI)\n   - 함수 docstring\n   - 복잡한 로직 주석",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "정적 분석 (ruff, mypy), 성능 테스트 (pytest-benchmark), 보안 검토, 코드 리뷰 체크리스트 작성 및 검증",
             "parentId": "undefined"
           }

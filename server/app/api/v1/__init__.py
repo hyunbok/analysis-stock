@@ -4,8 +4,10 @@ from app.api.v1.auth import router as auth_router
 from app.api.v1.coins import router as coins_router
 from app.api.v1.exchanges import router as exchanges_router
 from app.api.v1.health import router as health_router
+from app.api.v1.notifications import router as notifications_router
 from app.api.v1.orders import router as orders_router
 from app.api.v1.portfolio import router as portfolio_router
+from app.api.v1.price_alerts import router as price_alerts_router
 from app.api.v1.social_auth import router as social_auth_router
 from app.api.v1.users import router as users_router
 from app.api.v1.watchlist import router as watchlist_router
@@ -21,6 +23,8 @@ router.include_router(coins_router, prefix="/coins", tags=["coins"])
 router.include_router(watchlist_router, prefix="/watchlist", tags=["watchlist"])
 router.include_router(orders_router, prefix="/orders", tags=["orders"])
 router.include_router(portfolio_router)
+router.include_router(price_alerts_router, prefix="/price-alerts", tags=["price-alerts"])
+router.include_router(notifications_router, prefix="/notifications", tags=["notifications"])
 
 # Routers will be included here as they are implemented:
 # from app.api.v1 import wallets, auto_trading, market

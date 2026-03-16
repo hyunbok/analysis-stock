@@ -51,6 +51,10 @@ class RedisTTL:
     # Notifications
     UNREAD_COUNT = 3600             # 1시간
 
+    # Price Alerts
+    PRICE_ALERT_UNREAD_COUNT = 30 * 24 * 3600  # 30일
+    PRICE_ALERT_TRIGGERING = 30                 # 30초 (중복 트리거 방지 Lock)
+
 
 class RedisKey:
     """Redis 키 생성 헬퍼 — 타입 안전 키 생성"""
@@ -205,6 +209,16 @@ class RedisKey:
     @staticmethod
     def unread_count(user_id: str) -> str:
         return f"notifications:unread_count:{user_id}"
+
+    @staticmethod
+    def price_alert_unread_count(user_id: str) -> str:
+        """가격 알림 미읽 카운트 (30일 TTL — 알림 트리거 시 INCR, 읽음 처리 시 DECR/DEL)."""
+        return f"price_alert:unread:{user_id}"
+
+    @staticmethod
+    def price_alert_triggering(alert_id: str) -> str:
+        """중복 트리거 방지 Lock (SETNX, 30초 TTL — 분산 환경 멀티 워커 대비)."""
+        return f"price_alert:triggering:{alert_id}"
 
     # ── Trading / Risk Management ─────────────────────────────────────────────
 

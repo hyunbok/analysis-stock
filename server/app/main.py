@@ -95,7 +95,22 @@ async def lifespan(app: FastAPI):
     app.state.ws_bridge = bridge
     app.state.ws_router = ws_router
 
+    # PriceAlertMonitor 시작 (ticker Pub/Sub → 알림 조건 체크)
+    from app.core.database import AsyncSessionLocal
+    from app.ws.price_alert_monitor import PriceAlertMonitor
+
+    price_alert_monitor = PriceAlertMonitor(
+        session_factory=AsyncSessionLocal,
+        pubsub_redis=get_pubsub_redis(),
+        main_redis=get_redis(),
+        settings=settings,
+    )
+    await price_alert_monitor.start()
+
     yield
+
+    # Shutdown — PriceAlertMonitor 정리
+    await price_alert_monitor.stop()
 
     # Shutdown — WS 태스크 정리
     heartbeat_task.cancel()
