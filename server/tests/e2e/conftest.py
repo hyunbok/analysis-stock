@@ -194,7 +194,7 @@ async def e2e_db_session(e2e_engine):
         yield session
 
 
-@pytest_asyncio.fixture(loop_scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def e2e_client(e2e_app):
     """httpx AsyncClient — E2E API 호출 전용."""
     async with AsyncClient(
@@ -204,7 +204,7 @@ async def e2e_client(e2e_app):
         yield client
 
 
-@pytest_asyncio.fixture(loop_scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def test_user(e2e_client, e2e_redis):
     """등록 + 인증된 사용자 픽스처 — access_token 포함.
 
@@ -245,7 +245,7 @@ async def test_user(e2e_client, e2e_redis):
     # 전체 스키마(데이터 포함)가 제거됨 → 명시적 cleanup 불필요 (ADR-025-2)
 
 
-@pytest_asyncio.fixture(loop_scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def test_exchange_account(e2e_client, test_user):
     """MockProvider 연결된 거래소 계정 픽스처."""
     headers = {"Authorization": f"Bearer {test_user['access_token']}"}
