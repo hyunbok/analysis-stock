@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import pytest
 from starlette.testclient import TestClient
+from starlette.websockets import WebSocketDisconnect
 
 pytestmark = pytest.mark.e2e
 
@@ -123,9 +124,10 @@ def test_ws_personal_channel_subscribe(e2e_app, test_user):
 
 def test_ws_unauthorized_rejected(e2e_app):
     """토큰 없이 WS 연결 → close code 4001 (Unauthorized)."""
-    with pytest.raises(Exception):
+    with pytest.raises(WebSocketDisconnect) as exc_info:
         with TestClient(e2e_app).websocket_connect("/ws/v1?token=invalid-token") as ws:
             ws.receive_json()  # 여기까지 도달하면 안 됨
+    assert exc_info.value.code == 4001
 
 
 # ── TC-WS-E2E-06: 잘못된 토큰 형식 → 연결 거부 ──────────────────────────────
@@ -133,9 +135,10 @@ def test_ws_unauthorized_rejected(e2e_app):
 
 def test_ws_malformed_token_rejected(e2e_app):
     """잘못된 형식의 JWT → WS 연결 거부."""
-    with pytest.raises(Exception):
+    with pytest.raises(WebSocketDisconnect) as exc_info:
         with TestClient(e2e_app).websocket_connect("/ws/v1?token=not.a.valid.jwt") as ws:
             ws.receive_json()
+    assert exc_info.value.code == 4001
 
 
 # ── TC-WS-E2E-07: ping → pong 응답 ───────────────────────────────────────────

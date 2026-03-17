@@ -182,7 +182,7 @@ async def e2e_app(e2e_engine, e2e_redis, e2e_pubsub_redis, mongo_client):
 # ── 함수 범위 (테스트별 독립) ─────────────────────────────────────────────────
 
 
-@pytest_asyncio.fixture(loop_scope="session")
+@pytest_asyncio.fixture(scope="function", loop_scope="session")
 async def e2e_db_session(e2e_engine):
     """DB 직접 검증용 세션 — API 호출 결과를 DB에서 확인할 때만 사용.
 
@@ -240,7 +240,9 @@ async def test_user(e2e_client, e2e_redis):
         "refresh_token": data["tokens"]["refresh_token"],
         "email": "e2e@test.com",
     }
-    # teardown: 세션 범위라 Alembic base 롤백 시 자동 cleanup
+    # teardown: 별도 API 삭제 호출 없음.
+    # 세션 범위 fixture이므로 e2e_engine teardown 시 Alembic downgrade("base")로
+    # 전체 스키마(데이터 포함)가 제거됨 → 명시적 cleanup 불필요 (ADR-025-2)
 
 
 @pytest_asyncio.fixture(loop_scope="session")

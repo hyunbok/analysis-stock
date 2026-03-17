@@ -164,51 +164,10 @@ async def test_exchange_limit_sell_and_cancel(
     e2e_app,
 ):
     """지정가 매도 → OPEN 상태 → 취소 → CANCELLED 확인."""
-    from app.providers.factory import ExchangeProviderFactory
-    from app.providers.mock_provider import MockOrderScenario
+    from app.providers.mock_provider import MockExchangeProvider, MockOrderScenario
 
     headers = auth_headers(test_user["access_token"])
     account_id = test_exchange_account["account_id"]
-
-    # MockProvider를 OPEN 시나리오로 전환
-    factory = ExchangeProviderFactory.instance()
-    # 현재 활성 Provider 중 MockExchangeProvider 찾기
-    mock_provider = None
-    for provider in factory._active_providers:
-        if hasattr(provider, "set_scenario"):
-            mock_provider = provider
-            break
-
-    # Provider가 없으면 새로 생성 시 OPEN 시나리오 적용을 위해 패치
-    if mock_provider is None:
-        # 코인 ID 조회
-        coins_resp = await e2e_client.get(
-            "/api/v1/coins?exchange_type=upbit&page=1&size=50",
-            headers=headers,
-        )
-        assert coins_resp.status_code == 200
-        coins_data = coins_resp.json()["data"]
-        items = (
-            coins_data.get("items", coins_data) if isinstance(coins_data, dict) else coins_data
-        )
-        btc_coin = next(
-            (c for c in items if "BTC" in c.get("symbol", "") or "BTC" in c.get("market_code", "")),
-            None,
-        )
-        if btc_coin is None:
-            pytest.skip("BTC 코인 없음")
-        coin_id = btc_coin["id"]
-
-        # 먼저 시장가 매수로 OPEN 시나리오를 유도하는 Provider 생성
-        # (실제 Provider 인스턴스는 서비스 내부에서 생성되므로 패치로 처리)
-        from unittest.mock import patch
-
-        with patch.object(
-            factory.__class__,
-            "create",
-            wraps=lambda *a, **kw: _create_open_provider(factory, *a, **kw),
-        ):
-            pass  # 단순 취소 흐름은 create 후 scenario 변경 불가 → 다른 방법 사용
 
     # 코인 ID 조회
     coins_resp = await e2e_client.get(
@@ -229,15 +188,18 @@ async def test_exchange_limit_sell_and_cancel(
     coin_id = btc_coin["id"]
 
     # MockProvider OPEN 시나리오로 지정가 매도
-    # ExchangeProviderRegistry에 등록된 MockProvider의 set_scenario를 패치
+    # patch.object로 메서드 교체 + try/finally로 scenario 원복 보장
     from unittest.mock import patch as mock_patch
-    from app.providers.mock_provider import MockExchangeProvider
 
     original_place_order = MockExchangeProvider.place_order
 
     async def open_place_order(self, order):
+        original_scenario = self._scenario
         self._scenario = MockOrderScenario.OPEN
-        return await original_place_order(self, order)
+        try:
+            return await original_place_order(self, order)
+        finally:
+            self._scenario = original_scenario
 
     with mock_patch.object(MockExchangeProvider, "place_order", open_place_order):
         limit_order_resp = await e2e_client.post(
@@ -365,8 +327,12 @@ async def test_exchange_batch_cancel(
     original_place_order = MockExchangeProvider.place_order
 
     async def open_place_order(self, order):
+        original_scenario = self._scenario
         self._scenario = MockOrderScenario.OPEN
-        return await original_place_order(self, order)
+        try:
+            return await original_place_order(self, order)
+        finally:
+            self._scenario = original_scenario
 
     order_ids = []
     with patch.object(MockExchangeProvider, "place_order", open_place_order):
