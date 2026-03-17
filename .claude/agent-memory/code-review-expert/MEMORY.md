@@ -88,11 +88,35 @@
 - audit log 검증: `mock_audit_service`를 파라미터로 받지 않으면 호출 횟수 검증 불가
 - MongoDB 모듈: `sys.modules`에 `ModuleType` 인스턴스로 mock (Pydantic v2 + bson.Decimal128 비호환 우회)
 
+## 자주 발견되는 패턴 (Flutter 클라이언트)
+
+### WARNING 패턴
+- **GoRouter 재생성 패턴**: `routerProvider`에서 `ref.watch(authStateProvider)` → 로그인/로그아웃 시마다 GoRouter 새로 생성 → 네비게이션 스택 리셋. 올바른 패턴: `_RouterNotifier(ChangeNotifier)` + `refreshListenable` 조합
+- **splash 탈출 로직 누락**: `isSplash → return null` 패턴은 loading 완료 후 /splash 고착 버그. `isSplash → isAuthenticated ? '/home' : '/login'`으로 수정 필요
+- **catch 타입 불일치**: `on ApiException catch (_)`로 PlatformException을 잡으려는 패턴 → bare `catch (_)` 사용
+- **financial models double 사용**: Dart에서 Decimal 타입은 `decimal` 패키지 필요. 가격/수량 필드는 `String`이나 `Decimal` 권장
+
+### INFO 패턴
+- **ScaffoldWithNavBar i18n 누락**: NavigationDestination label 하드코딩 → `AppLocalizations.of(context).navXxx` 사용
+- **app.dart ref.listen + routerProvider ref.watch 중복**: authState 변화 → routerProvider rebuild (new router) + ref.listen의 router.refresh() (old router) 둘 다 발생
+
+### 테스트 패턴 (Flutter)
+- `FakeSecureStorage`: `FlutterSecureStorage` 플랫폼 채널 없이 인메모리로 구현 (`test/helpers/fake_secure_storage.dart`)
+- `SharedPreferences.setMockInitialValues({})` → `SharedPreferences.getInstance()` 패턴으로 앱 설정 테스트
+- `ErrorInterceptorHandler` 서브클래스로 `_CaptureHandler` 만들어 reject/next 캡처
+- `HttpClientAdapter` 구현으로 HTTP mock (RefreshInterceptor 테스트)
+- `integration_test`: `IntegrationTestWidgetsFlutterBinding.ensureInitialized()` + `flutter test integration_test/`
+
 ## 팀 구성 (v1-5 이후)
 - team-lead: 총괄, 최종 보고 대상
 - python-backend-expert: 백엔드 구현 (리뷰 대상, SendMessage recipient = "python-backend-expert")
 - e2e-test-expert: 통합 테스트 구현 (SendMessage recipient = "e2e-test-expert")
 - code-review-expert: 본인
+
+## 팀 구성 (v1-23)
+- team-lead: 총괄
+- flutter-frontend-expert: Flutter 구현 (ST3/ST4/ST7/ST8, SendMessage recipient = "flutter-frontend-expert")
+- code-review-expert: 코드 리뷰 + ST10 테스트 환경 구성
 
 ## 주요 설계 결정 (v1-3)
 - Rate Limiter: Token Bucket Lua EVALSHA (`server/app/core/lua/token_bucket.lua`)

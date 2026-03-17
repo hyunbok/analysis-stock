@@ -187,6 +187,56 @@ ws/hub.py -> Redis Pub/Sub (services 직접 호출 금지)
 - 각 거래소 공개 REST API 호출 → `upsert(ON CONFLICT DO UPDATE)` 방식
 - `--exchange upbit|coinone|coinbase|binance|all` 옵션
 
+## v1-21 가격 알림 시스템 설계 확정사항
+
+- 설계서: `docs/tasks/v1-21-price-alert-system-plan.md` (project-architect 작성 예정)
+- **기존 활용**: `PriceAlert` PG 모델(trading.py), `Notification` MongoDB(notifications.py), `RedisKey.unread_count`, `PubSubChannel.price_alert` 모두 이미 정의됨
+- **신규 파일**: `api/v1/price_alerts.py`, `schemas/price_alert.py`, `repositories/price_alert_repository.py`, `repositories/notification_repository.py`, `services/price_alert_service.py`, `services/fcm_service.py`, `ws/price_alert_monitor.py`
+- **기존 수정**: `core/exceptions.py`(PriceAlertErrors), `core/deps.py`(4개 DI), `api/v1/__init__.py`
+
+### API 엔드포인트
+- `POST /api/v1/price-alerts` → 201
+- `GET /api/v1/price-alerts?active={bool}` → PriceAlertListResponse (alerts + unread_count)
+- `PUT /api/v1/price-alerts/{alert_id}` → 200
+- `DELETE /api/v1/price-alerts/{alert_id}` → 200
+- `PATCH /api/v1/price-alerts/mark-all-read` → MarkAllReadResponse (mark-all-read 먼저 등록)
+- `PATCH /api/v1/price-alerts/{alert_id}/mark-read` → 200
+
+### mark-read 설계
+- `{alert_id}` = PriceAlert PG id (UUID)
+- MongoDB notification 조회: `data.price_alert_id == alert_id`
+- Redis unread_count DECR/SET 0 병행 처리
+
+### PriceAlertErrors (5개)
+- not_found(404), access_denied(403), coin_not_found(404), exchange_account_not_owned(403), cannot_reactivate_triggered(409)
+
+### 백그라운드 모니터
+- `PriceAlertMonitor`: Redis Pub/Sub `ch:ticker:*:*` 구독 → `process_ticker()` 호출
+- lifespan에서 start/stop 연동
+- 트리거 조건: above → current >= target, below → current <= target
+- 트리거 시: PG mark_triggered + MongoDB notification + Redis INCR + FCM
+
+### Settings 추가 필요
+- FCM 관련: `FIREBASE_CREDENTIALS_JSON: str | None = None` (Firebase Admin SDK 방식 권장)
+
+### DB 인프라 확인 완료 (db-architect, 2026-03-16)
+- `price_alerts` 마이그레이션: 001(테이블), 002(인덱스), 007(updated_at + coin_active 인덱스) 적용 완료
+- `PriceAlert.updated_at` 필드 추가됨 → `PriceAlertResponse`에 포함 필요
+- `ix_price_alerts_coin_active_untriggered`: coin_id 기준 partial index → `get_active_untriggered_by_market()` 최적화
+- `User.price_alerts` relationship: 이미 존재 (cascade all, delete-orphan)
+- `UserExchangeAccount.price_alerts` relationship: 이미 존재 (cascade 없음, SET NULL)
+- `Notification.data` 키: `"alert_id"` (str UUID), `"coin_symbol"`, `"exchange_type"`, `"current_price"`, `"target_price"`, `"condition"` — 인덱스 불필요
+
+### notifications.py 라우터 파일 분리 확정 (project-architect 협의)
+- `api/v1/notifications.py`: MongoDB 읽기 전용 + 읽음 처리 (별도 라우터)
+- `services/notification_service.py`: list, mark-read, mark-all-read, unread-count
+- `schemas/notification.py`: NotificationResponse, NotificationListResponse, UnreadCountResponse
+- Notification 목록 페이지네이션: 커서 기반 (cursor=created_at ISO datetime)
+- `RedisTTL.PRICE_ALERT_UNREAD_COUNT` 불필요 — 기존 `UNREAD_COUNT=3600` 재사용
+- HTTP 메서드: PUT → PATCH (mark-read)
+- FCM 토큰: User 아닌 Client 모델 (기기별), user_id로 active client 복수 조회 → 멀티 디바이스 발송
+- `PriceAlertService` 생성자: ClientRepository 추가 필요 (FCM 토큰 조회용)
+
 ## 상세 참조
 
 - architecture.md: 디렉토리 구조 전체 최종안

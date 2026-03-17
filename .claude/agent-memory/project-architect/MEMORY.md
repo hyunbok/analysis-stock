@@ -204,6 +204,83 @@
 - 신규 라이브러리: 없음
 - 테스트: ~50건 (단위 45 + 통합 5)
 
+## v1-19 결정 사항 (Celery 비동기 작업 및 스케줄)
+- 디렉토리: `server/tasks/` (app 밖 독립 패키지, PRD 구조 준수)
+- 파일: celery_app.py, context.py, ai_trading.py, news_scraper.py, reports.py, cleanup.py
+- async 패턴: `asyncio.run()` per-task + TaskContext 프로세스 싱글턴 (prefork pool 고수)
+- TaskContext: lazy 초기화, Redis+AsyncEngine+MotorDB 보유, create_session() 메서드
+- Redis DB 분리: DB0=앱 캐시/PubSub, DB1=Celery Broker, DB2=Celery Result
+- 큐 3개: ai, scraper, default (kombu Queue)
+- Beat: AI매매 300초, 뉴스 3600초, PnL crontab(0:05UTC), cleanup crontab(3:00UTC)
+- 2단계 Redis Lock: cycle 280초 + config별 270초 (SET NX + TTL)
+- run_single_config: max_retries=3 지수 백오프 (거래소 네트워크 오류만)
+- run_backtest: (config_id, start_date, end_date) M9 스텁
+- DLQ 대신 Sentry CeleryIntegration + task_acks_late
+- 3계층 마스터 스위치: settings.AI_TRADING_ENABLED + Redis kill switch + user.ai_trading_enabled
+- Settings 추가: CELERY_BROKER_URL, CELERY_RESULT_BACKEND, CELERY_WORKER_CONCURRENCY, AI_TRADING_ENABLED, NEWS_SCRAPER_ENABLED
+- celery_broker_url/celery_result_backend: @property (REDIS_URL 기반 DB번호 자동 계산)
+- 뉴스 스크랩: v1-19는 스캐폴딩만, 실제 크롤러 v2
+- BaseAsyncTask 추상 베이스 클래스
+- 테스트: ~38건 (단위 30 + 통합 8)
+
+## v1-20 결정 사항 (포트폴리오/자산 조회 API)
+- 단일 PortfolioService + PortfolioRepository(ReadOnly, SELECT 집계 전용)
+- 평균 매입가: 가중 평균(VWAP) — Σ(qty×price)/Σ(qty), filled buy만, 매도 무관 (국내 거래소 표준)
+- 데이터 소스: 거래소 API 실시간 호출 + Redis 캐시 (DB 동기화 아님)
+- 원화 환산: KRW 기축 직접 계산, 환율 모듈 불필요 (해외 거래소는 v2)
+- Redis 키: portfolio:summary:{user_id}(5분), portfolio:exchange:{user_id}:{ea_id}(1분), portfolio:avg_price:{user_id}:{ea_id}(10분)
+- Redis 키에 user_id 포함 (keyspace 격리, 보안 스캔 용이 — code-architect 제안 채택)
+- PortfolioErrors 4개: exchange_account_not_owned(403), no_exchange_accounts(404), balance_fetch_failed(503), exchange_unavailable(503)
+- 에러 코드 네임스페이스: PORTFOLIO_ 접두사
+- DI: PortfolioRepository + ExchangeAccountRepository + ExchangeProviderFactory + MarketCacheService + Redis + Settings
+- 부분 실패 허용: asyncio.gather(return_exceptions=True), 실패 거래소 제외, 나머지 반환
+- 도넛 차트: portfolio_weight 필드 (0.0~100.0 Decimal), KRW 포함, remainder adjustment
+- 캐시 무효화: 주문 체결(→filled) 시 3개 키 DEL (v1은 OrderService 직접, v2는 Pub/Sub)
+- top_coins: value_krw 내림차순 상위 5개
+- 테스트: 단위 ~25건 + 통합 ~9건
+
+## v1-21 결정 사항 (가격 알림 시스템)
+- PriceAlertMonitor: Redis Pub/Sub ticker 구독, ws/price_alert_monitor.py, lifespan 연동
+- 트리거 중복 방지: DB UPDATE WHERE is_triggered=false (1차) + Redis SETNX 30초 (2차)
+- FCMService 스텁: Settings.FCM_SERVER_KEY, Client.fcm_token 복수 기기 지원
+- NotificationService + NotificationRepository (MongoDB), 커서 기반 페이지네이션
+
+## v1-22 결정 사항 (FCM 푸시 알림 시스템)
+- Firebase Admin SDK (firebase-admin>=6.0) — Legacy Server Key 폐기
+- 인증: FIREBASE_CREDENTIALS_PATH (서비스 계정 JSON 파일 경로), 빈 문자열=비활성
+- FCMService 리팩토링: Settings만 → ClientRepository + Redis + Settings 3개 의존
+- 초기화: lifespan에서 firebase_admin.initialize_app() 1회 → 싱글턴 아님, DI 매 요청 생성
+- 범용 send_to_user(user_id, title, body, data, silent) — 내부에서 토큰 조회 + send_each() 멀티캐스트
+- 알림 유형 헬퍼: send_order_execution(), send_ai_signal(), send_price_alert(), send_system_alert()
+- 기존 Client 모델 fcm_token 재활용 (별도 fcm_tokens 테이블 미생성)
+- 토큰 관리: PUT /api/v1/clients/me/fcm-token (JWT client_id 기반)
+- Rate Limiting: fcm:rate:{user_id} INCR+EXPIRE(60), 분당 10건
+- Dedup: fcm:dedup:{user_id}:{type}:{hash} SETNX(60초), SHA-256(title+body)[:16]
+- 실패 토큰 정리: NotRegistered/UNREGISTERED → ClientRepo.clear_fcm_token()
+- Silent push: data-only 메시지 (notification 필드 제외), content_available=True (iOS)
+- 호출자 패턴: 각 서비스가 NotificationService.create() + FCMService.send_xxx() 독립 호출
+- PriceAlertService 변경: client_repo DI 제거 (FCMService가 내부 보유)
+- FCMErrors: not_configured(503), token_invalid(400), send_failed(502)
+- 의존 라이브러리: firebase-admin>=6.0
+- 테스트: ~42건 (단위 28 + 통합 14)
+
+## v1-23 결정 사항 (Flutter 프로젝트 기본 구조)
+- GoRouter: StatefulShellRoute.indexedStack 5탭 (홈/트레이딩/AI매매/자산/더보기)
+- 인증 가드: GoRouter.redirect (splash에서 토큰 확인 → 자동 리다이렉트)
+- Theme: TradingColors ThemeExtension (한국식 red=buy/blue=sell, 글로벌 green=buy/red=sell)
+- i18n: flutter_localizations + intl ARB, 5언어 (en/ko/ja/zh/es), ~30개 기본 키
+- Riverpod: @Riverpod(keepAlive: true) for core infra, @riverpod (autoDispose) for features
+- Dio: interceptors/ 하위 3개 파일 분리 (auth, refresh, error)
+- RefreshInterceptor: Completer lock + 별도 Dio (순환 방지), refresh token rotation 대응
+- ApiException: Freezed 4 variant (server, network, timeout, unauthorized)
+- WS: web_socket_channel, 서버 v1-12 프로토콜 완전 매칭
+- WS 재연결: 지수 백오프 (1s→30s max), 기존 구독 자동 복원
+- WS Heartbeat: 30초 ping, 10초 pong 타임아웃
+- Storage: SecureStorage (JWT), AppPreferences (설정), Hive (캐시, v1-23은 초기화만)
+- Feature 패턴: models/repositories/providers/screens/widgets 5-folder
+- 환경 설정: --dart-define=API_BASE_URL 빌드 타임 오버라이드
+- code-architect 분업: Riverpod/Dio/WS/Storage/Features 설계 담당
+
 ## 협업 패턴
 - code-architect와 이견 시 먼저 합의 후 설계서 반영 (동시 편집 충돌 주의)
 - 설계서 초안을 먼저 작성하고 상대에게 수정/보강 요청하는 방식이 효율적
