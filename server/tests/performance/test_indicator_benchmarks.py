@@ -23,7 +23,6 @@ from app.trading.indicators.volatility import (
     calculate_obv,
 )
 
-
 pytestmark = pytest.mark.benchmark
 
 
@@ -59,7 +58,9 @@ class TestCalculateAllIndicators:
 class TestIndividualIndicators:
     def test_rsi_200(self, benchmark, candles_200):
         result = benchmark(calculate_rsi, candles_200)
-        assert result is not None or result is None  # None 허용 (데이터 부족 시)
+        # 200개 캔들 → MIN_CANDLES_RSI(15) 이상이므로 항상 계산됨. 0~100 범위 검증.
+        if result is not None:
+            assert 0.0 <= result <= 100.0, f"RSI 범위 벗어남: {result}"
 
     def test_macd_200(self, benchmark, candles_200):
         result = benchmark(calculate_macd, candles_200)
@@ -84,21 +85,21 @@ class TestIndividualIndicators:
         assert "adx" in result
 
     def test_atr_200(self, benchmark, candles_200):
-        result = benchmark(calculate_atr, candles_200)
-        # atr는 float | None
+        # atr는 float | None — 값 범위 무제한이므로 실행 성공만 검증
+        benchmark(calculate_atr, candles_200)
 
     def test_vwap_200(self, benchmark, candles_200):
         result = benchmark(calculate_vwap, candles_200)
         assert "vwap" in result
 
     def test_obv_200(self, benchmark, candles_200):
-        result = benchmark(calculate_obv, candles_200)
-        # obv는 float | None
+        # obv는 float | None — 값 범위 무제한이므로 실행 성공만 검증
+        benchmark(calculate_obv, candles_200)
 
     def test_cci_200(self, benchmark, candles_200):
-        result = benchmark(calculate_cci, candles_200)
-        # cci는 float | None
+        # cci는 float | None — 값 범위 무제한이므로 실행 성공만 검증
+        benchmark(calculate_cci, candles_200)
 
     def test_williams_r_200(self, benchmark, candles_200):
-        result = benchmark(calculate_williams_r, candles_200)
-        # williams_r는 float | None
+        # williams_r는 float | None (범위: -100~0) — 실행 성공만 검증
+        benchmark(calculate_williams_r, candles_200)

@@ -30,8 +30,6 @@ from __future__ import annotations
 import json
 import os
 import random
-import time
-import uuid
 
 from locust import HttpUser, between, events, task
 from locust.env import Environment
@@ -47,7 +45,9 @@ except ImportError:
 # ── 테스트 계정 설정 ─────────────────────────────────────────────────────────
 
 _TEST_EMAIL = os.getenv("LOCUST_TEST_EMAIL", "loadtest@cointrader.io")
-_TEST_PASSWORD = os.getenv("LOCUST_TEST_PASSWORD", "LoadTest123!")
+# 보안: 비밀번호 기본값 없음. 반드시 환경변수로 주입 필요.
+# LOCUST_TEST_PASSWORD=your_password locust -f locustfile.py ...
+_TEST_PASSWORD = os.getenv("LOCUST_TEST_PASSWORD", "")
 _TEST_EXCHANGE_ACCOUNT_ID = os.getenv("LOCUST_EXCHANGE_ACCOUNT_ID", "")
 _TEST_COIN_ID = os.getenv("LOCUST_COIN_ID", "")
 
@@ -216,40 +216,59 @@ if HAS_WS_USER:
         """WebSocket 실시간 시세 구독 부하 테스트.
 
         요구사항: locust-plugins>=4.0
-        채널: ticker:upbit:KRW-BTC
+        채널: ticker / exchange: upbit / market: KRW-BTC 등
 
-        목표: 1,000개 동시 WS 연결 유지
+        WS 프로토콜 (서버 app/schemas/ws.py 기준):
+          인바운드:  {"action":"subscribe","channel":"ticker","exchange":"upbit","market":"..."}
+          아웃바운드: {"action":"subscribed","channel":"ticker","exchange":"upbit","market":"..."}
+
+        host는 --host 옵션에서 http→ws 자동 변환. 하드코딩 금지.
+        목표: 1,000개 동시 WS 연결 유지 (PRD §10.1)
         """
 
-        host = "ws://localhost:8000"
+        # host는 --host CLI 옵션에서 주입됨. http(s)→ws(s) 변환은 on_start에서 처리.
         wait_time = between(0.5, 1.0)
 
         _MARKETS = ["KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-ADA", "KRW-SOL"]
 
         def on_start(self):
-            # WS 연결 후 인증 토큰 없이 공개 채널 구독
             self._market = random.choice(self._MARKETS)
+
+        @property
+        def _ws_host(self) -> str:
+            """--host 옵션(http/https)을 ws/wss로 변환."""
+            base = self.environment.host or "http://localhost:8000"
+            return base.replace("https://", "wss://").replace("http://", "ws://")
 
         @task
         def subscribe_ticker(self):
+            """서버 WS 프로토콜에 맞는 구독 메시지 전송.
+
+            action 필드 사용, channel/exchange/market 분리 포맷.
+            """
             subscribe_msg = json.dumps({
-                "type": "subscribe",
-                "channels": [f"ticker:upbit:{self._market}"],
+                "action": "subscribe",
+                "channel": "ticker",
+                "exchange": "upbit",
+                "market": self._market,
             })
             self.ws.send(subscribe_msg)
 
-            # 최대 2초 대기 후 다음 이터레이션
+            # 응답 수신 (최대 2초 대기 후 다음 이터레이션)
             try:
                 msg = self.ws.recv()
                 if msg:
                     data = json.loads(msg)
-                    if data.get("type") == "error":
+                    # 서버가 action="error"로 응답하면 실패 기록
+                    if data.get("action") == "error":
                         self.environment.events.request.fire(
                             request_type="WS",
-                            name="subscribe",
+                            name="subscribe:ticker",
                             response_time=0,
                             response_length=0,
-                            exception=Exception(data.get("message", "WS error")),
+                            exception=Exception(
+                                f"WS error code={data.get('code')} msg={data.get('message')}"
+                            ),
                         )
             except Exception:
                 pass  # timeout 등 무시

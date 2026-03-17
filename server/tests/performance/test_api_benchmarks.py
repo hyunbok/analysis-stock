@@ -1,14 +1,16 @@
 """API 응답 시간 벤치마크 — pytest-benchmark.
 
 성능 기준 (설계서 ST6):
-  - API 응답 (인증): < 200ms (mean)
-  - API 응답 (주문): < 300ms (mean, mock 기준)
+  - API 응답 (코인 목록): < 200ms (mean)
+  - API 응답 (주문 목록): < 300ms (mean, mock 기준)
 
 구현 방식:
-  - ASGI transport + 의존성 오버라이드로 외부 I/O 제거
-  - benchmark()는 내부적으로 함수를 여러 번 반복 호출하므로
-    lambda 없이 직접 callable을 전달 (매 호출마다 새 AsyncClient 생성 대신
-    module-scope app을 공유하고 asyncio.run()으로 단일 요청 측정)
+  - ASGI transport + 의존성 오버라이드로 외부 DB/Redis I/O 제거
+  - benchmark()는 동기 함수만 직접 지원하므로 asyncio.run() 래핑 사용
+  - 측정값에는 asyncio.run() 이벤트 루프 생성 오버헤드(~수십 μs)가 포함됨
+    실제 프로덕션 응답 시간보다 약간 높게 측정될 수 있으며, 절대값보다
+    회귀(regression) 감지 목적으로 활용할 것을 권장
+  - 실제 네트워크/DB 레이턴시 포함 측정은 locustfile.py (스테이징 환경) 사용
 """
 from __future__ import annotations
 
@@ -24,7 +26,6 @@ from httpx import ASGITransport, AsyncClient
 
 from app.middleware.correlation_id import CorrelationIdMiddleware
 from app.middleware.error_handler import register_error_handlers
-
 
 pytestmark = pytest.mark.benchmark
 

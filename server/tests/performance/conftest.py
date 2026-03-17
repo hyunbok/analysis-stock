@@ -4,13 +4,12 @@ from __future__ import annotations
 import random
 import time
 import uuid
-from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock
+from datetime import UTC, datetime
+from unittest.mock import MagicMock
 
 import pytest
 
 from app.trading.indicators.types import CandleInput
-
 
 # ── 캔들 데이터 생성 헬퍼 ─────────────────────────────────────────────────────
 
@@ -66,21 +65,28 @@ def mock_user() -> MagicMock:
     user.price_color_style = "korean"
     user.ai_trading_enabled = False
     user.is_2fa_enabled = False
-    user.email_verified_at = datetime.now(timezone.utc)
+    user.email_verified_at = datetime.now(UTC)
     user.soft_deleted_at = None
-    user.created_at = datetime.now(timezone.utc)
+    user.created_at = datetime.now(UTC)
     return user
 
 
 # ── fakeredis 클라이언트 ──────────────────────────────────────────────────────
 
 @pytest.fixture
-async def fake_redis():
-    """fakeredis async 클라이언트."""
+def fake_redis():
+    """fakeredis async 클라이언트 — 동기 픽스처.
+
+    benchmark 테스트는 동기 함수이므로 async 픽스처를 사용하면
+    event loop 충돌이 발생할 수 있음. 동기 픽스처로 제공하되
+    내부 async 연산은 asyncio.run()으로 실행.
+    """
     try:
+        import asyncio
+
         import fakeredis.aioredis as fakeredis_async
         client = fakeredis_async.FakeRedis()
         yield client
-        await client.aclose()
+        asyncio.run(client.aclose())
     except ImportError:
         pytest.skip("fakeredis not installed")
