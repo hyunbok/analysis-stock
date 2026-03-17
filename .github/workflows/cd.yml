@@ -1,0 +1,138 @@
+name: CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deploy target'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/server
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest,enable={{is_default_branch}}
+      - uses: docker/build-push-action@v5
+        with:
+          context: ./server
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  security-scan:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/${{ github.repository }}/server:${{ github.sha }}
+          format: sarif
+          output: trivy-results.sarif
+          exit-code: 1
+          severity: CRITICAL,HIGH
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+
+  migrate:
+    needs: security-scan
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: |
+          pip install -r server/requirements.txt
+          cd server && alembic upgrade head
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+
+  deploy-staging:
+    needs: migrate
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H $(echo "${{ secrets.STAGING_HOST }}" | cut -d@ -f2) >> ~/.ssh/known_hosts
+      - name: Deploy to staging
+        run: |
+          ssh ${{ secrets.STAGING_HOST }} << 'EOF'
+            cd /opt/cointrader
+            docker compose -f docker-compose.prod.yml pull server-1 server-2 celery-worker
+            IMAGE_TAG=${{ github.sha }} bash scripts/deploy.sh ${{ github.sha }}
+          EOF
+
+  smoke-test:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Health check staging
+        run: |
+          for i in $(seq 1 10); do
+            if curl -sf "${{ secrets.STAGING_URL }}/api/v1/health"; then
+              echo "Staging healthy"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Staging health check failed"
+          exit 1
+
+  deploy-production:
+    needs: smoke-test
+    runs-on: ubuntu-latest
+    if: github.event.inputs.environment == 'production' || github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: ${{ secrets.PRODUCTION_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PRODUCTION_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H $(echo "${{ secrets.PRODUCTION_HOST }}" | cut -d@ -f2) >> ~/.ssh/known_hosts
+      - name: Deploy to production
+        run: |
+          ssh ${{ secrets.PRODUCTION_HOST }} << 'EOF'
+            cd /opt/cointrader
+            IMAGE_TAG=${{ github.sha }} bash scripts/deploy.sh ${{ github.sha }}
+          EOF

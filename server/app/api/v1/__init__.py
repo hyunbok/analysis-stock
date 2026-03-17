@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.api.v1.app_version import router as app_version_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.clients import router as clients_router
 from app.api.v1.coins import router as coins_router
@@ -16,6 +17,7 @@ from app.api.v1.watchlist import router as watchlist_router
 router = APIRouter()
 
 router.include_router(health_router, tags=["health"])
+router.include_router(app_version_router, tags=["app"])
 router.include_router(auth_router, prefix="/auth", tags=["auth"])
 router.include_router(social_auth_router, prefix="/auth/social", tags=["auth:social"])
 router.include_router(users_router, prefix="/users", tags=["users"])

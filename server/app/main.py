@@ -16,6 +16,7 @@ from app.core.redis import close_redis, get_pubsub_redis, get_redis, init_redis
 from app.middleware.correlation_id import CorrelationIdMiddleware
 from app.middleware.error_handler import register_error_handlers
 from app.middleware.rate_limit import RateLimitMiddleware
+from app.middleware.security_headers import SecurityHeadersMiddleware
 
 if settings.SENTRY_DSN:
     sentry_sdk.init(
@@ -144,10 +145,13 @@ instrumentator.instrument(app).expose(app, endpoint="/metrics")
 # 2. RateLimitMiddleware
 app.add_middleware(RateLimitMiddleware)
 
-# 3. CorrelationIdMiddleware
+# 3. SecurityHeadersMiddleware — 모든 응답에 보안 헤더 추가
+app.add_middleware(SecurityHeadersMiddleware)
+
+# 4. CorrelationIdMiddleware
 app.add_middleware(CorrelationIdMiddleware)
 
-# 4. CORSMiddleware (가장 외부 — 마지막 등록)
+# 5. CORSMiddleware (가장 외부 — 마지막 등록)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,

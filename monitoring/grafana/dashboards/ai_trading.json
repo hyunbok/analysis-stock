@@ -1,0 +1,85 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "Trade Execution Count (by strategy & action)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(cointrader_ai_trade_executions_total[5m])) by (action, strategy)",
+          "legendFormat": "{{ action }} / {{ strategy }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ops" }
+      }
+    },
+    {
+      "title": "Regime Analysis Duration",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(cointrader_ai_regime_analysis_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(cointrader_ai_regime_analysis_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p95"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s" }
+      }
+    },
+    {
+      "title": "Trade Success vs Failure",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(cointrader_ai_trade_executions_total) by (result)",
+          "legendFormat": "{{ result }}"
+        }
+      ]
+    },
+    {
+      "title": "Trade Executions by Strategy (7d rolling)",
+      "type": "bargauge",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(increase(cointrader_ai_trade_executions_total[7d])) by (strategy)",
+          "legendFormat": "{{ strategy }}"
+        }
+      ]
+    },
+    {
+      "title": "Orders Placed (by side & status)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(cointrader_orders_placed_total[5m])) by (side, status)",
+          "legendFormat": "{{ side }} / {{ status }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ops" }
+      }
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["cointrader", "ai", "trading"],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "CoinTrader - AI Trading",
+  "uid": "cointrader-ai-trading"
+}

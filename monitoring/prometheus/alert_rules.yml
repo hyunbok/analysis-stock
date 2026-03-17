@@ -1,0 +1,50 @@
+groups:
+  - name: cointrader
+    rules:
+      - alert: HighErrorRate
+        expr: rate(cointrader_api_request_duration_seconds_count{status_code=~"5.."}[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High 5xx error rate: {{ $value }}"
+
+      - alert: ExchangeCircuitBreakerOpen
+        expr: cointrader_circuit_breaker_state > 1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Circuit breaker OPEN for {{ $labels.exchange }}"
+
+      - alert: HighAPILatency
+        expr: histogram_quantile(0.95, rate(cointrader_api_request_duration_seconds_bucket[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "API p95 latency > 500ms: {{ $value }}s"
+
+      - alert: WSConnectionsHigh
+        expr: cointrader_ws_active_connections > 900
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "WS connections approaching limit: {{ $value }}/1000"
+
+      - alert: HighExchangeErrorRate
+        expr: rate(cointrader_exchange_request_errors_total[5m]) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Exchange {{ $labels.exchange }} error rate high: {{ $value }}"
+
+      - alert: AITradeFailureRate
+        expr: (rate(cointrader_ai_trade_executions_total{result="fail"}[15m]) / rate(cointrader_ai_trade_executions_total[15m]) > 0.3) and (rate(cointrader_ai_trade_executions_total[15m]) > 0)
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "AI trade failure rate > 30%: {{ $value }}"

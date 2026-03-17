@@ -1,0 +1,171 @@
+services:
+  nginx:
+    image: nginx:1.25-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      server-1:
+        condition: service_healthy
+      server-2:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - cointrader-network
+
+  server-1:
+    image: ghcr.io/${GITHUB_REPOSITORY}/server:${IMAGE_TAG:-latest}
+    env_file: .env.prod
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/api/v1/health').raise_for_status()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - cointrader-network
+
+  server-2:
+    image: ghcr.io/${GITHUB_REPOSITORY}/server:${IMAGE_TAG:-latest}
+    env_file: .env.prod
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/api/v1/health').raise_for_status()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - cointrader-network
+
+  celery-worker:
+    image: ghcr.io/${GITHUB_REPOSITORY}/server:${IMAGE_TAG:-latest}
+    command: >
+      celery -A tasks.celery_app.celery_app worker
+      -l info
+      -c 4
+      -Q ai,scraper,default
+    env_file: .env.prod
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - cointrader-network
+
+  celery-beat:
+    image: ghcr.io/${GITHUB_REPOSITORY}/server:${IMAGE_TAG:-latest}
+    command: >
+      celery -A tasks.celery_app.celery_app beat
+      -l info
+      --scheduler celery.beat.PersistentScheduler
+    env_file: .env.prod
+    restart: unless-stopped
+    depends_on:
+      - redis
+    networks:
+      - cointrader-network
+
+  postgres:
+    image: postgres:16-alpine
+    env_file: .env.prod
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups/postgres:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cointrader"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+    restart: unless-stopped
+    networks:
+      - cointrader-network
+
+  mongodb:
+    image: mongo:7
+    env_file: .env.prod
+    volumes:
+      - mongodb_data:/data/db
+      - ./backups/mongodb:/backups
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+    networks:
+      - cointrader-network
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy volatile-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - cointrader-network
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  redis_data:
+
+networks:
+  cointrader-network:
+    driver: bridge
