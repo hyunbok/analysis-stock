@@ -3102,7 +3102,7 @@
         "dependencies": [
           "23"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -3222,7 +3222,8 @@
             "testStrategy": "Widget Test: 설정 항목 렌더링, 테마/언어 전환. Integration Test: 테마 변경 즉시 적용, 가격 색상 스타일 변경, 로그아웃 플로우, 비밀번호 변경 폼 유효성",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-03-17T03:58:01.892Z"
       },
       {
         "id": "25",
@@ -3346,9 +3347,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-03-15T12:45:09.209Z",
+      "lastModified": "2026-03-17T03:58:01.892Z",
       "taskCount": 25,
-      "completedCount": 20,
+      "completedCount": 24,
       "tags": [
         "v1"
       ]
