@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TradingView Chart</title>
+  <script src="lightweight-charts.standalone.production.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+    #chart { width: 100%; height: 100%; }
+  </style>
+</head>
+<body>
+  <div id="chart"></div>
+  <script>
+    let chart = null;
+    let candleSeries = null;
+    let volumeSeries = null;
+    let currentTheme = 'dark';
+
+    const darkColors = {
+      background: '#0A0A0F',
+      text: '#E8E9F0',
+      grid: '#1C1D26',
+      border: '#3A3B4E',
+      upColor: '#F23645',
+      downColor: '#1E88E5',
+    };
+
+    const lightColors = {
+      background: '#FFFFFF',
+      text: '#1A1B23',
+      grid: '#F0F1F8',
+      border: '#C8C9D8',
+      upColor: '#D24F45',
+      downColor: '#1261C4',
+    };
+
+    function getColors(isDark) {
+      return isDark ? darkColors : lightColors;
+    }
+
+    function initChart(options) {
+      // options: { isDark: bool, symbol: string, interval: string }
+      const isDark = options.isDark !== false;
+      currentTheme = isDark ? 'dark' : 'light';
+      const colors = getColors(isDark);
+
+      if (chart) {
+        chart.remove();
+        chart = null;
+      }
+
+      chart = LightweightCharts.createChart(document.getElementById('chart'), {
+        layout: {
+          background: { type: 'solid', color: colors.background },
+          textColor: colors.text,
+        },
+        grid: {
+          vertLines: { color: colors.grid },
+          horzLines: { color: colors.grid },
+        },
+        crosshair: {
+          mode: LightweightCharts.CrosshairMode.Normal,
+        },
+        rightPriceScale: {
+          borderColor: colors.border,
+          textColor: colors.text,
+        },
+        timeScale: {
+          borderColor: colors.border,
+          textColor: colors.text,
+          timeVisible: true,
+          secondsVisible: false,
+        },
+        handleScroll: true,
+        handleScale: true,
+      });
+
+      candleSeries = chart.addCandlestickSeries({
+        upColor: colors.upColor,
+        downColor: colors.downColor,
+        borderUpColor: colors.upColor,
+        borderDownColor: colors.downColor,
+        wickUpColor: colors.upColor,
+        wickDownColor: colors.downColor,
+      });
+
+      volumeSeries = chart.addHistogramSeries({
+        color: colors.upColor,
+        priceFormat: { type: 'volume' },
+        priceScaleId: 'volume',
+      });
+      chart.priceScale('volume').applyOptions({
+        scaleMargins: { top: 0.8, bottom: 0 },
+      });
+
+      // 크로스헤어 이동 이벤트 → Flutter 전달
+      chart.subscribeCrosshairMove(function(param) {
+        if (param && param.time && FlutterBridge) {
+          const priceData = param.seriesData.get(candleSeries);
+          if (priceData) {
+            FlutterBridge.postMessage(JSON.stringify({
+              type: 'crosshair',
+              time: param.time,
+              price: priceData.close || priceData.value,
+            }));
+          }
+        }
+      });
+
+      // 초기화 완료 알림
+      if (typeof FlutterBridge !== 'undefined') {
+        FlutterBridge.postMessage(JSON.stringify({ type: 'ready' }));
+      }
+    }
+
+    function setTheme(isDark) {
+      if (!chart) return;
+      const colors = getColors(isDark);
+      chart.applyOptions({
+        layout: {
+          background: { type: 'solid', color: colors.background },
+          textColor: colors.text,
+        },
+        grid: {
+          vertLines: { color: colors.grid },
+          horzLines: { color: colors.grid },
+        },
+      });
+      candleSeries.applyOptions({
+        upColor: colors.upColor,
+        downColor: colors.downColor,
+        borderUpColor: colors.upColor,
+        borderDownColor: colors.downColor,
+        wickUpColor: colors.upColor,
+        wickDownColor: colors.downColor,
+      });
+    }
+
+    function setData(candles) {
+      if (!candleSeries || !volumeSeries) return;
+      try {
+        const data = typeof candles === 'string' ? JSON.parse(candles) : candles;
+        if (!Array.isArray(data) || data.length === 0) return;
+
+        candleSeries.setData(data.map(function(c) {
+          return { time: c.time, open: c.open, high: c.high, low: c.low, close: c.close };
+        }));
+
+        const colors = getColors(currentTheme === 'dark');
+        volumeSeries.setData(data.map(function(c) {
+          return {
+            time: c.time,
+            value: c.volume || 0,
+            color: c.close >= c.open ? colors.upColor + '88' : colors.downColor + '88',
+          };
+        }));
+
+        chart.timeScale().fitContent();
+      } catch (e) {
+        console.error('setData error:', e);
+      }
+    }
+
+    function updateCandle(candle) {
+      if (!candleSeries) return;
+      try {
+        const c = typeof candle === 'string' ? JSON.parse(candle) : candle;
+        candleSeries.update({ time: c.time, open: c.open, high: c.high, low: c.low, close: c.close });
+        if (volumeSeries && c.volume !== undefined) {
+          const colors = getColors(currentTheme === 'dark');
+          volumeSeries.update({
+            time: c.time,
+            value: c.volume,
+            color: c.close >= c.open ? colors.upColor + '88' : colors.downColor + '88',
+          });
+        }
+      } catch (e) {
+        console.error('updateCandle error:', e);
+      }
+    }
+
+    function setInterval(interval) {
+      // Flutter에 interval 변경 알림 (서버에서 새 데이터 요청)
+      if (typeof FlutterBridge !== 'undefined') {
+        FlutterBridge.postMessage(JSON.stringify({ type: 'intervalChanged', interval: interval }));
+      }
+    }
+
+    // 윈도우 리사이즈 처리
+    window.addEventListener('resize', function() {
+      if (chart) {
+        chart.applyOptions({
+          width: window.innerWidth,
+          height: window.innerHeight,
+        });
+      }
+    });
+  </script>
+</body>
+</html>

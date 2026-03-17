@@ -29,5 +29,184 @@
   "moreNotifications": "알림",
   "moreSettings": "설정",
   "moreProfile": "프로필",
-  "moreTerms": "이용약관"
+  "moreTerms": "이용약관",
+
+  "splashTagline": "코인 자동매매 플랫폼",
+
+  "welcomeTitle": "CoinTrader에 오신 것을 환영합니다",
+  "registerSubtitle": "이메일로 가입합니다",
+  "nicknameLabel": "닉네임",
+  "passwordConfirmLabel": "비밀번호 확인",
+  "agreeTerms": "이용약관 및 개인정보 처리방침에 동의합니다",
+  "emailVerifyTitle": "이메일 인증",
+  "emailVerifySent": "인증 메일이 발송되었습니다",
+  "emailVerifyResend": "인증 메일 재전송",
+  "forgotPasswordTitle": "비밀번호 찾기",
+  "forgotPasswordDesc": "가입한 이메일 주소를 입력하세요",
+  "resetPasswordButton": "비밀번호 재설정 링크 전송",
+  "socialGoogle": "Google로 계속하기",
+  "socialApple": "Apple로 계속하기",
+
+  "homeSearchHint": "코인 검색...",
+  "homeSortName": "코인명",
+  "homeSortPrice": "현재가",
+  "homeSortChange": "변동률",
+  "homeSortVolume": "거래량",
+  "homeNoCoins": "코인이 없습니다",
+
+  "tradingSelectCoin": "코인을 선택하세요",
+  "tradingSelectCoinHint": "홈에서 코인 선택",
+  "tradingTabChart": "차트",
+  "tradingTabOrderbook": "호가창",
+  "tradingTabOrder": "주문",
+  "tradingCurrentPrice": "현재가",
+  "orderbookAskHeader": "매도 잔량",
+  "orderbookBidHeader": "매수 잔량",
+  "orderbookPrice": "가격",
+  "orderbookCount": "건수",
+  "orderBuy": "매수",
+  "orderSell": "매도",
+  "orderTypeLimit": "지정가",
+  "orderTypeMarket": "시장가",
+  "orderPrice": "가격",
+  "orderQuantity": "수량",
+  "orderTotal": "주문 총액",
+  "orderAvailable": "사용 가능",
+  "orderBuyButton": "{coin} 매수 주문",
+  "@orderBuyButton": {
+    "placeholders": {
+      "coin": { "type": "String" }
+    }
+  },
+  "orderSellButton": "{coin} 매도 주문",
+  "@orderSellButton": {
+    "placeholders": {
+      "coin": { "type": "String" }
+    }
+  },
+  "orderConfirmTitle": "주문 확인",
+  "orderConfirmMessage": "{side} {coin} {quantity}개를 {price}에 주문합니다",
+  "@orderConfirmMessage": {
+    "placeholders": {
+      "side": { "type": "String" },
+      "coin": { "type": "String" },
+      "quantity": { "type": "String" },
+      "price": { "type": "String" }
+    }
+  },
+  "timeframe1m": "1분",
+  "timeframe5m": "5분",
+  "timeframe15m": "15분",
+  "timeframe30m": "30분",
+  "timeframe1h": "1시",
+  "timeframe4h": "4시",
+  "timeframe1d": "일",
+  "timeframe1w": "주",
+
+  "exchangeTitle": "거래소 설정",
+  "exchangeConnected": "연결된 거래소",
+  "exchangeAdd": "거래소 추가",
+  "exchangeAccessKey": "Access Key",
+  "exchangeSecretKey": "Secret Key",
+  "exchangeTestAndSave": "연결 테스트 후 저장",
+  "exchangeEdit": "수정",
+  "exchangeDelete": "삭제",
+  "exchangeDeleteConfirm": "이 거래소 연결을 삭제하시겠습니까?",
+  "exchangeLastVerified": "마지막 검증: {date}",
+  "@exchangeLastVerified": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "exchangeSecurityNote": "API 키는 AES-256-GCM 방식으로 암호화 저장됩니다",
+  "exchangeUpbit": "업비트",
+  "exchangeCoinone": "코인원",
+
+  "aiTitle": "AI 자동매매",
+  "aiMasterSwitch": "전체 AI 매매",
+  "aiConfirmStart": "AI 자동매매를 시작합니다.\n최대 투자금: {amount}원",
+  "@aiConfirmStart": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+  "aiCurrentRegime": "현재 장세",
+  "aiLastAnalysis": "마지막 분석: {time}",
+  "@aiLastAnalysis": {
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  },
+  "aiDailyPnl": "오늘의 손익",
+  "aiCoinSettings": "코인별 AI 설정",
+  "aiRecentLogs": "최근 AI 매매 로그",
+  "aiStatusOn": "AI 작동중",
+  "aiStatusOff": "중지됨",
+  "aiStatusAnalyzing": "분석중...",
+  "regimeTrend": "추세장",
+  "regimeRange": "횡보장",
+  "regimeTransition": "전환장",
+  "aiStrategy": "전략: {name}",
+  "@aiStrategy": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "aiEntryPrice": "진입가: {price}",
+  "@aiEntryPrice": {
+    "placeholders": {
+      "price": { "type": "String" }
+    }
+  },
+
+  "portfolioTitle": "자산",
+  "portfolioTotalAsset": "총 자산",
+  "portfolioHolding": "보유 수량",
+  "portfolioAvgPrice": "평균 단가",
+  "portfolioPnlRate": "수익률",
+  "historyTitle": "매매 내역",
+  "historyFilterThisMonth": "이번달",
+  "historyFilterLastMonth": "지난달",
+  "historyFilterCustom": "직접 선택",
+  "historyTotalPnl": "총 손익",
+  "historyWinRate": "승률",
+  "historyTradeCount": "거래수",
+  "historyTabOrders": "주문 내역",
+  "historyTabTrades": "체결 내역",
+  "historyAiTrade": "AI매매",
+  "historyManualTrade": "수동",
+
+  "profileTitle": "프로필 수정",
+  "profileAvatar": "프로필 사진",
+  "profileChangeAvatar": "사진 변경",
+  "profileNickname": "닉네임",
+  "profileEmail": "이메일",
+  "profileChangePassword": "비밀번호 변경",
+  "profileSaved": "프로필이 저장되었습니다",
+
+  "settingsTitle": "설정",
+  "settingsAppSection": "앱 설정",
+  "settingsTheme": "테마",
+  "settingsThemeDark": "다크",
+  "settingsThemeLight": "라이트",
+  "settingsThemeSystem": "시스템",
+  "settingsLanguage": "언어",
+  "settingsPriceColor": "가격 색상",
+  "settingsPriceColorKorean": "한국식",
+  "settingsPriceColorGlobal": "글로벌",
+  "settingsNotifications": "알림",
+  "settingsNotifSection": "알림 설정",
+  "settingsNotifPrice": "가격 알림",
+  "settingsNotifAi": "AI 매매 알림",
+  "settingsNotifTrade": "체결 알림",
+  "settingsSecuritySection": "보안",
+  "settingsChangePassword": "비밀번호 변경",
+  "settingsBiometric": "생체 인증",
+  "settingsInfoSection": "정보",
+  "settingsVersion": "버전",
+  "settingsPrivacy": "개인정보 처리방침",
+  "settingsLogout": "로그아웃",
+  "settingsLogoutConfirm": "로그아웃 하시겠습니까?",
+
+  "moreAiSettings": "AI 매매 설정"
 }

@@ -1,94 +1,213 @@
 {
   "@@locale": "en",
   "appTitle": "CoinTrader",
-  "@appTitle": {
-    "description": "The title of the application"
+  "@appTitle": { "description": "The title of the application" },
+  "navHome": "Home",
+  "navTrading": "Trading",
+  "navAiTrading": "AI Trading",
+  "navPortfolio": "Portfolio",
+  "navMore": "More",
+  "loginTitle": "Login",
+  "registerTitle": "Sign Up",
+  "emailLabel": "Email",
+  "passwordLabel": "Password",
+  "loginButton": "Login",
+  "registerButton": "Sign Up",
+  "forgotPassword": "Forgot Password?",
+  "orLoginWith": "Or login with",
+  "loading": "Loading...",
+  "retry": "Retry",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "save": "Save",
+  "delete": "Delete",
+  "search": "Search",
+  "noData": "No data available",
+  "errorGeneric": "Something went wrong. Please try again.",
+  "connectionLost": "Connection lost. Reconnecting...",
+  "moreExchanges": "Exchange Settings",
+  "moreHistory": "Trade History",
+  "moreNotifications": "Notifications",
+  "moreSettings": "Settings",
+  "moreProfile": "Profile",
+  "moreTerms": "Terms of Service",
+
+  "splashTagline": "Automated Crypto Trading Platform",
+
+  "welcomeTitle": "Welcome to CoinTrader",
+  "registerSubtitle": "Sign up with your email",
+  "nicknameLabel": "Nickname",
+  "passwordConfirmLabel": "Confirm Password",
+  "agreeTerms": "I agree to the Terms of Service and Privacy Policy",
+  "emailVerifyTitle": "Email Verification",
+  "emailVerifySent": "Verification email sent",
+  "emailVerifyResend": "Resend verification email",
+  "forgotPasswordTitle": "Forgot Password",
+  "forgotPasswordDesc": "Enter your registered email address",
+  "resetPasswordButton": "Send Password Reset Link",
+  "socialGoogle": "Continue with Google",
+  "socialApple": "Continue with Apple",
+
+  "homeSearchHint": "Search coins...",
+  "homeSortName": "Name",
+  "homeSortPrice": "Price",
+  "homeSortChange": "Change",
+  "homeSortVolume": "Volume",
+  "homeNoCoins": "No coins found",
+
+  "tradingSelectCoin": "Select a coin",
+  "tradingSelectCoinHint": "Select a coin from Home",
+  "tradingTabChart": "Chart",
+  "tradingTabOrderbook": "Orderbook",
+  "tradingTabOrder": "Order",
+  "tradingCurrentPrice": "Current Price",
+  "orderbookAskHeader": "Ask Volume",
+  "orderbookBidHeader": "Bid Volume",
+  "orderbookPrice": "Price",
+  "orderbookCount": "Count",
+  "orderBuy": "Buy",
+  "orderSell": "Sell",
+  "orderTypeLimit": "Limit",
+  "orderTypeMarket": "Market",
+  "orderPrice": "Price",
+  "orderQuantity": "Quantity",
+  "orderTotal": "Order Total",
+  "orderAvailable": "Available",
+  "orderBuyButton": "Buy {coin}",
+  "@orderBuyButton": {
+    "placeholders": {
+      "coin": { "type": "String" }
+    }
+  },
+  "orderSellButton": "Sell {coin}",
+  "@orderSellButton": {
+    "placeholders": {
+      "coin": { "type": "String" }
+    }
+  },
+  "orderConfirmTitle": "Confirm Order",
+  "orderConfirmMessage": "{side} {quantity} {coin} at {price}",
+  "@orderConfirmMessage": {
+    "placeholders": {
+      "side": { "type": "String" },
+      "coin": { "type": "String" },
+      "quantity": { "type": "String" },
+      "price": { "type": "String" }
+    }
+  },
+  "timeframe1m": "1m",
+  "timeframe5m": "5m",
+  "timeframe15m": "15m",
+  "timeframe30m": "30m",
+  "timeframe1h": "1h",
+  "timeframe4h": "4h",
+  "timeframe1d": "1D",
+  "timeframe1w": "1W",
+
+  "exchangeTitle": "Exchange Settings",
+  "exchangeConnected": "Connected Exchanges",
+  "exchangeAdd": "Add Exchange",
+  "exchangeAccessKey": "Access Key",
+  "exchangeSecretKey": "Secret Key",
+  "exchangeTestAndSave": "Test & Save Connection",
+  "exchangeEdit": "Edit",
+  "exchangeDelete": "Delete",
+  "exchangeDeleteConfirm": "Delete this exchange connection?",
+  "exchangeLastVerified": "Last verified: {date}",
+  "@exchangeLastVerified": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "exchangeSecurityNote": "API keys are encrypted using AES-256-GCM",
+  "exchangeUpbit": "Upbit",
+  "exchangeCoinone": "CoinOne",
+
+  "aiTitle": "AI Trading",
+  "aiMasterSwitch": "AI Trading Master",
+  "aiConfirmStart": "Start AI trading?\nMax investment: {amount}",
+  "@aiConfirmStart": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+  "aiCurrentRegime": "Market Regime",
+  "aiLastAnalysis": "Last analysis: {time}",
+  "@aiLastAnalysis": {
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  },
+  "aiDailyPnl": "Today's P&L",
+  "aiCoinSettings": "Coin AI Settings",
+  "aiRecentLogs": "Recent AI Trade Logs",
+  "aiStatusOn": "AI Active",
+  "aiStatusOff": "Stopped",
+  "aiStatusAnalyzing": "Analyzing...",
+  "regimeTrend": "Trending",
+  "regimeRange": "Ranging",
+  "regimeTransition": "Transitioning",
+  "aiStrategy": "Strategy: {name}",
+  "@aiStrategy": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "aiEntryPrice": "Entry: {price}",
+  "@aiEntryPrice": {
+    "placeholders": {
+      "price": { "type": "String" }
+    }
   },
 
-  "navHome": "Home",
-  "@navHome": { "description": "Bottom nav: Home tab" },
+  "portfolioTitle": "Portfolio",
+  "portfolioTotalAsset": "Total Assets",
+  "portfolioHolding": "Holdings",
+  "portfolioAvgPrice": "Avg. Price",
+  "portfolioPnlRate": "P&L Rate",
+  "historyTitle": "Trade History",
+  "historyFilterThisMonth": "This Month",
+  "historyFilterLastMonth": "Last Month",
+  "historyFilterCustom": "Custom",
+  "historyTotalPnl": "Total P&L",
+  "historyWinRate": "Win Rate",
+  "historyTradeCount": "Trades",
+  "historyTabOrders": "Orders",
+  "historyTabTrades": "Trades",
+  "historyAiTrade": "AI",
+  "historyManualTrade": "Manual",
 
-  "navTrading": "Trading",
-  "@navTrading": { "description": "Bottom nav: Trading tab" },
+  "profileTitle": "Edit Profile",
+  "profileAvatar": "Profile Photo",
+  "profileChangeAvatar": "Change Photo",
+  "profileNickname": "Nickname",
+  "profileEmail": "Email",
+  "profileChangePassword": "Change Password",
+  "profileSaved": "Profile saved",
 
-  "navAiTrading": "AI Trading",
-  "@navAiTrading": { "description": "Bottom nav: AI Trading tab" },
+  "settingsTitle": "Settings",
+  "settingsAppSection": "App Settings",
+  "settingsTheme": "Theme",
+  "settingsThemeDark": "Dark",
+  "settingsThemeLight": "Light",
+  "settingsThemeSystem": "System",
+  "settingsLanguage": "Language",
+  "settingsPriceColor": "Price Color",
+  "settingsPriceColorKorean": "Korean",
+  "settingsPriceColorGlobal": "Global",
+  "settingsNotifications": "Notifications",
+  "settingsNotifSection": "Notification Settings",
+  "settingsNotifPrice": "Price Alerts",
+  "settingsNotifAi": "AI Trade Alerts",
+  "settingsNotifTrade": "Order Fill Alerts",
+  "settingsSecuritySection": "Security",
+  "settingsChangePassword": "Change Password",
+  "settingsBiometric": "Biometric Login",
+  "settingsInfoSection": "Info",
+  "settingsVersion": "Version",
+  "settingsPrivacy": "Privacy Policy",
+  "settingsLogout": "Logout",
+  "settingsLogoutConfirm": "Are you sure you want to logout?",
 
-  "navPortfolio": "Portfolio",
-  "@navPortfolio": { "description": "Bottom nav: Portfolio tab" },
-
-  "navMore": "More",
-  "@navMore": { "description": "Bottom nav: More tab" },
-
-  "loginTitle": "Login",
-  "@loginTitle": { "description": "Login screen title" },
-
-  "registerTitle": "Sign Up",
-  "@registerTitle": { "description": "Register screen title" },
-
-  "emailLabel": "Email",
-  "@emailLabel": { "description": "Email input label" },
-
-  "passwordLabel": "Password",
-  "@passwordLabel": { "description": "Password input label" },
-
-  "loginButton": "Login",
-  "@loginButton": { "description": "Login button text" },
-
-  "registerButton": "Sign Up",
-  "@registerButton": { "description": "Register button text" },
-
-  "forgotPassword": "Forgot Password?",
-  "@forgotPassword": { "description": "Forgot password link text" },
-
-  "orLoginWith": "Or login with",
-  "@orLoginWith": { "description": "Social login divider text" },
-
-  "loading": "Loading...",
-  "@loading": { "description": "Generic loading text" },
-
-  "retry": "Retry",
-  "@retry": { "description": "Retry button text" },
-
-  "cancel": "Cancel",
-  "@cancel": { "description": "Cancel button text" },
-
-  "confirm": "Confirm",
-  "@confirm": { "description": "Confirm button text" },
-
-  "save": "Save",
-  "@save": { "description": "Save button text" },
-
-  "delete": "Delete",
-  "@delete": { "description": "Delete button text" },
-
-  "search": "Search",
-  "@search": { "description": "Search hint text" },
-
-  "noData": "No data available",
-  "@noData": { "description": "Empty state message" },
-
-  "errorGeneric": "Something went wrong. Please try again.",
-  "@errorGeneric": { "description": "Generic error message" },
-
-  "connectionLost": "Connection lost. Reconnecting...",
-  "@connectionLost": { "description": "WebSocket connection lost banner" },
-
-  "moreExchanges": "Exchange Settings",
-  "@moreExchanges": { "description": "More menu: Exchange Settings" },
-
-  "moreHistory": "Trade History",
-  "@moreHistory": { "description": "More menu: Trade History" },
-
-  "moreNotifications": "Notifications",
-  "@moreNotifications": { "description": "More menu: Notifications" },
-
-  "moreSettings": "Settings",
-  "@moreSettings": { "description": "More menu: Settings" },
-
-  "moreProfile": "Profile",
-  "@moreProfile": { "description": "More menu: Profile" },
-
-  "moreTerms": "Terms of Service",
-  "@moreTerms": { "description": "More menu: Terms of Service" }
+  "moreAiSettings": "AI Trading Settings"
 }
