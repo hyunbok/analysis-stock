@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/constants/app_colors.dart';
+
 enum AiStatus { on, off, analyzing }
 
 /// AI 자동매매 상태 배지.
@@ -21,9 +23,9 @@ class _AiStatusBadgeState extends State<AiStatusBadge>
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
-  static const _aiOnColor = Color(0xFF00BCD4);
-  static const _aiOffColor = Color(0xFF9E9E9E);
-  static const _analyzingColor = Color(0xFF29B6F6);
+  static const _aiOnColor = AppColors.aiOn;
+  static const _aiOffColor = AppColors.aiOff;
+  static const _analyzingColor = AppColors.aiAnalyzing;
 
   @override
   void initState() {

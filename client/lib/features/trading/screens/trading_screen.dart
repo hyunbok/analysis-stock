@@ -74,8 +74,6 @@ class _TradingDetailScreenState extends ConsumerState<TradingDetailScreen>
   @override
   void dispose() {
     _tabController.dispose();
-    // 트레이딩 화면 이탈 시 주문 폼 상태 초기화
-    ref.read(orderFormProvider.notifier).reset();
     super.dispose();
   }
 
@@ -119,17 +117,14 @@ class _TradingDetailScreenState extends ConsumerState<TradingDetailScreen>
       ),
     );
 
-    double price = coin.price ?? 0.0;
-    double changeRate = coin.changeRate24h ?? 0.0;
-
-    tickerAsync.whenData((msg) {
-      final data = msg.data;
-      if (data is Map<String, dynamic>) {
-        price = (data['price'] as num?)?.toDouble() ?? price;
-        changeRate =
-            (data['change_rate'] as num?)?.toDouble() ?? changeRate;
-      }
-    });
+    // ref.watch로 직접 파싱 — 스트림 변경 시 자동 리빌드
+    final tickerData =
+        tickerAsync.valueOrNull?.data as Map<String, dynamic>?;
+    final price =
+        (tickerData?['price'] as num?)?.toDouble() ?? coin.price ?? 0.0;
+    final changeRate = (tickerData?['change_rate'] as num?)?.toDouble() ??
+        coin.changeRate24h ??
+        0.0;
 
     final watchlistAsync = ref.watch(watchlistProvider);
     final isFavorite = watchlistAsync.valueOrNull

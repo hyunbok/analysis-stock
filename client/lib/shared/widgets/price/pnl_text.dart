@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/format_utils.dart';
 
 /// 손익 텍스트 위젯 — 양수=수익(초록), 음수=손실(빨강), 0=중립(회색).
@@ -7,11 +8,6 @@ class PnlText extends StatelessWidget {
   final double amount;
   final double? rate;
   final TextStyle? style;
-
-  // 수익/손실 색상 (TradingColors와 별개 — PnL 전용)
-  static const _profitColor = Color(0xFF26A69A);
-  static const _lossColor = Color(0xFFEF5350);
-  static const _neutralColor = Color(0xFF9E9E9E);
 
   const PnlText({
     super.key,
@@ -24,11 +20,11 @@ class PnlText extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color color;
     if (amount > 0) {
-      color = _profitColor;
+      color = AppColors.profit;
     } else if (amount < 0) {
-      color = _lossColor;
+      color = AppColors.loss;
     } else {
-      color = _neutralColor;
+      color = AppColors.neutral;
     }
 
     final prefix = amount >= 0 ? '+' : '';

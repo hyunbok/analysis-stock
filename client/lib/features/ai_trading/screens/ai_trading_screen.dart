@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/format_utils.dart';
 import '../../../shared/widgets/badges/ai_status_badge.dart';
 import '../../../shared/widgets/badges/market_regime_chip.dart';
@@ -60,13 +61,20 @@ class AiTradingScreen extends ConsumerWidget {
                         value: isMasterOn,
                         onChanged: (value) async {
                           if (value) {
+                            final configs =
+                                configsAsync.valueOrNull ?? const [];
+                            final totalMax = configs.fold<double>(
+                                0, (sum, c) => sum + c.maxAmount);
+                            final maxLabel = totalMax > 0
+                                ? FormatUtils.formatKrw(totalMax)
+                                : '0';
                             final confirmed = await ConfirmBottomSheet.show(
                               context,
                               title: 'AI 자동매매 시작',
-                              message: 'AI 자동매매를 시작합니다.\n최대 투자금: 1,000,000원',
+                              message:
+                                  'AI 자동매매를 시작합니다.\n최대 투자금: ${maxLabel}원',
                               confirmLabel: '시작',
-                              confirmColor:
-                                  const Color(0xFF00BCD4),
+                              confirmColor: AppColors.aiOn,
                             );
                             if (confirmed == true) {
                               ref.read(aiMasterSwitchProvider.notifier).set(true);

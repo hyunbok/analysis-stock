@@ -23,5 +23,8 @@ class AppSettings with _$AppSettings {
     @Default('ko') String locale,
     @Default('korean') String priceColorScheme, // 'korean' | 'global'
     @Default(true) bool pushEnabled,
+    @Default(true) bool priceNotifEnabled,
+    @Default(true) bool aiNotifEnabled,
+    @Default(true) bool tradeNotifEnabled,
   }) = _AppSettings;
 }

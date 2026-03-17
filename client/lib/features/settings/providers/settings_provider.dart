@@ -41,6 +41,21 @@ class SettingsNotifier extends _$SettingsNotifier {
     await ref.read(appPreferencesProvider).setPushEnabled(enabled);
     state = state.copyWith(pushEnabled: enabled);
   }
+
+  Future<void> setPriceNotifEnabled(bool enabled) async {
+    await ref.read(appPreferencesProvider).setPushEnabled(enabled);
+    state = state.copyWith(priceNotifEnabled: enabled);
+  }
+
+  Future<void> setAiNotifEnabled(bool enabled) async {
+    await ref.read(appPreferencesProvider).setPushEnabled(enabled);
+    state = state.copyWith(aiNotifEnabled: enabled);
+  }
+
+  Future<void> setTradeNotifEnabled(bool enabled) async {
+    await ref.read(appPreferencesProvider).setPushEnabled(enabled);
+    state = state.copyWith(tradeNotifEnabled: enabled);
+  }
 }
 
 /// 현재 테마 모드 (파생 프로바이더).

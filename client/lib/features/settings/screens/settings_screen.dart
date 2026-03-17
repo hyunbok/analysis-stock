@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../providers/settings_provider.dart';
 
@@ -64,27 +65,43 @@ class SettingsScreen extends ConsumerWidget {
               SwitchListTile(
                 secondary: const Icon(Icons.notifications_outlined),
                 title: const Text('가격 알림'),
-                value: settings.pushEnabled,
-                onChanged: (v) async {
-                  await notifier.setPushEnabled(v);
-                },
+                value: settings.priceNotifEnabled,
+                onChanged: notifier.setPriceNotifEnabled,
               ),
               const Divider(indent: 56, height: 1),
               SwitchListTile(
                 secondary: const Icon(Icons.smart_toy_outlined),
                 title: const Text('AI 매매 알림'),
-                value: settings.pushEnabled,
-                onChanged: (v) async {
-                  await notifier.setPushEnabled(v);
-                },
+                value: settings.aiNotifEnabled,
+                onChanged: notifier.setAiNotifEnabled,
               ),
               const Divider(indent: 56, height: 1),
               SwitchListTile(
                 secondary: const Icon(Icons.receipt_long_outlined),
                 title: const Text('체결 알림'),
-                value: settings.pushEnabled,
-                onChanged: (v) async {
-                  await notifier.setPushEnabled(v);
+                value: settings.tradeNotifEnabled,
+                onChanged: notifier.setTradeNotifEnabled,
+              ),
+            ],
+          ),
+          // 보안
+          _SettingsSection(
+            title: '보안',
+            children: [
+              ListTile(
+                leading: const Icon(Icons.lock_outline),
+                title: const Text('비밀번호 변경'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.go('/more/profile'),
+              ),
+              const Divider(indent: 56, height: 1),
+              SwitchListTile(
+                secondary: const Icon(Icons.fingerprint),
+                title: const Text('생체 인증'),
+                subtitle: const Text('지문/Face ID로 로그인'),
+                value: false,
+                onChanged: (v) {
+                  // TODO(security): 생체 인증 설정 연동
                 },
               ),
             ],
