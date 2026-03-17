@@ -67,10 +67,21 @@ class MockExchangeProvider(BaseExchangeProvider):
         self._scenario: MockOrderScenario = MockOrderScenario.IMMEDIATE_FILL
         # 주문 저장소: exchange_order_id → OrderResult (get_order 조회용)
         self._orders: dict[str, OrderResult] = {}
+        self._custom_balances: list[Balance] | None = None  # E2E 테스트용 동적 잔고
 
     def set_scenario(self, scenario: MockOrderScenario) -> None:
         """테스트용 주문 시나리오 설정."""
         self._scenario = scenario
+
+    def set_balance(self, balances: list[Balance]) -> None:
+        """E2E 테스트용 잔고 동적 설정."""
+        self._custom_balances = balances
+
+    def reset_orders(self) -> None:
+        """테스트 간 전체 상태 초기화."""
+        self._orders.clear()
+        self._scenario = MockOrderScenario.IMMEDIATE_FILL
+        self._custom_balances = None
 
     def _now(self) -> datetime:
         return datetime.now(tz=timezone.utc)
@@ -251,6 +262,8 @@ class MockExchangeProvider(BaseExchangeProvider):
     # ── REST: 잔고 / 수수료 / API 키 ────────────────────────────────────────
 
     async def get_balance(self) -> list[Balance]:
+        if self._custom_balances is not None:
+            return self._custom_balances
         return [
             Balance(
                 currency="KRW",
