@@ -81,6 +81,12 @@ unhandled exception 테스트는 BaseHTTPMiddleware 없는 별도 fixture로 격
 - `server/tests/test_middleware_chain.py` — 11개 (CORS, 미들웨어 순서, 헬스체크, Prometheus) [v1-4]
 - `server/tests/integration/test_auth_api.py` — 28개 (회원가입, 로그인, 토큰갱신 등) [v1-5/7]
 - `server/tests/integration/test_2fa_session_api.py` — 37개 (2FA setup/verify/disable/status, login-verify, 세션관리) [v1-7]
+- `server/tests/e2e/conftest.py` — E2E 공용 픽스처 (ADR-025-2 기반) [v1-25]
+- `server/tests/e2e/test_auth_flow.py` — 8개 (회원가입~로그아웃 전체 흐름) [v1-25]
+- `server/tests/e2e/test_exchange_flow.py` — 6개 (거래소 등록~일괄취소) [v1-25]
+- `server/tests/e2e/test_ai_trading_flow.py` — 6개 (indicators~ExecutionEngine) [v1-25]
+- `server/tests/e2e/test_portfolio_flow.py` — 6개 (포트폴리오~권한 검증) [v1-25]
+- `server/tests/e2e/test_websocket_flow.py` — 12개 (WS 연결~구독~에러) [v1-25]
 
 ## AsyncMock 의존성 Mock 패턴 (중요!)
 
@@ -96,6 +102,29 @@ mock_auth_service.get_and_delete_2fa_login_pending.return_value = data
 ```
 
 **AsyncMock 자동 메서드 생성**: `AsyncMock()` 인스턴스는 접근 시 자동으로 async 메서드 생성. 별도로 `AsyncMock(return_value=...)` 지정 필요.
+
+## E2E conftest 핵심 패턴 (v1-25)
+
+### AsyncSessionLocal 교체 필요 (WS E2E 필수)
+`authenticate_ws()`는 `app.core.database.AsyncSessionLocal`을 직접 사용 → `dependency_overrides`로 해결 불가.
+E2E conftest에서 모듈 글로벌 직접 교체:
+```python
+import app.core.database as db_module
+db_module.AsyncSessionLocal = async_sessionmaker(e2e_engine, ...)
+```
+
+### WS 테스트: Starlette TestClient sync 패턴
+```python
+def test_ws_connect(e2e_app, test_user):
+    token = test_user["access_token"]
+    with TestClient(e2e_app).websocket_connect(f"/ws/v1?token={token}") as ws:
+        msg = ws.receive_json()
+        assert msg["action"] == "connected"
+```
+
+### MockExchangeProvider 확장 (v1-25)
+- `set_balance(balances)`: E2E 테스트용 잔고 동적 설정
+- `reset_orders()`: 테스트 간 전체 상태 초기화 (_orders, _scenario, _custom_balances)
 
 ## integration/conftest.py 패턴
 

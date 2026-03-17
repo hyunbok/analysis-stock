@@ -4,7 +4,7 @@
 - 설계서 위치: `docs/tasks/v1-{N}-{name}-plan.md`
 - 참조 문서: `docs/refs/project-prd.md`, `docs/refs/architecture.md`, `docs/refs/security.md`
 - 서버 코드: `server/app/` (FastAPI, 3계층: api → services → repositories)
-- 테스트: `server/tests/` (unit/, integration/)
+- 테스트: `server/tests/` (unit/, integration/, e2e/, performance/)
 
 ## 아키텍처 패턴
 - 모듈러 모놀리스, 3계층 패턴 (API → Service → Repository)
@@ -280,6 +280,18 @@
 - Feature 패턴: models/repositories/providers/screens/widgets 5-folder
 - 환경 설정: --dart-define=API_BASE_URL 빌드 타임 오버라이드
 - code-architect 분업: Riverpod/Dio/WS/Storage/Features 설계 담당
+
+## v1-25 결정 사항 (통합 테스트 및 배포 파이프라인)
+- E2E: `tests/e2e/` 신규, Alembic DB 초기화, 커밋+teardown cleanup (multi-request)
+- fakeredis FakeServer 세션 공유 (pub/sub 동작 → WS E2E 필수)
+- MockProvider 최소 확장: `reset_orders()` 추가만, `set_balance()` 미채택 (잔고는 DB 검증)
+- 성능: pytest-benchmark(CI 주간) + locust+locust-plugins(스테이징 후)
+- CI 4단계: PR(unit+integration), develop(e2e), 주간(benchmark), 스테이징(locust)
+- Prometheus: `cointrader_` 접두사 커스텀 메트릭 7종
+- 모니터링: docker-compose.monitoring.yml (Prometheus+Grafana+Loki+AlertManager)
+- 배포: Nginx reverse proxy + 2 server Rolling Update + 롤백 스크립트
+- 보안: SecurityHeadersMiddleware, trivy/safety/trufflehog 워크플로우
+- 신규 의존성: pytest-benchmark, locust, locust-plugins (dev)
 
 ## 협업 패턴
 - code-architect와 이견 시 먼저 합의 후 설계서 반영 (동시 편집 충돌 주의)
