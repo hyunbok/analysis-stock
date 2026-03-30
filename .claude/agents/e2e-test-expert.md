@@ -3,7 +3,7 @@ name: e2e-test-expert
 description: "Use this agent when designing, implementing, or running end-to-end tests for the coin trading application. Specializes in server API integration tests (pytest + httpx), Flutter integration tests (integration_test), cross-system flow validation, test fixture management, and CI/CD test pipeline configuration."
 model: sonnet
 color: purple
-tools: Read, Edit, Write, Glob, Grep, Bash, WebFetch, WebSearch
+tools: Read, Edit, Write, Glob, Grep, Bash, WebFetch, WebSearch, SendMessage
 memory: project
 permissionMode: bypassPermissions
 ---
